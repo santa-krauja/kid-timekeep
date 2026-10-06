@@ -1,6 +1,18 @@
 package lv.zarin.timekeep.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.window.core.layout.WindowWidthSizeClass
+import kotlinx.coroutines.launch
+import lv.zarin.timekeep.ui.timer.TimerContent
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,7 +86,7 @@ import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.common.durationPhrase
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit,
@@ -94,6 +106,69 @@ fun HomeScreen(
         },
     )
     val state by vm.state.collectAsStateWithLifecycle()
+    val twoPane = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
+    if (!twoPane) {
+        HomeList(vm, state, onOpenSettings, onOpenTimer, onNewTimer, onEditPreset, onStartPreset = vm::startPreset)
+        return
+    }
+
+    // Two-pane: the list on the left, the selected timer big on the right. Nothing navigates.
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val shownId = selectedId?.takeIf { id -> state.now.any { it.id == id } }
+        ?: state.now.firstOrNull { it.state is RunState.Running }?.id
+        ?: state.now.firstOrNull { it.state is RunState.Paused }?.id
+    val scope = rememberCoroutineScope()
+    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        listPane = {
+            AnimatedPane(Modifier.preferredWidth(0.45f)) {
+                HomeList(
+                    vm, state, onOpenSettings,
+                    onOpenTimer = { selectedId = it },
+                    onNewTimer = onNewTimer,
+                    onEditPreset = onEditPreset,
+                    onStartPreset = { id -> scope.launch { selectedId = vm.startPresetNow(id) } },
+                    selectedId = shownId,
+                )
+            }
+        },
+        detailPane = {
+            AnimatedPane {
+                if (shownId == null) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            stringResource(R.string.home_select_timer),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    key(shownId) {
+                        TimerContent(shownId, onClose = { selectedId = null }, showBack = false)
+                    }
+                }
+            }
+        },
+    )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeList(
+    vm: HomeViewModel,
+    state: HomeState,
+    onOpenSettings: () -> Unit,
+    onOpenTimer: (String) -> Unit,
+    onNewTimer: () -> Unit,
+    onEditPreset: (String) -> Unit,
+    onStartPreset: (String) -> Unit,
+    selectedId: String? = null,
+) {
+    val container = appContainer()
     val clock = container.clock
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val nowMs by produceState(clock.nowMs(), lifecycle, clock) {
@@ -142,6 +217,7 @@ fun HomeScreen(
                         nowMs = nowMs,
                         clock = clock,
                         canPause = state.canPause,
+                        selected = timer.id == selectedId,
                         onOpen = { onOpenTimer(timer.id) },
                         onToggle = { vm.togglePause(timer.id) },
                         onRestart = { vm.restart(timer.id) },
@@ -155,7 +231,7 @@ fun HomeScreen(
                 Box {
                     PresetRow(
                         preset = preset,
-                        onStart = { vm.startPreset(preset.id) },
+                        onStart = { onStartPreset(preset.id) },
                         onLongPress = { menuFor = preset },
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {
@@ -221,6 +297,7 @@ private fun NowCard(
     nowMs: Long,
     clock: Clock,
     canPause: Boolean,
+    selected: Boolean,
     onOpen: () -> Unit,
     onToggle: () -> Unit,
     onRestart: () -> Unit,
@@ -230,7 +307,11 @@ private fun NowCard(
     val cardDescription = stringResource(
         R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
     )
-    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        onClick = onOpen,
+        modifier = Modifier.fillMaxWidth(),
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
         Column(
             Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

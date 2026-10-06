@@ -7,6 +7,7 @@
     <string name="seed_preset_teeth">Brush teeth</string>
     <string name="seed_preset_dressed">Get dressed</string>
     <string name="seed_preset_reading">Reading</string>
+    <string name="home_select_timer">Pick a timer to see it big</string>
     <string name="home_now">Now</string>
     <string name="home_presets">Presets</string>
     <string name="home_nothing_running">Nothing running</string>

@@ -3,6 +3,8 @@ package lv.zarin.timekeep.ui.timer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,6 +37,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,6 +45,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,9 +64,18 @@ import lv.zarin.timekeep.ui.common.DurationLabel
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimerScreen(timerId: String, onBack: () -> Unit) {
+fun TimerScreen(timerId: String, onBack: () -> Unit) = TimerContent(timerId, onClose = onBack, showBack = true)
+
+/**
+ * The big timer. Used as the phone route (`showBack = true`) and as the tablet detail pane
+ * (`showBack = false`); [onClose] also runs when the timer is dismissed or no longer exists.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
+    val onBack = onClose
+    val landscape = currentWindowAdaptiveInfo().windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
     val container = appContainer()
     val vm: TimerViewModel = viewModel(
         key = "timer-$timerId",
@@ -111,8 +124,10 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
             TopAppBar(
                 title = { Text(state?.timer?.name.orEmpty()) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                    if (showBack) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        }
                     }
                 },
             )
@@ -122,11 +137,8 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
         val timer = s.timer
         val paused = timer.state is RunState.Paused
         val finished = timer.state is RunState.Finished
-        Column(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
+        val hourglass: @Composable (Modifier) -> Unit = { mod ->
+            Box(mod, contentAlignment = Alignment.Center) {
                 Hourglass(
                     look = timer.look,
                     progress = { timer.progress(vm.nowMs()) },
@@ -150,6 +162,8 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
                     }
                 }
             }
+        }
+        val numbers: @Composable () -> Unit = {
             if (s.showNumbers) {
                 Text(
                     stringResource(R.string.timer_left),
@@ -171,10 +185,13 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Row(
+        }
+        val controls: @Composable () -> Unit = {
+            FlowRow(
                 Modifier.padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedButton(onClick = { confirmStartOver = true }) {
                     Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
@@ -190,6 +207,28 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
                         Text(stringResource(R.string.action_add_minute), maxLines = 1)
                     }
                 }
+            }
+        }
+        if (landscape) {
+            // Compact height (phone landscape): hourglass on the left, time and controls on the right.
+            Row(
+                Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                hourglass(Modifier.weight(1f).fillMaxHeight())
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    numbers()
+                    controls()
+                }
+            }
+        } else {
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                hourglass(Modifier.weight(1f).fillMaxSize())
+                numbers()
+                controls()
             }
         }
 

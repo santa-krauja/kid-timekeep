@@ -44,6 +44,9 @@ class HomeViewModel(
         viewModelScope.launch { service.startFromPreset(id) }
     }
 
+    /** Starts a preset and returns the new timer's id (the tablet layout selects it). */
+    suspend fun startPresetNow(id: String): String = service.startFromPreset(id).id
+
     fun togglePause(id: String) {
         viewModelScope.launch {
             val t = timers.get(id) ?: return@launch
