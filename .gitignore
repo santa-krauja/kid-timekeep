@@ -1,0 +1,52 @@
+# Gradle / build
+.gradle
+build/
+.kotlin/
+.externalNativeBuild
+.cxx
+
+# Local config
+local.properties
+
+# Signing — never commit keys
+*.jks
+*.keystore
+keystore.properties
+
+# Secrets / env
+secrets.properties
+.env
+
+# IDE
+*.iml
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/androidTestResultsUserPreferences.xml
+/.idea/appInsightsSettings.xml
+/.idea/other.xml
+/.idea/shelf/
+/.idea/sonarlint/
+.vscode/
+.fleet/
+
+# OS
+.DS_Store
+
+# Generated / tooling
+/captures
+*.hprof
+lint-results*.html
+lint-results*.xml
+/release/
+*.apk
+*.aab
+output-metadata.json
+
+# Claude Code local settings
+.claude/settings.local.json
