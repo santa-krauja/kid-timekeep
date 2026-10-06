@@ -9,6 +9,13 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +37,15 @@ import lv.zarin.timekeep.domain.hourglass.BulbShape
 import lv.zarin.timekeep.domain.hourglass.SandLevelSolver
 import lv.zarin.timekeep.domain.timer.Look
 
+/** Test-only: current flip rotation in degrees (0 when idle). */
+internal val HourglassRotation = SemanticsPropertyKey<Float>("HourglassRotation")
+
+private val FlipEasing = CubicBezierEasing(0.55f, 0f, 0.3f, 1f)
+private val SettleEasing = CubicBezierEasing(0f, 0f, 0.58f, 1f) // CSS ease-out
+
+/** Last progress drawn by the back layer (plain field, not state): the pre-flip value to freeze on. */
+private class LastDrawn { var value = 0f }
+
 /**
  * Shared animation clock for every running hourglass: one state, written once per frame. Several
  * hourglasses may each run [run]; each frame callback writes the same value, so only the first write
@@ -50,7 +66,9 @@ internal object SandClock {
  * changes), stream (the only layer that reads the frame clock) and front (glass stroke, shine, caps;
  * never redraws). [progress] (elapsed fraction, 0..1) is read only in draw blocks. While [running] (and
  * 0 < progress < 1) a falling-sand stream animates; with reduced motion only its faint core line shows.
- * [flipTrigger] is reserved for the flip animation.
+ * When [flipTrigger] changes (not on first composition) the whole stack rotates 0..180 degrees over 650 ms
+ * while still drawing the pre-flip progress, then draws the live progress with an alpha 0.35..1 settle over
+ * 260 ms. With reduced motion the switch is instant.
  */
 @Composable
 fun Hourglass(
@@ -72,6 +90,22 @@ fun Hourglass(
     val reducedMotion = remember {
         Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     }
+    val rotation = remember { Animatable(0f) }
+    val alpha = remember { Animatable(1f) }
+    var frozen by remember { mutableStateOf<Float?>(null) }
+    val lastDrawn = remember { LastDrawn() }
+    val initialTrigger = remember { flipTrigger }
+    LaunchedEffect(flipTrigger) {
+        if (flipTrigger == initialTrigger || reducedMotion) return@LaunchedEffect
+        frozen = lastDrawn.value
+        rotation.snapTo(0f)
+        alpha.snapTo(1f)
+        rotation.animateTo(180f, tween(650, easing = FlipEasing))
+        frozen = null
+        rotation.snapTo(0f)
+        alpha.snapTo(0.35f)
+        alpha.animateTo(1f, tween(260, easing = SettleEasing))
+    }
     if (running && !reducedMotion) {
         LaunchedEffect(Unit) { SandClock.run() }
     }
@@ -83,7 +117,14 @@ fun Hourglass(
     } else {
         Modifier
     }
-    Box(modifier.aspectRatio(BulbShape.WIDTH / BulbShape.HEIGHT).then(semantics)) {
+    val rotationSemantics = Modifier.semantics { this[HourglassRotation] = rotation.value }
+    Box(
+        modifier.aspectRatio(BulbShape.WIDTH / BulbShape.HEIGHT).then(semantics).then(rotationSemantics)
+            .graphicsLayer {
+                rotationZ = rotation.value
+                this.alpha = alpha.value
+            },
+    ) {
         // Back layer.
         Spacer(
             Modifier.fillMaxSize().graphicsLayer().drawWithCache {
@@ -93,7 +134,9 @@ fun Hourglass(
                 val topTexture = textures.get(true, this, topPainter, look.top, look.topSand, s)
                 val bottomTexture = textures.get(false, this, bottomPainter, look.bottom, look.bottomSand, s)
                 onDrawBehind {
-                    val levels = SandLevelSolver.levels(progress())
+                    val p = frozen ?: progress()
+                    lastDrawn.value = p
+                    val levels = SandLevelSolver.levels(p)
                     translate(ox, oy) {
                         scale(s, s, pivot = Offset.Zero) {
                             drawHourglassBack(paths, levels, topTexture, bottomTexture, colors, s)
@@ -109,7 +152,7 @@ fun Hourglass(
                 val ox = (size.width - BulbShape.WIDTH * s) / 2
                 val oy = (size.height - BulbShape.HEIGHT * s) / 2
                 onDrawBehind {
-                    if (!running) return@onDrawBehind
+                    if (!running || frozen != null) return@onDrawBehind
                     val p = progress()
                     if (p <= 0f || p >= 1f) return@onDrawBehind
                     val levels = SandLevelSolver.levels(p)

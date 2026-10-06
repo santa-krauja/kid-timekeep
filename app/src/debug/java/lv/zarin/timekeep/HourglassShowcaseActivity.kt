@@ -10,7 +10,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,19 +59,27 @@ class HourglassShowcaseActivity : ComponentActivity() {
                                 }
                             }
                         }
-                    } else Column(
-                        Modifier.safeDrawingPadding().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        listOf(listOf(0f, 0.3f), listOf(0.7f, 1f)).forEach { row ->
-                            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                row.forEach { p ->
-                                    Hourglass(
-                                        look = look,
-                                        progress = { p },
-                                        running = p > 0f && p < 1f,
-                                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                    )
+                    } else {
+                        var flip by remember { mutableIntStateOf(0) }
+                        var firstP by remember { mutableFloatStateOf(0.3f) }
+                        Column(
+                            Modifier.safeDrawingPadding().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            // Debug: flip the first cell (p = 0.3) and reset its progress to 0.
+                            Button(onClick = { firstP = 0f; flip++ }) { Text("Flip") }
+                            listOf(listOf(firstP, 0.3f), listOf(0.7f, 1f)).forEachIndexed { r, row ->
+                                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    row.forEachIndexed { c, p ->
+                                        val isFlipCell = r == 0 && c == 0
+                                        Hourglass(
+                                            look = look,
+                                            progress = if (isFlipCell) ({ firstP }) else ({ p }),
+                                            running = p > 0f && p < 1f,
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                            flipTrigger = if (isFlipCell) flip else 0,
+                                        )
+                                    }
                                 }
                             }
                         }
