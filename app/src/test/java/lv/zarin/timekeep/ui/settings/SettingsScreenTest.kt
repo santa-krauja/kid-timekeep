@@ -2,6 +2,8 @@ package lv.zarin.timekeep.ui.settings
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -43,8 +45,11 @@ class SettingsScreenTest {
         throw AssertionError("Timed out waiting for $what")
     }
 
-    private fun waitForText(text: String) =
-        waitFor(text) { rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitForText(text: String, substring: Boolean = false) =
+        waitFor(text) { rule.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty() }
+
+    private fun waitForTag(tag: String) =
+        waitFor(tag) { rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
 
     private fun current() = runBlocking { repo.settings.first() }
 
@@ -74,13 +79,13 @@ class SettingsScreenTest {
         show()
         waitForText("System default")
         rule.onNodeWithText("System default").performClick()
-        waitForText("Dark")
-        rule.onNodeWithText("Dark").performClick()
+        waitForTag("theme_option_DARK")
+        rule.onNodeWithTag("theme_option_DARK").performClick()
         waitFor("theme dark") { current().themeMode == ThemeMode.DARK }
         waitForText("Dark")
         rule.onNodeWithText("Dark").performClick()
-        waitForText("Light")
-        rule.onNodeWithText("Light").performClick()
+        waitForTag("theme_option_LIGHT")
+        rule.onNodeWithTag("theme_option_LIGHT").performClick()
         waitFor("theme light") { current().themeMode == ThemeMode.LIGHT }
         assertEquals(ThemeMode.LIGHT, current().themeMode)
     }
@@ -93,9 +98,7 @@ class SettingsScreenTest {
             .performClick()
         waitForText("Licences")
         waitForText("Close")
-        waitFor("licence text") {
-            rule.onAllNodesWithText("Apache License", substring = true)
-                .fetchSemanticsNodes().size >= 2
-        }
+        // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.
+        waitForText("Licensed under the Apache License, Version 2.0", substring = true)
     }
 }
