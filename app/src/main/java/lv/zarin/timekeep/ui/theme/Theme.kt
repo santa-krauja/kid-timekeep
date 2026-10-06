@@ -15,6 +15,13 @@ import lv.zarin.timekeep.domain.ports.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
+    primaryContainer = Color(0xFF2C2850),
+    onPrimaryContainer = Color(0xFFE9E6FB),
+    secondary = Color(0xFFA39D93),
+    secondaryContainer = Color(0xFF282624),
+    onSecondaryContainer = DarkOnSurface,
+    tertiary = DarkPrimary,
+    onSurfaceVariant = Color(0xFFA39D93),
     onPrimary = DarkBackground,
     background = DarkBackground,
     surface = DarkSurface,
@@ -26,6 +33,13 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = LightPrimary,
+    primaryContainer = Color(0xFFE9E6FB),
+    onPrimaryContainer = Color(0xFF2A2160),
+    secondary = Color(0xFF6B665E),
+    secondaryContainer = Color(0xFFEFEDE8),
+    onSecondaryContainer = LightOnSurface,
+    tertiary = LightPrimary,
+    onSurfaceVariant = Color(0xFF6B665E),
     onPrimary = Color.White,
     background = LightBackground,
     surface = LightSurface,

@@ -43,7 +43,7 @@ private fun Gallery() {
 @Preview(name = "Gallery 48 dp", widthDp = 460, heightDp = 1060, showBackground = true)
 @Composable
 private fun HourglassGalleryPreview() {
-    KidTimekeepTheme() { Surface { Gallery() } }
+    KidTimekeepTheme { Surface { Gallery() } }
 }
 
 @Preview(
@@ -55,13 +55,13 @@ private fun HourglassGalleryPreview() {
 )
 @Composable
 private fun HourglassGalleryDarkPreview() {
-    KidTimekeepTheme() { Surface { Gallery() } }
+    KidTimekeepTheme { Surface { Gallery() } }
 }
 
 @Preview(name = "Sample 400 dp", widthDp = 420, heightDp = 540, showBackground = true)
 @Composable
 private fun HourglassLargePreview() {
-    KidTimekeepTheme() {
+    KidTimekeepTheme {
         Surface {
             Hourglass(sampleLook, progress = { 0.4f }, running = false, modifier = Modifier.padding(10.dp).width(400.dp))
         }
@@ -71,7 +71,7 @@ private fun HourglassLargePreview() {
 @Preview(name = "Key progress values", widthDp = 440, heightDp = 160, showBackground = true)
 @Composable
 private fun HourglassProgressPreview() {
-    KidTimekeepTheme() {
+    KidTimekeepTheme {
         Surface {
             Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(0f, 0.3f, 0.7f, 1f).forEach { p ->
