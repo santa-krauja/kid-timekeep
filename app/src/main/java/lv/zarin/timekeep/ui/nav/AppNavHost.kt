@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import lv.zarin.timekeep.ui.edit.EditTimerScreen
 import lv.zarin.timekeep.ui.home.HomeScreen
 import lv.zarin.timekeep.ui.settings.SettingsScreen
@@ -24,7 +25,9 @@ fun AppNavHost(navController: NavHostController, startTimerId: String? = null) {
                 onEditPreset = { navController.navigate(EditTimerRoute(it)) },
             )
         }
-        composable<TimerRoute> { TimerScreen(onBack = { navController.popBackStack() }) }
+        composable<TimerRoute> { entry ->
+            TimerScreen(entry.toRoute<TimerRoute>().timerId, onBack = { navController.popBackStack() })
+        }
         composable<EditTimerRoute> { EditTimerScreen(onBack = { navController.popBackStack() }) }
         composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
     }
