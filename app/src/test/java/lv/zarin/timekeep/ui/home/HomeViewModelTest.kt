@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.Control
+import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -48,5 +50,18 @@ class HomeViewModelTest {
         vm.state.onEach { }.launchIn(backgroundScope)
         runCurrent()
         assertEquals(listOf("run", "pau", "fin"), vm.state.value.now.map { it.id })
+    }
+
+    @Test
+    fun canPauseFollowsPolicy() = runTest {
+        val timers = InMemoryTimerRepository()
+        val presets = InMemoryPresetRepository()
+        val clock = FakeClock(0)
+        val service = TimerService(timers, presets, RecordingAlarmScheduler(), clock, LookPicker())
+        val deny = ControlPolicy { it != Control.PAUSE }
+        val vm = HomeViewModel(timers, presets, service, clock, deny)
+        vm.state.onEach { }.launchIn(backgroundScope)
+        runCurrent()
+        assertEquals(false, vm.state.value.canPause)
     }
 }

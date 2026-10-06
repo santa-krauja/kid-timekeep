@@ -13,6 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.derivedStateOf
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,6 +42,8 @@ import lv.zarin.timekeep.domain.timer.Look
 
 /** Test-only: current flip rotation in degrees (0 when idle). */
 internal val HourglassRotation = SemanticsPropertyKey<Float>("HourglassRotation")
+
+private const val PROGRESS_BUCKETS = 4000
 
 private val FlipEasing = CubicBezierEasing(0.55f, 0f, 0.3f, 1f)
 private val SettleEasing = CubicBezierEasing(0f, 0f, 0.58f, 1f) // CSS ease-out
@@ -137,6 +142,25 @@ fun Hourglass(
     if (running && !reducedMotion) {
         LaunchedEffect(Unit) { SandClock.run() }
     }
+    // Slow ticker so a plain (non-state) progress source still advances with reduced motion.
+    val slowTick = remember { mutableLongStateOf(0L) }
+    if (running && reducedMotion) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(250)
+                slowTick.longValue++
+            }
+        }
+    }
+    // Quantised progress: re-evaluates on every shared frame / slow tick (so plain-clock progress
+    // lambdas keep working) but only invalidates the back layer when the solver bucket changes.
+    val bucket = remember(progress, running) {
+        derivedStateOf {
+            SandClock.time.longValue
+            slowTick.longValue
+            (progress().coerceIn(0f, 1f) * PROGRESS_BUCKETS).roundToInt()
+        }
+    }
     val semantics = if (contentDescription != null) {
         Modifier.semantics {
             this.contentDescription = contentDescription
@@ -148,7 +172,7 @@ fun Hourglass(
     val rotationSemantics = Modifier.semantics {
         this[HourglassRotation] = rotation.value
         this[HourglassAlpha] = alpha.value
-        this[HourglassDrawnProgress] = frozen ?: progress()
+        this[HourglassDrawnProgress] = frozen ?: (bucket.value / PROGRESS_BUCKETS.toFloat())
     }
     Box(
         modifier.aspectRatio(BulbShape.WIDTH / BulbShape.HEIGHT).then(semantics).then(rotationSemantics)
@@ -166,7 +190,7 @@ fun Hourglass(
                 val topTexture = textures.get(true, this, topPainter, look.top, look.topSand, s)
                 val bottomTexture = textures.get(false, this, bottomPainter, look.bottom, look.bottomSand, s)
                 onDrawBehind {
-                    val p = frozen ?: progress()
+                    val p = frozen ?: (bucket.value / PROGRESS_BUCKETS.toFloat())
                     flip.lastDrawn = p // plain-field side effect, read in composition by the next flip
                     val levels = SandLevelSolver.levels(p)
                     translate(ox, oy) {

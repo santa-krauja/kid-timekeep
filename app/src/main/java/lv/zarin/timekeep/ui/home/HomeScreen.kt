@@ -1,7 +1,6 @@
 package lv.zarin.timekeep.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -50,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,12 +69,10 @@ import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.progress
 import lv.zarin.timekeep.domain.timer.remainingMs
-import lv.zarin.timekeep.ui.common.DurationLabel
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.common.durationPhrase
 import lv.zarin.timekeep.ui.hourglass.Hourglass
-import lv.zarin.timekeep.ui.nav.EditTimerRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +88,7 @@ fun HomeScreen(
             initializer {
                 HomeViewModel(
                     container.timerRepository, container.presetRepository,
-                    container.timerService, container.clock,
+                    container.timerService, container.clock, container.controlPolicy,
                 )
             }
         },
@@ -144,6 +141,7 @@ fun HomeScreen(
                         timer = timer,
                         nowMs = nowMs,
                         clock = clock,
+                        canPause = state.canPause,
                         onOpen = { onOpenTimer(timer.id) },
                         onToggle = { vm.togglePause(timer.id) },
                         onRestart = { vm.restart(timer.id) },
@@ -181,7 +179,10 @@ fun HomeScreen(
             title = { Text(stringResource(R.string.preset_delete_title)) },
             text = { Text(stringResource(R.string.preset_delete_message, preset.name)) },
             confirmButton = {
-                TextButton(onClick = { vm.deletePreset(preset.id); confirmDelete = null }) {
+                TextButton(
+                    onClick = { vm.deletePreset(preset.id); confirmDelete = null },
+                    modifier = Modifier.testTag("confirm_delete"),
+                ) {
                     Text(stringResource(R.string.action_delete))
                 }
             },
@@ -219,18 +220,16 @@ private fun NowCard(
     timer: Timer,
     nowMs: Long,
     clock: Clock,
+    canPause: Boolean,
     onOpen: () -> Unit,
     onToggle: () -> Unit,
     onRestart: () -> Unit,
 ) {
     val done = timer.state is RunState.Finished || timer.isOverdue(nowMs)
     val paused = timer.state is RunState.Paused
-    val remaining = durationPhrase(timer.remainingMs(nowMs), roundUp = true)
-    val statusPhrase = when {
-        done -> stringResource(R.string.timer_done_badge)
-        paused -> stringResource(R.string.timer_paused_label, remaining)
-        else -> stringResource(R.string.timer_left_label, remaining)
-    }
+    val cardDescription = stringResource(
+        R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
+    )
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Column(
             Modifier.padding(12.dp),
@@ -242,16 +241,19 @@ private fun NowCard(
                     progress = { timer.progress(clock.nowMs()) },
                     running = !paused && !done,
                     modifier = Modifier.height(96.dp).aspectRatio(0.62f),
+                    contentDescription = cardDescription,
                 )
                 if (!done) {
-                    IconButton(
-                        onClick = onToggle,
-                        modifier = Modifier.align(Alignment.TopEnd),
-                    ) {
-                        Icon(
-                            if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                            contentDescription = stringResource(if (paused) R.string.cd_resume else R.string.cd_pause),
-                        )
+                    if (canPause || paused) {
+                        IconButton(
+                            onClick = onToggle,
+                            modifier = Modifier.align(Alignment.TopEnd),
+                        ) {
+                            Icon(
+                                if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                                contentDescription = stringResource(if (paused) R.string.cd_resume else R.string.cd_pause),
+                            )
+                        }
                     }
                 } else {
                     IconButton(onClick = onRestart, modifier = Modifier.align(Alignment.TopEnd)) {

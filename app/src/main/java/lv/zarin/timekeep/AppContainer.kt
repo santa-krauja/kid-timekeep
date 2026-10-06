@@ -13,6 +13,8 @@ import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
 import lv.zarin.timekeep.alarm.NoOpAlarmScheduler
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
+import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.AlarmScheduler
 import lv.zarin.timekeep.domain.ports.Clock
@@ -26,6 +28,7 @@ class AppContainer(
     context: Context,
     val inMemoryDb: Boolean = false,
     val clock: Clock = SystemClock,
+    val controlPolicy: ControlPolicy = AllowAllControlPolicy,
 ) {
     val appContext: Context = context.applicationContext
 
@@ -51,6 +54,6 @@ class AppContainer(
     val alarmScheduler: AlarmScheduler = NoOpAlarmScheduler
 
     val timerService: TimerService by lazy {
-        TimerService(timerRepository, presetRepository, alarmScheduler, clock, lookPicker)
+        TimerService(timerRepository, presetRepository, alarmScheduler, clock, lookPicker, controlPolicy)
     }
 }
