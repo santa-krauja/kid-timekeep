@@ -52,16 +52,16 @@ class TimerService(
             timer
         }
 
-    suspend fun pause(id: String) {
+    suspend fun pause(id: String): Unit {
         if (!policy.isAllowed(Control.PAUSE)) return
         transition(id) { TimerActions.pause(it, clock.nowMs()) }
     }
 
-    suspend fun resume(id: String) = transition(id) { TimerActions.resume(it, clock.nowMs()) }
+    suspend fun resume(id: String): Unit = transition(id) { TimerActions.resume(it, clock.nowMs()) }
 
-    suspend fun restart(id: String) = transition(id) { TimerActions.restart(it, clock.nowMs()) }
+    suspend fun restart(id: String): Unit = transition(id) { TimerActions.restart(it, clock.nowMs()) }
 
-    suspend fun addMinute(id: String) {
+    suspend fun addMinute(id: String): Unit {
         if (!policy.isAllowed(Control.ADD_MINUTE)) return
         transition(id) { TimerActions.addMinute(it, clock.nowMs()) }
     }
@@ -69,7 +69,10 @@ class TimerService(
     /** Returns the timer only if this call finished it. */
     suspend fun finishIfOverdue(id: String): Timer? = mutex.withLock {
         val t = timers.get(id) ?: return@withLock null
-        finishOverdue(t, clock.nowMs())
+        finishOverdue(t, clock.nowMs()) ?: run {
+            if (t.state is RunState.Running) syncAlarm(t) // early or stale fire: re-arm
+            null
+        }
     }
 
     suspend fun dismiss(id: String): Unit = mutex.withLock {
@@ -90,7 +93,9 @@ class TimerService(
 
     private suspend fun transition(id: String, change: (Timer) -> Timer): Unit = mutex.withLock {
         val t = timers.get(id) ?: return@withLock
-        val updated = change(t)
+        // An overdue Running timer is finished first, so actions never strand or shortchange it.
+        val current = TimerActions.finish(t, clock.nowMs()).takeIf { t.isOverdue(clock.nowMs()) } ?: t
+        val updated = change(current)
         if (updated === t) return@withLock
         save(updated)
     }

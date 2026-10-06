@@ -2,6 +2,7 @@ package lv.zarin.timekeep.domain
 
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
 import lv.zarin.timekeep.domain.control.Control
 import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
@@ -29,7 +30,7 @@ class TimerServiceTest {
     private val alarms = RecordingAlarmScheduler()
     private var counter = 0
 
-    private fun service(policy: ControlPolicy = lv.zarin.timekeep.domain.control.AllowAllControlPolicy) =
+    private fun service(policy: ControlPolicy = AllowAllControlPolicy) =
         TimerService(timers, presets, alarms, clock, LookPicker(Random(7)), policy, ids = { "id${counter++}" })
 
     private val pinned = Look(PictureId.HEART, SandColor.NIGHT, PictureId.STAR, SandColor.LEMON)
@@ -229,5 +230,36 @@ class TimerServiceTest {
         val s = service()
         s.pause("x"); s.resume("x"); s.restart("x"); s.addMinute("x"); s.dismiss("x")
         assertTrue(timers.getAll().isEmpty())
+    }
+
+    @Test
+    fun pauseAfterDueTimeFinishesInsteadOfStranding() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 10_000L, pinned)
+        clock.advance(15_000L)
+        s.pause(t.id)
+        assertTrue(timers.get(t.id)!!.state is RunState.Finished)
+        assertTrue(t.id !in alarms.scheduled)
+    }
+
+    @Test
+    fun addMinuteAfterDueTimeGivesFullMinute() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 10_000L, pinned)
+        clock.advance(15_000L)
+        s.addMinute(t.id)
+        val r = timers.get(t.id)!!
+        assertEquals(70_000L, r.durationMs)
+        assertEquals(clock.now + 60_000L, alarms.scheduled[t.id])
+    }
+
+    @Test
+    fun earlyAlarmReschedules() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        alarms.scheduled.clear()
+        clock.advance(5_000L)
+        assertNull(s.finishIfOverdue(t.id))
+        assertEquals(t.createdAtMs + 60_000L, alarms.scheduled[t.id])
     }
 }
