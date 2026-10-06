@@ -21,7 +21,8 @@ import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
 
 /**
- * Debug-only showcase: a 2x2 grid of hourglasses at p = 0, 0.3, 0.7, 1.
+ * Debug-only showcase: a 2x2 grid of hourglasses at p = 0, 0.3, 0.7, 1 (stream runs on 0.3 and 0.7);
+ * extra `--ez many true` shows 8 small running hourglasses.
  * `adb shell am start -n lv.zarin.timekeep/.HourglassShowcaseActivity`
  */
 class HourglassShowcaseActivity : ComponentActivity() {
@@ -29,10 +30,29 @@ class HourglassShowcaseActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val look = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
+        val many = intent.getBooleanExtra("many", false)
         setContent {
             KidTimekeepTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    Column(
+                    if (many) {
+                        Column(
+                            Modifier.safeDrawingPadding().padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(listOf(0.1f, 0.25f, 0.4f, 0.55f), listOf(0.65f, 0.75f, 0.85f, 0.95f)).forEach { row ->
+                                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { p ->
+                                        Hourglass(
+                                            look = look,
+                                            progress = { p },
+                                            running = true,
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else Column(
                         Modifier.safeDrawingPadding().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
@@ -42,7 +62,7 @@ class HourglassShowcaseActivity : ComponentActivity() {
                                     Hourglass(
                                         look = look,
                                         progress = { p },
-                                        running = false,
+                                        running = p > 0f && p < 1f,
                                         modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                     )
                                 }

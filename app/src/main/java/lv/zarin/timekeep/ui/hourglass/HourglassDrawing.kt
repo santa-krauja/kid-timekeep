@@ -6,6 +6,8 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
@@ -15,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import lv.zarin.timekeep.domain.hourglass.BulbShape
 import lv.zarin.timekeep.domain.hourglass.BulbShape.BOT0
@@ -25,6 +28,9 @@ import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP0
 import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP1
 import lv.zarin.timekeep.domain.hourglass.SandLevels
 import lv.zarin.timekeep.domain.timer.SandColor
+import kotlin.math.PI
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /*
  * Port of render() / drawSand() from the approved prototype script. Everything except the emoji is
@@ -120,7 +126,14 @@ private const val GRAIN_R_MIN = 0.12f
 private const val GRAIN_R_SPAN = 0.22f
 
 /** One drawPoints batch: grains of one shade and (approximate) radius. */
-internal class GrainBatch(val points: List<Offset>, val diameter: Float, val light: Boolean)
+internal class GrainBatch(val points: FloatArray, diameter: Float, light: Boolean) {
+    val paint = Paint().apply {
+        color = if (light) GRAIN_LIGHT else GRAIN_DARK
+        style = PaintingStyle.Stroke
+        strokeWidth = diameter
+        strokeCap = StrokeCap.Round
+    }
+}
 
 /** Grain batches per bulb, filtered to that bulb's band as the prototype does. */
 internal class GrainSet(val top: List<GrainBatch>, val bottom: List<GrainBatch>)
@@ -130,12 +143,17 @@ internal val GRAIN_SET: GrainSet by lazy {
         val result = ArrayList<GrainBatch>()
         for (light in listOf(true, false)) {
             for (b in 0 until GRAIN_BUCKETS) {
-                val pts = GRAINS.filter {
+                val sel = GRAINS.filter {
                     it.light == light && it.y in lo..hi &&
                         ((it.r - GRAIN_R_MIN) / GRAIN_R_SPAN * GRAIN_BUCKETS).toInt().coerceAtMost(GRAIN_BUCKETS - 1) == b
-                }.map { Offset(it.x, it.y) }
+                }
+                val pts = FloatArray(sel.size * 2)
+                sel.forEachIndexed { i, g ->
+                    pts[2 * i] = g.x
+                    pts[2 * i + 1] = g.y
+                }
                 val r = GRAIN_R_MIN + GRAIN_R_SPAN * (b + 0.5f) / GRAIN_BUCKETS
-                if (pts.isNotEmpty()) result += GrainBatch(pts, 2 * r, light)
+                if (sel.isNotEmpty()) result += GrainBatch(pts, 2 * r, light)
             }
         }
         return result
@@ -147,6 +165,10 @@ private val GRAIN_LIGHT = Color(1f, 1f, 1f, 0.42f)
 private val GRAIN_DARK = Color(70 / 255f, 45 / 255f, 20 / 255f, 0.14f)
 private val SURFACE_HIGHLIGHT = Color(1f, 1f, 1f, 0.5f)
 private val SHINE = Color(1f, 1f, 1f, 0.45f)
+private val GLASS_STROKE = Stroke(width = 1.6f, join = StrokeJoin.Round)
+private val SHINE_STROKE = Stroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+private val SURFACE_STROKE = Stroke(width = 0.8f)
+private val CORE_STROKE = Stroke(width = 0.55f, cap = StrokeCap.Round)
 private const val EMOJI_SIZE = 30f
 private const val EMOJI_ALPHA = 0.95f
 private const val GRAIN_MIN_SCALE = 1.4f
@@ -182,6 +204,9 @@ internal fun DrawScope.drawHourglass(
     bottomSand: SandColor,
     colors: GlassColors,
     pxPerUnit: Float,
+    streamTime: Long = 0L,
+    streamRunning: Boolean = false,
+    reducedMotion: Boolean = false,
 ) {
     drawPath(paths.glass, colors.fill)
     levels.topLevel?.let {
@@ -190,8 +215,11 @@ internal fun DrawScope.drawHourglass(
     levels.bottomLevel?.let {
         drawSand(paths, top = false, level = it, amp = levels.mound, bottomPainter, bottomSand, pxPerUnit)
     }
-    drawPath(paths.glass, colors.line, style = Stroke(width = 1.6f, join = StrokeJoin.Round))
-    drawPath(paths.shine, SHINE, style = Stroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    if (streamRunning && levels.topLevel != null) {
+        drawStream(levels, topSand.shades(), bottomSand.shades(), streamTime, animate = !reducedMotion)
+    }
+    drawPath(paths.glass, colors.line, style = GLASS_STROKE)
+    drawPath(paths.shine, SHINE, style = SHINE_STROKE)
     drawPath(paths.capTop, colors.cap)
     drawPath(paths.capBottom, colors.cap)
 }
@@ -228,7 +256,7 @@ private fun DrawScope.drawSand(
             val left = CX - EMOJI_SIZE / 2
             val topY = cy - EMOJI_SIZE / 2
             scale(1f / pxPerUnit, 1f / pxPerUnit, pivot = Offset.Zero) {
-                translate(left * pxPerUnit, topY * pxPerUnit) {
+                translate((left * pxPerUnit).roundToInt().toFloat(), (topY * pxPerUnit).roundToInt().toFloat()) {
                     with(painter) {
                         draw(Size(EMOJI_SIZE * pxPerUnit, EMOJI_SIZE * pxPerUnit), alpha = EMOJI_ALPHA)
                     }
@@ -237,17 +265,58 @@ private fun DrawScope.drawSand(
 
             if (pxPerUnit > GRAIN_MIN_SCALE) {
                 for (batch in if (top) GRAIN_SET.top else GRAIN_SET.bottom) {
-                    drawPoints(
-                        points = batch.points,
-                        pointMode = PointMode.Points,
-                        color = if (batch.light) GRAIN_LIGHT else GRAIN_DARK,
-                        strokeWidth = batch.diameter,
-                        cap = StrokeCap.Round,
-                    )
+                    drawContext.canvas.drawRawPoints(PointMode.Points, batch.points, batch.paint)
                 }
             }
 
-            drawPath(surfacePath, SURFACE_HIGHLIGHT, style = Stroke(width = 0.8f))
+            drawPath(surfacePath, SURFACE_HIGHLIGHT, style = SURFACE_STROKE)
         }
     }
+}
+
+private const val STREAM_FADE_START = 0.25f
+private const val STREAM_FADE_SPAN = 0.6f
+private val CORE_ALPHA = 0.45f
+
+/** Port of the prototype drawStream(): faint core line plus (unless [animate] is false) grains and splash. */
+private fun DrawScope.drawStream(levels: SandLevels, ts: SandShades, bs: SandShades, t: Long, animate: Boolean) {
+    val bottom = levels.bottomLevel
+    val y0 = TOP1 - 1.2f
+    val y1 = if (bottom != null) maxOf(BOT0 + 0.5f, bottom - levels.mound) else BOT1
+    val len = y1 - y0
+    drawLine(
+        brush = Brush.verticalGradient(0f to ts.base, 1f to bs.base, startY = y0, endY = y1),
+        start = Offset(CX, y0),
+        end = Offset(CX, y1),
+        strokeWidth = CORE_STROKE.width,
+        cap = CORE_STROKE.cap,
+        alpha = CORE_ALPHA,
+    )
+    if (!animate) return
+    val tf = t.toDouble()
+    val grains = SandParticles.stream
+    for (i in grains.indices) {
+        val g = grains[i]
+        val f = ((tf / g.per + g.ph) % 1.0).toFloat()
+        val y = y0 + Math.pow(f.toDouble(), 1.6).toFloat() * len
+        val x = CX + g.dx * f * f + sin(tf / 70 + g.wob).toFloat() * 0.1f * f
+        val m = ((f - STREAM_FADE_START) / STREAM_FADE_SPAN).coerceIn(0f, 1f)
+        drawCircle(lerp(ts.shade(g.sh), bs.shade(g.sh), m), g.r, Offset(x, y))
+    }
+    if (bottom != null) {
+        val splash = SandParticles.splash
+        for (i in splash.indices) {
+            val s = splash[i]
+            val q = ((tf / s.per + s.ph) % 1.0).toFloat()
+            val cx = CX + s.dir * s.reach * q
+            val cy = y1 - sin(q * PI.toFloat()) * s.hgt + q * q * 1.5f
+            drawCircle(bs.shade(s.sh), s.r, Offset(cx, cy), alpha = 1f - q)
+        }
+    }
+}
+
+private fun SandShades.shade(i: Int): Color = when (i) {
+    0 -> light
+    1 -> base
+    else -> dark
 }
