@@ -1,0 +1,247 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "3294f2cb9bba4b8af69d5c30e21c6c6b",
+    "entities": [
+      {
+        "tableName": "timers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `durationMs` INTEGER NOT NULL, `presetId` TEXT, `stateType` TEXT NOT NULL, `runningSinceMs` INTEGER, `elapsedMs` INTEGER, `finishedAtMs` INTEGER, `createdAtMs` INTEGER NOT NULL, `updatedAtMs` INTEGER NOT NULL, `look_topPicture` TEXT NOT NULL, `look_topSand` TEXT NOT NULL, `look_bottomPicture` TEXT NOT NULL, `look_bottomSand` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "presetId",
+            "columnName": "presetId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stateType",
+            "columnName": "stateType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "runningSinceMs",
+            "columnName": "runningSinceMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "elapsedMs",
+            "columnName": "elapsedMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "finishedAtMs",
+            "columnName": "finishedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.topPicture",
+            "columnName": "look_topPicture",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.topSand",
+            "columnName": "look_topSand",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.bottomPicture",
+            "columnName": "look_bottomPicture",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.bottomSand",
+            "columnName": "look_bottomSand",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "presets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `durationMs` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAtMs` INTEGER NOT NULL, `updatedAtMs` INTEGER NOT NULL, `pinned_topPicture` TEXT, `pinned_topSand` TEXT, `pinned_bottomPicture` TEXT, `pinned_bottomSand` TEXT, `last_topPicture` TEXT, `last_topSand` TEXT, `last_bottomPicture` TEXT, `last_bottomSand` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pinnedLook.topPicture",
+            "columnName": "pinned_topPicture",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pinnedLook.topSand",
+            "columnName": "pinned_topSand",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pinnedLook.bottomPicture",
+            "columnName": "pinned_bottomPicture",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pinnedLook.bottomSand",
+            "columnName": "pinned_bottomSand",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastLook.topPicture",
+            "columnName": "last_topPicture",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastLook.topSand",
+            "columnName": "last_topSand",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastLook.bottomPicture",
+            "columnName": "last_bottomPicture",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastLook.bottomSand",
+            "columnName": "last_bottomSand",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "favourite_looks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `updatedAtMs` INTEGER NOT NULL, `look_topPicture` TEXT NOT NULL, `look_topSand` TEXT NOT NULL, `look_bottomPicture` TEXT NOT NULL, `look_bottomSand` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.topPicture",
+            "columnName": "look_topPicture",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.topSand",
+            "columnName": "look_topSand",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.bottomPicture",
+            "columnName": "look_bottomPicture",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look.bottomSand",
+            "columnName": "look_bottomSand",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3294f2cb9bba4b8af69d5c30e21c6c6b')"
+    ]
+  }
+}
