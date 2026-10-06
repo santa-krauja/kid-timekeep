@@ -28,7 +28,17 @@ fun AppNavHost(navController: NavHostController, startTimerId: String? = null) {
         composable<TimerRoute> { entry ->
             TimerScreen(entry.toRoute<TimerRoute>().timerId, onBack = { navController.popBackStack() })
         }
-        composable<EditTimerRoute> { EditTimerScreen(onBack = { navController.popBackStack() }) }
+        composable<EditTimerRoute> { entry ->
+            EditTimerScreen(
+                presetId = entry.toRoute<EditTimerRoute>().presetId,
+                onBack = { navController.popBackStack() },
+                onStarted = { id ->
+                    navController.navigate(TimerRoute(id)) {
+                        popUpTo<EditTimerRoute> { inclusive = true }
+                    }
+                },
+            )
+        }
         composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
     }
 }
