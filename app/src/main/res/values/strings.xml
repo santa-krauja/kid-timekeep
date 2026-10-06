@@ -121,4 +121,14 @@
     <string name="about_emoji_credit">Emoji: Noto Color Emoji, Apache License 2.0</string>
     <string name="about_license_title">Licences</string>
     <string name="action_close">Close</string>
+    <string name="channel_time_up">Time\'s up</string>
+    <string name="channel_time_up_silent">Time\'s up (silent)</string>
+    <string name="notification_time_up">Time\'s up!</string>
+    <string name="notif_rationale_title">Let Kid Timekeep tell you when time is up?</string>
+    <string name="notif_rationale_text">We\'ll show a notification with a sound when a timer finishes, even if the app is closed.</string>
+    <string name="action_allow">Allow</string>
+    <string name="action_not_now">Not now</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="notif_allowed">Allowed ✓</string>
+    <string name="notif_turn_on">Turn on</string>
 </resources>

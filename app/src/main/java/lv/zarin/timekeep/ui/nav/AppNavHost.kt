@@ -2,6 +2,8 @@ package lv.zarin.timekeep.ui.nav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,9 +14,18 @@ import lv.zarin.timekeep.ui.settings.SettingsScreen
 import lv.zarin.timekeep.ui.timer.TimerScreen
 
 @Composable
-fun AppNavHost(navController: NavHostController, startTimerId: String? = null) {
+fun AppNavHost(
+    navController: NavHostController,
+    startTimerId: String? = null,
+    /** Called once the deep link was navigated, so recreation or recomposition can't navigate again. */
+    onStartTimerConsumed: () -> Unit = {},
+) {
+    val consumed by rememberUpdatedState(onStartTimerConsumed)
     LaunchedEffect(startTimerId) {
-        if (startTimerId != null) navController.navigate(TimerRoute(startTimerId))
+        if (startTimerId != null) {
+            navController.navigate(TimerRoute(startTimerId))
+            consumed()
+        }
     }
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {

@@ -58,6 +58,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.launch
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.ui.common.appContainer
+import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
 /**
@@ -87,6 +88,7 @@ fun EditTimerScreen(
     var lookOpen by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    val notificationGate = rememberNotificationPermissionGate()
 
     /** Runs [action] once at a time so double taps don't start two timers. */
     fun act(action: suspend () -> Unit) {
@@ -146,7 +148,7 @@ fun EditTimerScreen(
                     }
                 } else {
                     Button(
-                        onClick = { act { vm.start()?.let(onStarted) } },
+                        onClick = { notificationGate { act { vm.start()?.let(onStarted) } } },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)

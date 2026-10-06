@@ -83,6 +83,7 @@ import lv.zarin.timekeep.domain.timer.remainingMs
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.common.durationPhrase
+import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.timer.TimerContent
 
@@ -186,6 +187,7 @@ private fun HomeList(
             }
         }
     }
+    val notificationGate = rememberNotificationPermissionGate()
     var menuFor by remember { mutableStateOf<Preset?>(null) }
     var confirmDelete by remember { mutableStateOf<Preset?>(null) }
 
@@ -238,7 +240,7 @@ private fun HomeList(
                 Box {
                     PresetRow(
                         preset = preset,
-                        onStart = { vm.startPreset(preset.id) },
+                        onStart = { notificationGate { vm.startPreset(preset.id) } },
                         onLongPress = { menuFor = preset },
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {

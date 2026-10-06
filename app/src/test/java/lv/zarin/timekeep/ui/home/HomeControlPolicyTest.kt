@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.control.Control
 import org.junit.Rule
@@ -18,6 +19,7 @@ import org.junit.runner.RunWith
 class HomeControlPolicyTest {
     init {
         val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>()
+        app.allowNotifications()
         app.container = AppContainer(app, inMemoryDb = true, controlPolicy = { it != Control.PAUSE })
     }
 

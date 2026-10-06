@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.testutil.FakeClock
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -23,6 +24,7 @@ import org.robolectric.shadows.ShadowLooper
 class EditTimerScreenTest {
     private val clock = FakeClock(100_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
+        it.allowNotifications()
         it.container = AppContainer(it, inMemoryDb = true, clock = clock)
     }
 
