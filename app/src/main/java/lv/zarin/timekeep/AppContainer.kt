@@ -1,6 +1,12 @@
 package lv.zarin.timekeep
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.preferencesDataStoreFile
+import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
+import lv.zarin.timekeep.domain.ports.SettingsRepository
+import java.io.File
+import java.util.UUID
 import lv.zarin.timekeep.data.db.AppDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
@@ -23,4 +29,15 @@ class AppContainer(
     val timerRepository: TimerRepository by lazy { RoomTimerRepository(database.timerDao()) }
     val presetRepository: PresetRepository by lazy { RoomPresetRepository(database.presetDao()) }
     val favouriteLookRepository: FavouriteLookRepository by lazy { RoomFavouriteLookRepository(database.favouriteLookDao()) }
+
+    val settingsRepository: SettingsRepository by lazy {
+        val dataStore = PreferenceDataStoreFactory.create {
+            if (inMemoryDb) {
+                File(appContext.cacheDir, "settings-test-${UUID.randomUUID()}.preferences_pb")
+            } else {
+                appContext.preferencesDataStoreFile("settings")
+            }
+        }
+        DataStoreSettingsRepository(dataStore)
+    }
 }
