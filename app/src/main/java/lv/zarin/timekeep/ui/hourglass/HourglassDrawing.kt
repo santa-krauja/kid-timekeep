@@ -17,7 +17,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.painter.Painter
 import lv.zarin.timekeep.domain.hourglass.BulbShape
 import lv.zarin.timekeep.domain.hourglass.BulbShape.BOT0
@@ -29,6 +35,7 @@ import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP1
 import lv.zarin.timekeep.domain.hourglass.SandLevels
 import lv.zarin.timekeep.domain.timer.SandColor
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -191,33 +198,91 @@ internal class HourglassPaths {
     val surface = Path()
 }
 
+private data class TextureKey(val sand: SandColor, val picture: Any, val width: Int, val height: Int)
+
 /**
- * Draws the whole hourglass. The receiver must already be scaled so that one unit = one logical
- * unit; [pxPerUnit] is that scale, used for the emoji (drawn at device resolution) and the grain cut-off.
+ * Per-bulb sand textures (base fill + gradient + emoji + grains) rendered once at device resolution
+ * and reused every draw. Rebuilt only when the sand colour, picture or size changes.
  */
-internal fun DrawScope.drawHourglass(
+internal class SandTextures {
+    private var topKey: TextureKey? = null
+    private var topImage: ImageBitmap? = null
+    private var bottomKey: TextureKey? = null
+    private var bottomImage: ImageBitmap? = null
+
+    fun get(
+        top: Boolean,
+        density: Density,
+        painter: Painter,
+        pictureKey: Any,
+        sand: SandColor,
+        pxPerUnit: Float,
+    ): ImageBitmap {
+        val w = ceil(BulbShape.WIDTH * pxPerUnit).toInt().coerceAtLeast(1)
+        val h = ceil(BulbShape.HEIGHT * pxPerUnit).toInt().coerceAtLeast(1)
+        val key = TextureKey(sand, pictureKey, w, h)
+        val cachedKey = if (top) topKey else bottomKey
+        val cachedImage = if (top) topImage else bottomImage
+        if (cachedKey == key && cachedImage != null) return cachedImage
+        val image = ImageBitmap(w, h)
+        CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(image), Size(w.toFloat(), h.toFloat())) {
+            scale(pxPerUnit, pxPerUnit, pivot = Offset.Zero) { drawSandTexture(top, painter, sand, pxPerUnit) }
+        }
+        if (top) {
+            topKey = key
+            topImage = image
+        } else {
+            bottomKey = key
+            bottomImage = image
+        }
+        return image
+    }
+}
+
+/** Texture content in logical units (receiver already scaled by [pxPerUnit]). */
+private fun DrawScope.drawSandTexture(top: Boolean, painter: Painter, sand: SandColor, pxPerUnit: Float) {
+    val box = Size(BulbShape.WIDTH, BulbShape.HEIGHT)
+    drawRect(sand.shades().base, size = box)
+    drawRect(if (top) SAND_GRADIENT_TOP else SAND_GRADIENT_BOTTOM, size = box)
+
+    // Emoji: undo the logical scale so the vector rasterises at device resolution.
+    val cy = if (top) 29f else 104f
+    val left = CX - EMOJI_SIZE / 2
+    val topY = cy - EMOJI_SIZE / 2
+    scale(1f / pxPerUnit, 1f / pxPerUnit, pivot = Offset.Zero) {
+        translate((left * pxPerUnit).roundToInt().toFloat(), (topY * pxPerUnit).roundToInt().toFloat()) {
+            with(painter) {
+                draw(Size(EMOJI_SIZE * pxPerUnit, EMOJI_SIZE * pxPerUnit), alpha = EMOJI_ALPHA)
+            }
+        }
+    }
+
+    if (pxPerUnit > GRAIN_MIN_SCALE) {
+        for (batch in if (top) GRAIN_SET.top else GRAIN_SET.bottom) {
+            drawContext.canvas.drawRawPoints(PointMode.Points, batch.points, batch.paint)
+        }
+    }
+}
+
+/**
+ * Back layer: glass fill and both sand bodies (revealed from the cached textures). Receiver is scaled
+ * so that one unit = one logical unit; [pxPerUnit] is that scale (textures are drawn 1:1 in pixels).
+ */
+internal fun DrawScope.drawHourglassBack(
     paths: HourglassPaths,
     levels: SandLevels,
-    topPainter: Painter,
-    topSand: SandColor,
-    bottomPainter: Painter,
-    bottomSand: SandColor,
+    topTexture: ImageBitmap,
+    bottomTexture: ImageBitmap,
     colors: GlassColors,
     pxPerUnit: Float,
-    streamTime: Long = 0L,
-    streamRunning: Boolean = false,
-    reducedMotion: Boolean = false,
 ) {
     drawPath(paths.glass, colors.fill)
-    levels.topLevel?.let {
-        drawSand(paths, top = true, level = it, amp = levels.dip, topPainter, topSand, pxPerUnit)
-    }
-    levels.bottomLevel?.let {
-        drawSand(paths, top = false, level = it, amp = levels.mound, bottomPainter, bottomSand, pxPerUnit)
-    }
-    if (streamRunning && levels.topLevel != null) {
-        drawStream(levels, topSand.shades(), bottomSand.shades(), streamTime, animate = !reducedMotion)
-    }
+    levels.topLevel?.let { drawSand(paths, true, it, levels.dip, topTexture, pxPerUnit) }
+    levels.bottomLevel?.let { drawSand(paths, false, it, levels.mound, bottomTexture, pxPerUnit) }
+}
+
+/** Front layer: glass stroke, shine and caps. Fully static. */
+internal fun DrawScope.drawHourglassFront(paths: HourglassPaths, colors: GlassColors) {
     drawPath(paths.glass, colors.line, style = GLASS_STROKE)
     drawPath(paths.shine, SHINE, style = SHINE_STROKE)
     drawPath(paths.capTop, colors.cap)
@@ -229,8 +294,7 @@ private fun DrawScope.drawSand(
     top: Boolean,
     level: Float,
     amp: Float,
-    painter: Painter,
-    sand: SandColor,
+    texture: ImageBitmap,
     pxPerUnit: Float,
 ) {
     val floor = if (top) TOP1 else BOT1
@@ -247,28 +311,7 @@ private fun DrawScope.drawSand(
     }
     clipPath(paths.bulb) {
         clipPath(sandPath) {
-            val box = Size(BulbShape.WIDTH, BulbShape.HEIGHT)
-            drawRect(sand.shades().base, size = box)
-            drawRect(if (top) SAND_GRADIENT_TOP else SAND_GRADIENT_BOTTOM, size = box)
-
-            // Emoji: undo the logical scale so the vector rasterises at device resolution.
-            val cy = if (top) 29f else 104f
-            val left = CX - EMOJI_SIZE / 2
-            val topY = cy - EMOJI_SIZE / 2
-            scale(1f / pxPerUnit, 1f / pxPerUnit, pivot = Offset.Zero) {
-                translate((left * pxPerUnit).roundToInt().toFloat(), (topY * pxPerUnit).roundToInt().toFloat()) {
-                    with(painter) {
-                        draw(Size(EMOJI_SIZE * pxPerUnit, EMOJI_SIZE * pxPerUnit), alpha = EMOJI_ALPHA)
-                    }
-                }
-            }
-
-            if (pxPerUnit > GRAIN_MIN_SCALE) {
-                for (batch in if (top) GRAIN_SET.top else GRAIN_SET.bottom) {
-                    drawContext.canvas.drawRawPoints(PointMode.Points, batch.points, batch.paint)
-                }
-            }
-
+            scale(1f / pxPerUnit, 1f / pxPerUnit, pivot = Offset.Zero) { drawImage(texture) }
             drawPath(surfacePath, SURFACE_HIGHLIGHT, style = SURFACE_STROKE)
         }
     }
@@ -276,16 +319,118 @@ private fun DrawScope.drawSand(
 
 private const val STREAM_FADE_START = 0.25f
 private const val STREAM_FADE_SPAN = 0.6f
-private val CORE_ALPHA = 0.45f
+private const val CORE_ALPHA = 0.45f
+private const val LUT_STEPS = 8
+private const val ALPHA_STEPS = 4
+private const val R_BUCKETS = 2
+private const val STREAM_R_SPLIT = 0.29f
+private const val SPLASH_R_SPLIT = 0.24f
+private val STREAM_WIDTHS = floatArrayOf(2 * 0.225f, 2 * 0.355f)
+private val SPLASH_WIDTHS = floatArrayOf(2 * 0.19f, 2 * 0.29f)
+
+private fun pointPaint(color: Color, width: Float) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+    this.color = color.toArgb()
+    style = android.graphics.Paint.Style.STROKE
+    strokeWidth = width
+    strokeCap = android.graphics.Paint.Cap.ROUND
+}
+
+/** Reusable per-bucket point buffers: grains of one colour and size are drawn with one drawRawPoints. */
+internal class PointBuckets(val paints: Array<android.graphics.Paint>, capacity: Int) {
+    private val points = Array(paints.size) { FloatArray(capacity * 2) }
+    private val counts = IntArray(paints.size)
+
+    fun clear() = counts.fill(0)
+
+    fun add(bucket: Int, x: Float, y: Float) {
+        val n = counts[bucket]
+        points[bucket][n] = x
+        points[bucket][n + 1] = y
+        counts[bucket] = n + 2
+    }
+
+    fun flush(scope: DrawScope) {
+        for (i in paints.indices) {
+            if (counts[i] > 0) scope.drawContext.canvas.nativeCanvas.drawPoints(points[i], 0, counts[i], paints[i])
+        }
+    }
+}
+
+/**
+ * Stream colours for one look. Stream grains are bucketed by (shade, mix step, radius bucket) and the
+ * splash by (shade, alpha step, radius bucket); colours are RGB mixes as in the prototype.
+ */
+internal class StreamPalette(top: SandColor, bottom: SandColor) {
+    private val ts = top.shades()
+    private val bs = bottom.shades()
+    val topBase = ts.base
+    val bottomBase = bs.base
+
+    val grainBuckets = PointBuckets(
+        Array(3 * (LUT_STEPS + 1) * R_BUCKETS) { i ->
+            val rb = i % R_BUCKETS
+            val k = (i / R_BUCKETS) % (LUT_STEPS + 1)
+            val sh = i / R_BUCKETS / (LUT_STEPS + 1)
+            val m = k.toFloat() / LUT_STEPS
+            val a = ts.shade(sh)
+            val b = bs.shade(sh)
+            pointPaint(
+                Color(a.red + (b.red - a.red) * m, a.green + (b.green - a.green) * m, a.blue + (b.blue - a.blue) * m),
+                STREAM_WIDTHS[rb],
+            )
+        },
+        capacity = 120,
+    )
+
+    val splashBuckets = PointBuckets(
+        Array(3 * ALPHA_STEPS * R_BUCKETS) { i ->
+            val rb = i % R_BUCKETS
+            val ai = (i / R_BUCKETS) % ALPHA_STEPS
+            val sh = i / R_BUCKETS / ALPHA_STEPS
+            pointPaint(bs.shade(sh).copy(alpha = (ai + 0.5f) / ALPHA_STEPS), SPLASH_WIDTHS[rb])
+        },
+        capacity = 34,
+    )
+
+    fun grainBucket(sh: Int, m: Float, r: Float): Int =
+        (sh * (LUT_STEPS + 1) + (m * LUT_STEPS + 0.5f).toInt()) * R_BUCKETS + if (r < STREAM_R_SPLIT) 0 else 1
+
+    fun splashBucket(sh: Int, q: Float, r: Float): Int =
+        (sh * ALPHA_STEPS + ((1f - q) * ALPHA_STEPS).toInt().coerceIn(0, ALPHA_STEPS - 1)) * R_BUCKETS +
+            if (r < SPLASH_R_SPLIT) 0 else 1
+}
+
+/** Caches the core-line brush per quantised bottom end (y1 only changes when the levels do). */
+internal class CoreBrushCache {
+    private var key = Float.NaN
+    private var brush: Brush? = null
+    fun get(palette: StreamPalette, y0: Float, y1: Float): Brush {
+        val q = Math.round(y1 * 4f) / 4f
+        val cached = brush
+        if (cached != null && q == key) return cached
+        return Brush.verticalGradient(
+            0f to palette.topBase, 1f to palette.bottomBase, startY = y0, endY = q,
+        ).also {
+            key = q
+            brush = it
+        }
+    }
+}
 
 /** Port of the prototype drawStream(): faint core line plus (unless [animate] is false) grains and splash. */
-private fun DrawScope.drawStream(levels: SandLevels, ts: SandShades, bs: SandShades, t: Long, animate: Boolean) {
+internal fun DrawScope.drawStream(
+    levels: SandLevels,
+    palette: StreamPalette,
+    brushes: CoreBrushCache,
+    t: Long,
+    animate: Boolean,
+) {
     val bottom = levels.bottomLevel
     val y0 = TOP1 - 1.2f
     val y1 = if (bottom != null) maxOf(BOT0 + 0.5f, bottom - levels.mound) else BOT1
     val len = y1 - y0
     drawLine(
-        brush = Brush.verticalGradient(0f to ts.base, 1f to bs.base, startY = y0, endY = y1),
+        brush = brushes.get(palette, y0, y1),
         start = Offset(CX, y0),
         end = Offset(CX, y1),
         strokeWidth = CORE_STROKE.width,
@@ -295,23 +440,29 @@ private fun DrawScope.drawStream(levels: SandLevels, ts: SandShades, bs: SandSha
     if (!animate) return
     val tf = t.toDouble()
     val grains = SandParticles.stream
+    val gb = palette.grainBuckets
+    gb.clear()
     for (i in grains.indices) {
         val g = grains[i]
         val f = ((tf / g.per + g.ph) % 1.0).toFloat()
         val y = y0 + Math.pow(f.toDouble(), 1.6).toFloat() * len
         val x = CX + g.dx * f * f + sin(tf / 70 + g.wob).toFloat() * 0.1f * f
         val m = ((f - STREAM_FADE_START) / STREAM_FADE_SPAN).coerceIn(0f, 1f)
-        drawCircle(lerp(ts.shade(g.sh), bs.shade(g.sh), m), g.r, Offset(x, y))
+        gb.add(palette.grainBucket(g.sh, m, g.r), x, y)
     }
+    gb.flush(this)
     if (bottom != null) {
         val splash = SandParticles.splash
+        val sb = palette.splashBuckets
+        sb.clear()
         for (i in splash.indices) {
             val s = splash[i]
             val q = ((tf / s.per + s.ph) % 1.0).toFloat()
             val cx = CX + s.dir * s.reach * q
             val cy = y1 - sin(q * PI.toFloat()) * s.hgt + q * q * 1.5f
-            drawCircle(bs.shade(s.sh), s.r, Offset(cx, cy), alpha = 1f - q)
+            sb.add(palette.splashBucket(s.sh, q, s.r), cx, cy)
         }
+        sb.flush(this)
     }
 }
 
