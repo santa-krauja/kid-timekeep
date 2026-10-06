@@ -14,8 +14,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,7 +75,7 @@ class HourglassShowcaseActivity : ComponentActivity() {
                                         Hourglass(
                                             look = look,
                                             progress = if (isFlipCell) ({ firstP }) else ({ p }),
-                                            running = p > 0f && p < 1f,
+                                            running = (if (isFlipCell) firstP else p).let { it > 0f && it < 1f },
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                             flipTrigger = if (isFlipCell) flip else 0,
                                         )
