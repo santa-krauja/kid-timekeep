@@ -21,6 +21,7 @@ fun AppNavHost(navController: NavHostController, startTimerId: String? = null) {
                 onOpenSettings = { navController.navigate(SettingsRoute) },
                 onOpenTimer = { navController.navigate(TimerRoute(it)) },
                 onNewTimer = { navController.navigate(EditTimerRoute()) },
+                onEditPreset = { navController.navigate(EditTimerRoute(it)) },
             )
         }
         composable<TimerRoute> { TimerScreen(onBack = { navController.popBackStack() }) }

@@ -8,4 +8,38 @@
     <string name="seed_preset_teeth">Brush teeth</string>
     <string name="seed_preset_dressed">Get dressed</string>
     <string name="seed_preset_reading">Reading</string>
+    <string name="home_now">Now</string>
+    <string name="home_presets">Presets</string>
+    <string name="home_nothing_running">Nothing running</string>
+    <string name="home_nothing_running_hint">Tap ▶ on a preset or + for a new timer.</string>
+    <string name="timer_left_label">%1$s left</string>
+    <string name="timer_paused_label">Paused · %1$s</string>
+    <string name="timer_done_badge">Done!</string>
+    <string name="cd_new_timer">New timer</string>
+    <string name="cd_start_preset">Start %1$s</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_resume">Go on</string>
+    <string name="cd_preset_random_look">New look every time</string>
+    <string name="cd_restart">Again</string>
+    <string name="preset_menu_edit">Edit</string>
+    <string name="preset_menu_delete">Delete</string>
+    <string name="preset_delete_title">Delete preset?</string>
+    <string name="preset_delete_message">"%1$s" will be removed. Running timers keep going.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="duration_short_min">%d min</string>
+    <string name="duration_short_sec">%d s</string>
+    <string name="duration_short_hour">%d h</string>
+    <plurals name="duration_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="duration_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="duration_seconds">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
 </resources>
