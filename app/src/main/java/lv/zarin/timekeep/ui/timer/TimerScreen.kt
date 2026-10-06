@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -56,6 +57,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
+import lv.zarin.timekeep.alarm.Notifications
+import lv.zarin.timekeep.alarm.VisibleTimerTracker
 import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.elapsedMs
@@ -86,6 +89,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                     container.favouriteLookRepository, container.settingsRepository,
                     container.clock, container.controlPolicy,
                     AndroidTimeUpFeedback(container.appContext),
+                    clearNotification = { Notifications.cancel(container.appContext, it) },
                 )
             }
         },
@@ -96,6 +100,24 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
 
     LaunchedEffect(lifecycle, vm) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { vm.runTicker() }
+    }
+    DisposableEffect(lifecycle, timerId) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> VisibleTimerTracker.visibleTimerId = timerId
+                Lifecycle.Event.ON_STOP ->
+                    if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
+        }
+    }
+    if (state?.timer?.state is RunState.Finished) {
+        LaunchedEffect(timerId) { vm.onFinishedShown() }
     }
     if (missing) {
         LaunchedEffect(Unit) { onClose() }

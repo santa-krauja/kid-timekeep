@@ -45,6 +45,8 @@ class TimerViewModel(
     private val clock: Clock,
     private val policy: ControlPolicy = AllowAllControlPolicy,
     private val feedback: TimeUpFeedback,
+    /** Removes the time's-up notification of a timer id (no-op in tests). */
+    private val clearNotification: (String) -> Unit = {},
 ) : ViewModel() {
 
     private val flip = MutableStateFlow(0)
@@ -104,6 +106,7 @@ class TimerViewModel(
 
     fun restart() {
         flip.value += 1
+        clearNotification(timerId)
         viewModelScope.launch { service.restart(timerId) }
     }
 
@@ -114,8 +117,12 @@ class TimerViewModel(
     }
 
     fun dismiss() {
+        clearNotification(timerId)
         viewModelScope.launch { service.dismiss(timerId) }
     }
+
+    /** The Finished timer is on screen, so a leftover notification for it is stale. */
+    fun onFinishedShown() = clearNotification(timerId)
 
     fun saveLookAsFavourite() {
         val look = state.value?.timer?.look ?: return

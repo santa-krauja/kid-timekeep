@@ -75,9 +75,12 @@ class TimerViewModelTest {
     private val alarms = RecordingAlarmScheduler()
     private val service = TimerService(timers, InMemoryPresetRepository(), alarms, clock, LookPicker())
 
+    private val cleared = mutableListOf<String>()
+
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
         lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+        clearNotification = { cleared += it },
     )
 
     private suspend fun seed(state: RunState, duration: Long = 60_000) =
@@ -119,6 +122,20 @@ class TimerViewModelTest {
         assertEquals(1, s.flipTrigger)
         assertEquals(look, s.timer.look)
         assertTrue(s.timer.state is RunState.Running)
+    }
+
+    @Test
+    fun restartDismissAndShowingFinishedClearNotification() = runTest(dispatcher) {
+        seed(RunState.Finished(60_000))
+        val vm = vm()
+        vm.restart()
+        runCurrent()
+        assertEquals(listOf("t"), cleared)
+        vm.dismiss()
+        runCurrent()
+        assertEquals(listOf("t", "t"), cleared)
+        vm.onFinishedShown()
+        assertEquals(listOf("t", "t", "t"), cleared)
     }
 
     @Test

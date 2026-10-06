@@ -23,7 +23,7 @@ fun AppNavHost(
     val consumed by rememberUpdatedState(onStartTimerConsumed)
     LaunchedEffect(startTimerId) {
         if (startTimerId != null) {
-            navController.navigate(TimerRoute(startTimerId))
+            navController.navigate(TimerRoute(startTimerId)) { launchSingleTop = true }
             consumed()
         }
     }

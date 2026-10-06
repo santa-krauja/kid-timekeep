@@ -73,6 +73,7 @@ import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
+import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
@@ -102,6 +103,7 @@ fun HomeScreen(
                 HomeViewModel(
                     container.timerRepository, container.presetRepository,
                     container.timerService, container.clock, container.controlPolicy,
+                    clearNotification = { Notifications.cancel(container.appContext, it) },
                 )
             }
         },
