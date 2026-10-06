@@ -19,19 +19,7 @@ secrets.properties
 
 # IDE
 *.iml
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-/.idea/deploymentTargetDropDown.xml
-/.idea/deploymentTargetSelector.xml
-/.idea/androidTestResultsUserPreferences.xml
-/.idea/appInsightsSettings.xml
-/.idea/other.xml
-/.idea/shelf/
-/.idea/sonarlint/
+.idea/
 .vscode/
 .fleet/
 
