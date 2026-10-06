@@ -2,6 +2,7 @@ package lv.zarin.timekeep.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -26,7 +27,9 @@ class AdaptiveLayoutTest {
     val rule = createAndroidComposeRule<MainActivity>()
 
     private fun startBrushTeeth() {
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithContentDescription("Start Brush teeth").fetchSemanticsNodes().isNotEmpty()
+        }
         // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
@@ -47,7 +50,7 @@ class AdaptiveLayoutTest {
     @Test
     @Config(qualifiers = "w1280dp-h800dp")
     fun tabletWithoutTimersShowsPlaceholder() {
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Nothing running").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("Pick a timer to see it big").assertIsDisplayed()
     }
 
@@ -61,5 +64,51 @@ class AdaptiveLayoutTest {
         }
         rule.onNodeWithText("My timers").assertIsDisplayed()
         rule.onNodeWithText("Left").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp")
+    fun phoneLandscapeIsSinglePane() {
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Nothing running").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("My timers").assertIsDisplayed()
+        rule.onNodeWithText("Pick a timer to see it big").assertDoesNotExist()
+        rule.onNodeWithText("Left").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp")
+    fun phoneLandscapeTimerShowsAllControls() {
+        startBrushTeeth()
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+        }
+        // Card is the first match (the preset row comes later in the grid).
+        rule.onAllNodesWithText("Brush teeth")[0].performClick()
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("+1 min").fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText("Left").assertIsDisplayed()
+        rule.onNodeWithText("+1 min").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletTappingNowCardSelectsIt() {
+        startBrushTeeth()
+        waitForCount("Brush teeth", 3) // preset row + card + detail title
+        rule.onNodeWithContentDescription("Start Get dressed").performClick()
+        waitForCount("Get dressed", 3)
+        waitForCount("Brush teeth", 2)
+        // The Now cards come before the preset rows; the first one is Brush teeth.
+        rule.onAllNodesWithText("Brush teeth")[0].performClick()
+        waitForCount("Brush teeth", 3)
+        waitForCount("Get dressed", 2)
+    }
+
+    private fun waitForCount(text: String, count: Int) = rule.waitUntil(10_000) {
+        rule.mainClock.advanceTimeBy(50)
+        rule.onAllNodesWithText(text).fetchSemanticsNodes().size == count
     }
 }

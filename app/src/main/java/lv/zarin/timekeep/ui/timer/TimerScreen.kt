@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,7 +75,6 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) = TimerContent(timerId, onC
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
-    val onBack = onClose
     val landscape = currentWindowAdaptiveInfo().windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
     val container = appContainer()
     val vm: TimerViewModel = viewModel(
@@ -98,7 +98,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { vm.runTicker() }
     }
     if (missing) {
-        LaunchedEffect(Unit) { onBack() }
+        LaunchedEffect(Unit) { onClose() }
     }
     val nowMs by produceState(vm.nowMs(), lifecycle, vm) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -125,7 +125,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                 title = { Text(state?.timer?.name.orEmpty()) },
                 navigationIcon = {
                     if (showBack) {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = onClose) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
                     }
@@ -188,7 +188,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
         }
         val controls: @Composable () -> Unit = {
             FlowRow(
-                Modifier.padding(vertical = 12.dp),
+                Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,

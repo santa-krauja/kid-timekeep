@@ -2,6 +2,7 @@ package lv.zarin.timekeep.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -40,12 +41,18 @@ class HomeViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
+    private val _startedId = MutableStateFlow<String?>(null)
+
+    /** Id of the timer just started from a preset, until [consumeStartedId] (the tablet layout selects it). */
+    val startedId: StateFlow<String?> = _startedId
+
     fun startPreset(id: String) {
-        viewModelScope.launch { service.startFromPreset(id) }
+        viewModelScope.launch { _startedId.value = service.startFromPreset(id).id }
     }
 
-    /** Starts a preset and returns the new timer's id (the tablet layout selects it). */
-    suspend fun startPresetNow(id: String): String = service.startFromPreset(id).id
+    fun consumeStartedId() {
+        _startedId.value = null
+    }
 
     fun togglePause(id: String) {
         viewModelScope.launch {

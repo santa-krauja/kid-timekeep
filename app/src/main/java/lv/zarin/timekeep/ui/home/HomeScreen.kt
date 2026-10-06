@@ -2,17 +2,6 @@ package lv.zarin.timekeep.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
-import androidx.compose.runtime.key
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.window.core.layout.WindowWidthSizeClass
-import kotlinx.coroutines.launch
-import lv.zarin.timekeep.ui.timer.TimerContent
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,11 +41,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,12 +63,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.window.core.layout.WindowHeightSizeClass
+import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.ports.Clock
@@ -85,6 +84,7 @@ import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.common.durationPhrase
 import lv.zarin.timekeep.ui.hourglass.Hourglass
+import lv.zarin.timekeep.ui.timer.TimerContent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -106,53 +106,61 @@ fun HomeScreen(
         },
     )
     val state by vm.state.collectAsStateWithLifecycle()
-    val twoPane = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
+    val windowSize = currentWindowAdaptiveInfo().windowSizeClass
+    // Phones in landscape are wide but short: they keep the single-pane list and a full-screen timer.
+    val twoPane = windowSize.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED &&
+        windowSize.windowHeightSizeClass != WindowHeightSizeClass.COMPACT
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val startedId by vm.startedId.collectAsStateWithLifecycle()
+    LaunchedEffect(startedId) {
+        startedId?.let {
+            selectedId = it
+            vm.consumeStartedId()
+        }
+    }
     if (!twoPane) {
-        HomeList(vm, state, onOpenSettings, onOpenTimer, onNewTimer, onEditPreset, onStartPreset = vm::startPreset)
+        HomeList(vm, state, onOpenSettings, onOpenTimer, onNewTimer, onEditPreset)
         return
     }
 
     // Two-pane: the list on the left, the selected timer big on the right. Nothing navigates.
-    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val shownId = selectedId?.takeIf { id -> state.now.any { it.id == id } }
         ?: state.now.firstOrNull { it.state is RunState.Running }?.id
         ?: state.now.firstOrNull { it.state is RunState.Paused }?.id
-    val scope = rememberCoroutineScope()
     val navigator = rememberListDetailPaneScaffoldNavigator<String>()
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-    ListDetailPaneScaffold(
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        listPane = {
-            AnimatedPane(Modifier.preferredWidth(0.45f)) {
-                HomeList(
-                    vm, state, onOpenSettings,
-                    onOpenTimer = { selectedId = it },
-                    onNewTimer = onNewTimer,
-                    onEditPreset = onEditPreset,
-                    onStartPreset = { id -> scope.launch { selectedId = vm.startPresetNow(id) } },
-                    selectedId = shownId,
-                )
-            }
-        },
-        detailPane = {
-            AnimatedPane {
-                if (shownId == null) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            stringResource(R.string.home_select_timer),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    key(shownId) {
-                        TimerContent(shownId, onClose = { selectedId = null }, showBack = false)
+        ListDetailPaneScaffold(
+            directive = navigator.scaffoldDirective,
+            value = navigator.scaffoldValue,
+            listPane = {
+                AnimatedPane(Modifier.preferredWidth(0.45f)) {
+                    HomeList(
+                        vm, state, onOpenSettings,
+                        onOpenTimer = { selectedId = it },
+                        onNewTimer = onNewTimer,
+                        onEditPreset = onEditPreset,
+                        selectedId = shownId,
+                    )
+                }
+            },
+            detailPane = {
+                AnimatedPane {
+                    if (shownId == null) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                stringResource(R.string.home_select_timer),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        key(shownId) {
+                            TimerContent(shownId, onClose = { selectedId = null }, showBack = false)
+                        }
                     }
                 }
-            }
-        },
-    )
+            },
+        )
     }
 }
 
@@ -165,7 +173,6 @@ private fun HomeList(
     onOpenTimer: (String) -> Unit,
     onNewTimer: () -> Unit,
     onEditPreset: (String) -> Unit,
-    onStartPreset: (String) -> Unit,
     selectedId: String? = null,
 ) {
     val container = appContainer()
@@ -231,7 +238,7 @@ private fun HomeList(
                 Box {
                     PresetRow(
                         preset = preset,
-                        onStart = { onStartPreset(preset.id) },
+                        onStart = { vm.startPreset(preset.id) },
                         onLongPress = { menuFor = preset },
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {
