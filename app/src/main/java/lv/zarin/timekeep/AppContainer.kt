@@ -11,6 +11,10 @@ import lv.zarin.timekeep.data.db.AppDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
+import lv.zarin.timekeep.alarm.NoOpAlarmScheduler
+import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.look.LookPicker
+import lv.zarin.timekeep.domain.ports.AlarmScheduler
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.PresetRepository
@@ -39,5 +43,14 @@ class AppContainer(
             }
         }
         DataStoreSettingsRepository(dataStore)
+    }
+
+    val lookPicker = LookPicker()
+
+    // Task 21 replaces this with the AlarmManager adapter.
+    val alarmScheduler: AlarmScheduler = NoOpAlarmScheduler
+
+    val timerService: TimerService by lazy {
+        TimerService(timerRepository, presetRepository, alarmScheduler, clock, lookPicker)
     }
 }
