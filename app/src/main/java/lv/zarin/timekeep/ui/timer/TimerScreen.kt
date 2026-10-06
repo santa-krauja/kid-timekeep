@@ -33,9 +33,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -101,7 +103,7 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
     }
 
     var confirmStartOver by remember { mutableStateOf(false) }
-    var lookSaved by remember { mutableStateOf(false) }
+    var lookSaved by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -129,7 +131,7 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
                     look = timer.look,
                     progress = { timer.progress(vm.nowMs()) },
                     running = !paused && !finished,
-                    modifier = Modifier.fillMaxHeight(0.95f).aspectRatio(0.62f),
+                    modifier = Modifier.fillMaxHeight(0.95f).aspectRatio(0.62f).alpha(if (paused) 0.55f else 1f),
                     flipTrigger = s.flipTrigger,
                     contentDescription = timer.name,
                 )
@@ -178,13 +180,15 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) {
                     Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
                 }
                 if (s.canPause || paused) {
-                    Button(onClick = vm::togglePause, enabled = !finished) {
+                    Button(onClick = vm::togglePause) {
                         Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, contentDescription = null)
                         Text(stringResource(if (paused) R.string.action_go_on else R.string.action_pause))
                     }
                 }
-                OutlinedButton(onClick = vm::addMinute, enabled = s.canAddMinute) {
-                    Text(stringResource(R.string.action_add_minute), maxLines = 1)
+                if (s.showAddMinute) {
+                    OutlinedButton(onClick = vm::addMinute, enabled = s.addMinuteEnabled) {
+                        Text(stringResource(R.string.action_add_minute), maxLines = 1)
+                    }
                 }
             }
         }

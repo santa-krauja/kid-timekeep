@@ -49,7 +49,6 @@ class TimerScreenTest {
     private fun pump() {
         rule.mainClock.advanceTimeBy(50)
         ShadowLooper.idleMainLooper()
-        Thread.sleep(5)
     }
 
     private fun waitForText(text: String) = rule.waitUntil(10_000) {

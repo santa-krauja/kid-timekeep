@@ -2,6 +2,7 @@ package lv.zarin.timekeep.ui.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,13 +24,15 @@ import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.MAX_DURATION_MS
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.isOverdue
 
 data class TimerUiState(
     val timer: Timer,
     val showNumbers: Boolean,
     val keepScreenOn: Boolean,
     val canPause: Boolean,
-    val canAddMinute: Boolean,
+    val showAddMinute: Boolean,
+    val addMinuteEnabled: Boolean,
     val flipTrigger: Int,
 )
 
@@ -63,7 +66,8 @@ class TimerViewModel(
             showNumbers = l.settings.showNumbers,
             keepScreenOn = l.settings.keepScreenOn && t.state !is RunState.Finished,
             canPause = policy.isAllowed(Control.PAUSE),
-            canAddMinute = policy.isAllowed(Control.ADD_MINUTE) && t.durationMs < MAX_DURATION_MS,
+            showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
+            addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
             flipTrigger = l.flip,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -75,9 +79,12 @@ class TimerViewModel(
     fun nowMs(): Long = clock.nowMs()
 
     /** Runs while the screen is started: finishes an overdue timer and plays the feedback once. */
-    suspend fun runTicker() {
+    suspend fun runTicker() = coroutineScope {
+        // Keep `loaded` hot so the ticker can check overdue locally and leave the service alone until then.
+        launch { loaded.collect { } }
         while (true) {
-            if (service.finishIfOverdue(timerId) != null) {
+            val timer = loaded.value?.timer
+            if (timer != null && timer.isOverdue(clock.nowMs()) && service.finishIfOverdue(timerId) != null) {
                 val s = settings.settings.first()
                 feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
             }
@@ -88,7 +95,7 @@ class TimerViewModel(
     fun togglePause() {
         viewModelScope.launch {
             when (state.value?.timer?.state) {
-                is RunState.Running -> service.pause(timerId)
+                is RunState.Running -> if (policy.isAllowed(Control.PAUSE)) service.pause(timerId)
                 is RunState.Paused -> service.resume(timerId)
                 else -> Unit
             }

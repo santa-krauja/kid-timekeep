@@ -72,7 +72,8 @@ class TimerViewModelTest {
     private val clock = FakeClock(0)
     private val feedback = RecordingFeedback()
     private val favourites = RecordingFavourites()
-    private val service = TimerService(timers, InMemoryPresetRepository(), RecordingAlarmScheduler(), clock, LookPicker())
+    private val alarms = RecordingAlarmScheduler()
+    private val service = TimerService(timers, InMemoryPresetRepository(), alarms, clock, LookPicker())
 
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
@@ -126,7 +127,8 @@ class TimerViewModelTest {
         val vm = vm()
         vm.state.onEach { }.launchIn(backgroundScope)
         runCurrent()
-        assertFalse(vm.state.value!!.canAddMinute)
+        assertFalse(vm.state.value!!.addMinuteEnabled)
+        assertTrue(vm.state.value!!.showAddMinute)
     }
 
     @Test
@@ -148,5 +150,40 @@ class TimerViewModelTest {
         vm.saveLookAsFavourite()
         runCurrent()
         assertEquals(listOf(look), favourites.added)
+    }
+
+    @Test
+    fun tickerDoesNotTouchServiceUntilOverdue() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        clock.now = 10_000
+        val vm = vm()
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertEquals(0, alarms.scheduleCalls)
+        assertTrue(feedback.calls.isEmpty())
+    }
+
+    @Test
+    fun alreadyFinishedOnOpenPlaysNoFeedback() = runTest(dispatcher) {
+        seed(RunState.Finished(60_000))
+        clock.now = 120_000
+        val vm = vm()
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
+    }
+
+    @Test
+    fun finishedElsewhereFirstPlaysNoFeedback() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        clock.now = 61_000
+        service.finishIfOverdue("t") // e.g. the alarm receiver got there first
+        val vm = vm()
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
     }
 }
