@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Debug-only visual check of the hourglass renderer (Tasks 11-13). Not in release builds.
+             Exported (debug only) so `adb shell am start` can open it; it has no intent filter. -->
+        <activity
+            android:name=".HourglassShowcaseActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KidTimekeep" />
+    </application>
+
+</manifest>
