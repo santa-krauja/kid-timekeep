@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">Kid Timekeep</string>
+    <string name="app_name" translatable="false">Kid Timekeep</string>
+    <string name="home_title">My timers</string>
+    <string name="settings_title">Settings</string>
+    <string name="edit_new_title">New timer</string>
+    <string name="timer_title_placeholder">Timer</string>
+    <string name="cd_settings">Settings</string>
 </resources>
