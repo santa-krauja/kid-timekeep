@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "KidTimekeep"
 include(":app")
+include(":tools:emoji-import")
