@@ -131,6 +131,13 @@ class AccessibilityTest {
     }
 
     @Test
+    fun overdueRunningTimerReadsTimesUp() {
+        // Started 20 minutes ago on a 15 minute timer, not yet reconciled to Finished.
+        showTimer(RunState.Running(sinceMs = 100_000 - 20 * 60_000L, elapsedBeforeMs = 0))
+        waitForCd("Reading: time's up")
+    }
+
+    @Test
     fun timerClickablesHaveLabelsAndSize() {
         showTimer(RunState.Running(sinceMs = 40_000, elapsedBeforeMs = 0))
         waitForCd("Start over")
@@ -242,5 +249,28 @@ class HomeAccessibilityTest {
         assertClickablesAccessible(
             rule.onRoot().fetchSemanticsNode(), app.resources.displayMetrics.density, "home",
         )
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeFinishedCardTest {
+    private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
+        it.allowNotifications()
+        it.container = AppContainer(it, inMemoryDb = true)
+    }
+
+    @get:Rule
+    val rule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun finishedCardReadsTimesUp() {
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+        val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
+        runBlocking {
+            app.container.timerRepository.upsert(Timer("t", "Tidy", 120_000, look, null, RunState.Finished(1), 0, 0))
+        }
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithContentDescription("Tidy: time's up", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

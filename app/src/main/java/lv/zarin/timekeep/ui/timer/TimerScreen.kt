@@ -62,6 +62,7 @@ import lv.zarin.timekeep.alarm.VisibleTimerTracker
 import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.elapsedMs
+import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.progress
 import lv.zarin.timekeep.domain.timer.remainingMs
 import lv.zarin.timekeep.ui.common.DurationLabel
@@ -162,7 +163,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
         val finished = timer.state is RunState.Finished
         // Whole seconds only (durationPhrase rounds up), so the text changes at most once per second.
         val bigDescription = when {
-            finished -> stringResource(R.string.cd_timer_done, timer.name)
+            finished || timer.isOverdue(nowMs) -> stringResource(R.string.cd_timer_done, timer.name)
             else -> stringResource(
                 R.string.cd_timer_big,
                 timer.name,
