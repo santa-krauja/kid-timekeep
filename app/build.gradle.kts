@@ -48,7 +48,7 @@ android {
     lint {
         abortOnError = true
         checkDependencies = true
-        error += listOf("HardcodedText")
+        error += listOf("HardcodedText", "MissingTranslation")
     }
 }
 
