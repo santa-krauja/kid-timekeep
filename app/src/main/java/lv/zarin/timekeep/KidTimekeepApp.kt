@@ -9,10 +9,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import lv.zarin.timekeep.alarm.Notifications
 
-class KidTimekeepApp : Application() {
+open class KidTimekeepApp : Application() {
     lateinit var container: AppContainer
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Tests turn this off so the launch reconcile can't race with a container they swap in afterwards. */
+    protected open fun reconcileOnLaunch(): Boolean = true
 
     override fun onCreate() {
         super.onCreate()
@@ -20,6 +23,7 @@ class KidTimekeepApp : Application() {
             container = AppContainer(this)
         }
         Notifications.ensureChannels(this)
+        if (!reconcileOnLaunch()) return
         // The process may have been killed while a timer ran: finish/notify/re-arm from timestamps.
         appScope.launch {
             try {
