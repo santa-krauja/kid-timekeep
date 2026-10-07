@@ -1,9 +1,9 @@
 package lv.zarin.timekeep
 
 import android.content.Context
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
+import lv.zarin.timekeep.data.settings.settingsDataStore
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import java.io.File
 import java.util.concurrent.Executor
@@ -42,7 +42,7 @@ class AppContainer(
     val favouriteLookRepository: FavouriteLookRepository by lazy { RoomFavouriteLookRepository(database.favouriteLookDao()) }
 
     val settingsRepository: SettingsRepository by lazy {
-        val dataStore = PreferenceDataStoreFactory.create {
+        val dataStore = settingsDataStore {
             if (inMemoryDb) {
                 File(appContext.cacheDir, "settings-test-${UUID.randomUUID()}.preferences_pb")
             } else {
