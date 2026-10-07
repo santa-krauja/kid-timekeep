@@ -24,10 +24,13 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import lv.zarin.timekeep.testutil.QuietKidTimekeepApp
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
+@Config(application = QuietKidTimekeepApp::class)
 class SystemEventsReceiverTest {
     private val clock = FakeClock(0)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
@@ -109,7 +112,13 @@ class SystemEventsReceiverTest {
     fun unknownActionIsIgnored() {
         seedRunning("t1")
         clock.now = 20_000
+        // An ignored action returns before launching any work, so onHandled (the work-complete hook) never fires.
+        var handled = false
+        SystemEventsReceiver.onHandled = { handled = true }
         SystemEventsReceiver().onReceive(app, Intent("com.example.OTHER"))
+        assertTrue("receiver must not start work for an unknown action", !handled)
+        assertTrue(shadowOf(am).scheduledAlarms.isEmpty())
+        assertTrue(shadowOf(nm).allNotifications.isEmpty())
         val t = runBlocking { app.container.timerRepository.get("t1") }
         assertTrue(t!!.state is RunState.Running)
     }
