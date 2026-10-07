@@ -18,7 +18,6 @@ import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
-import lv.zarin.timekeep.testutil.QuietKidTimekeepApp
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.testutil.pump
 import lv.zarin.timekeep.testutil.pumpUntil
@@ -37,7 +36,7 @@ import org.robolectric.annotation.Config
 /** End-to-end flows through the real MainActivity with a fake clock; time only moves when a test moves it. */
 @RunWith(AndroidJUnit4::class)
 // A tall phone screen keeps every list row on screen (offscreen rows can't be tapped).
-@Config(application = QuietKidTimekeepApp::class, qualifiers = "w411dp-h891dp")
+@Config(qualifiers = "w411dp-h891dp")
 class FlowsTest {
     private val clock = FakeClock(1_000_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
