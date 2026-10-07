@@ -18,6 +18,26 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 CI (`.github/workflows/android.yml`) runs all three on pull requests and pushes to `main`, using JDK 25.
 Run them from the repo root before opening a PR.
 
+## Release
+
+`versionName` is `1.0.0` (bump `versionCode` for every upload). R8 minify + resource shrinking are on for `release`.
+Signing reads an untracked `keystore.properties` at the repo root (never commit it or any `*.jks`):
+
+```
+storeFile=/absolute/or/repo-relative/path/to/release.jks
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+```
+./gradlew assembleRelease   # app/build/outputs/apk/release/ (app-release-unsigned.apk if no keystore.properties)
+./gradlew bundleRelease     # .aab for Play
+```
+
+Play Console: the app declares `USE_EXACT_ALARM` (a countdown timer is a permitted core use), so the
+exact-alarm permission declaration form must be completed for the listing.
+
 ## Package layout (`app/src/main/java/lv/zarin/timekeep/`)
 
 - `domain/`: pure Kotlin. Models, time maths, look picker, hourglass geometry, ports (interfaces), `TimerService`.
