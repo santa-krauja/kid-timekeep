@@ -20,7 +20,7 @@ Run them from the repo root before opening a PR.
 
 ## Release
 
-`versionName` is `1.0.0` (bump `versionCode` for every upload). R8 minify + resource shrinking are on for `release`.
+`versionName` is `1.0.0` (bump `versionCode` for every upload). R8 optimization is on for `release` (via the AGP `optimization {}` block).
 Signing reads an untracked `keystore.properties` at the repo root (never commit it or any `*.jks`):
 
 ```
@@ -31,9 +31,11 @@ keyPassword=...
 ```
 
 ```
-./gradlew assembleRelease   # app/build/outputs/apk/release/ (app-release-unsigned.apk if no keystore.properties)
+./gradlew assembleRelease   # app/build/outputs/apk/release/; unsigned (app-release-unsigned.apk) without keystore.properties, e.g. on CI
 ./gradlew bundleRelease     # .aab for Play
 ```
+
+To smoke-test an unsigned APK locally, re-sign a copy with the debug keystore (apksigner); never commit that.
 
 Play Console: the app declares `USE_EXACT_ALARM` (a countdown timer is a permitted core use), so the
 exact-alarm permission declaration form must be completed for the listing.

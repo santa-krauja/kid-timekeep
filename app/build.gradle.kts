@@ -25,15 +25,26 @@ android {
     }
 
     // Release signing is read from an untracked keystore.properties at the repo root; without it the release APK is unsigned.
-    val keystoreProps = rootProject.file("keystore.properties")
-    if (keystoreProps.exists()) {
-        val props = Properties().apply { keystoreProps.inputStream().use { load(it) } }
+    val keystoreFile = rootProject.file("keystore.properties")
+    val keystoreProps: Properties? = if (keystoreFile.exists()) {
+        Properties().apply { keystoreFile.inputStream().use { load(it) } }.also { props ->
+            listOf("storeFile", "storePassword", "keyAlias", "keyPassword").forEach { key ->
+                if (props.getProperty(key).isNullOrBlank()) error("keystore.properties is missing '$key'")
+            }
+            if (!rootProject.file(props.getProperty("storeFile")).exists()) {
+                error("keystore.properties: storeFile '${props.getProperty("storeFile")}' does not exist")
+            }
+        }
+    } else {
+        null
+    }
+    if (keystoreProps != null) {
         signingConfigs {
             create("release") {
-                storeFile = rootProject.file(props.getProperty("storeFile"))
-                storePassword = props.getProperty("storePassword")
-                keyAlias = props.getProperty("keyAlias")
-                keyPassword = props.getProperty("keyPassword")
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
             }
         }
     }
@@ -44,7 +55,7 @@ android {
             isPseudoLocalesEnabled = true
         }
         release {
-            if (keystoreProps.exists()) signingConfig = signingConfigs.getByName("release")
+            if (keystoreProps != null) signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
