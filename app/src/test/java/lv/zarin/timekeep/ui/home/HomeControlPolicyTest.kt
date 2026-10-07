@@ -3,7 +3,10 @@ package lv.zarin.timekeep.ui.home
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import lv.zarin.timekeep.AppContainer
@@ -20,7 +23,7 @@ class HomeControlPolicyTest {
     init {
         val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>()
         app.allowNotifications()
-        app.container = AppContainer(app, inMemoryDb = true, controlPolicy = { it != Control.PAUSE })
+        app.container = AppContainer(app, inMemoryDb = true, controlPolicy = { it == Control.ADD_MINUTE })
     }
 
     @get:Rule
@@ -36,5 +39,14 @@ class HomeControlPolicyTest {
             rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
         }
         rule.onNodeWithContentDescription("Pause").assertDoesNotExist()
+    }
+
+    @Test
+    fun noEditOrDeleteMenuWhenPolicyDeniesThem() {
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Reading").performTouchInput { longClick() }
+        rule.waitForIdle()
+        rule.onNodeWithText("Edit").assertDoesNotExist()
+        rule.onNodeWithText("Delete").assertDoesNotExist()
     }
 }

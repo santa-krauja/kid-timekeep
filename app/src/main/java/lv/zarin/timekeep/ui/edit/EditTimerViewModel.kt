@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
+import lv.zarin.timekeep.domain.control.Control
+import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
@@ -36,6 +39,8 @@ data class EditState(
     val favourites: List<FavouriteLook>,
     val nameError: Boolean,
     val durationError: Boolean,
+    val canEdit: Boolean = true,
+    val canDelete: Boolean = true,
 )
 
 /** New timer (presetId == null) or Edit preset. */
@@ -46,6 +51,7 @@ class EditTimerViewModel(
     private val service: TimerService,
     private val lookPicker: LookPicker,
     private val clock: Clock,
+    private val policy: ControlPolicy = AllowAllControlPolicy,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -59,6 +65,8 @@ class EditTimerViewModel(
             favourites = emptyList(),
             nameError = false,
             durationError = false,
+            canEdit = policy.isAllowed(Control.EDIT),
+            canDelete = policy.isAllowed(Control.DELETE),
         ),
     )
     val state: StateFlow<EditState> = _state.asStateFlow()
@@ -107,6 +115,7 @@ class EditTimerViewModel(
     }
 
     fun deleteFavourite(id: String) {
+        if (!policy.isAllowed(Control.DELETE)) return
         viewModelScope.launch { favourites.delete(id) }
     }
 
@@ -143,8 +152,9 @@ class EditTimerViewModel(
         return service.startOneOff(name, s.durationMs, s.look, savedPresetId).id
     }
 
-    /** Saves the edited preset. Returns false when the input is invalid or the preset is gone. */
+    /** Saves the edited preset. Returns false when editing is not allowed, the input is invalid or the preset is gone. */
     suspend fun savePreset(): Boolean {
+        if (!policy.isAllowed(Control.EDIT)) return false
         val s = validated() ?: return false
         val p = preset ?: presetId?.let { presets.get(it) } ?: return false
         presets.upsert(
@@ -159,6 +169,7 @@ class EditTimerViewModel(
     }
 
     suspend fun deletePreset() {
+        if (!policy.isAllowed(Control.DELETE)) return
         presetId?.let { presets.delete(it) }
     }
 

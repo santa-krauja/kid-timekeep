@@ -76,6 +76,7 @@ fun LookPickerScreen(
     onSaveFavourite: () -> Unit,
     onDeleteFavourite: (String) -> Unit,
     onDone: () -> Unit,
+    canDelete: Boolean = true,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -123,7 +124,7 @@ fun LookPickerScreen(
                         fav = fav,
                         selected = fav.look == look,
                         onUse = { onLookChange(fav.look) },
-                        onDelete = { onDeleteFavourite(fav.id) },
+                        onDelete = if (canDelete) ({ onDeleteFavourite(fav.id) }) else null,
                     )
                 }
                 OutlinedButton(onClick = onSaveFavourite, enabled = favourites.none { it.look == look }) {
@@ -156,7 +157,7 @@ internal fun FieldLabel(text: String, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> Unit, onDelete: () -> Unit) {
+private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> Unit, onDelete: (() -> Unit)?) {
     val border = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
     Box(
         Modifier
@@ -165,7 +166,7 @@ private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> U
             .combinedClickable(
                 onClick = onUse,
                 onLongClick = onDelete,
-                onLongClickLabel = stringResource(R.string.action_delete),
+                onLongClickLabel = if (onDelete != null) stringResource(R.string.action_delete) else null,
             )
             .padding(6.dp),
     ) {

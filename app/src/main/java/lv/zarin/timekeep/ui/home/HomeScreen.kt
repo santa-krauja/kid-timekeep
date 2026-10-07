@@ -243,17 +243,22 @@ private fun HomeList(
                     PresetRow(
                         preset = preset,
                         onStart = { notificationGate { vm.startPreset(preset.id) } },
-                        onLongPress = { menuFor = preset },
+                        // ControlPolicy: no menu at all when neither Edit nor Delete is allowed.
+                        onLongPress = { if (state.canEdit || state.canDelete) menuFor = preset },
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.preset_menu_edit)) },
-                            onClick = { menuFor = null; onEditPreset(preset.id) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.preset_menu_delete)) },
-                            onClick = { menuFor = null; confirmDelete = preset },
-                        )
+                        if (state.canEdit) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.preset_menu_edit)) },
+                                onClick = { menuFor = null; onEditPreset(preset.id) },
+                            )
+                        }
+                        if (state.canDelete) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.preset_menu_delete)) },
+                                onClick = { menuFor = null; confirmDelete = preset },
+                            )
+                        }
                     }
                 }
             }
