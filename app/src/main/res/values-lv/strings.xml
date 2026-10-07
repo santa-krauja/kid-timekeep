@@ -132,7 +132,9 @@
     <string name="about_license_title">Licences</string>
     <string name="action_close">Aizvērt</string>
     <string name="channel_time_up">Laiks beidzies</string>
-    <string name="channel_time_up_silent">Laiks beidzies (bez skaņas)</string>
+    <string name="channel_time_up_sound_only">Laiks beidzies (tikai skaņa)</string>
+    <string name="channel_time_up_vibrate_only">Laiks beidzies (tikai vibrācija)</string>
+    <string name="channel_time_up_silent">Laiks beidzies (klusi)</string>
     <string name="notification_time_up">Laiks beidzies!</string>
     <string name="notif_rationale_title">Vai atļausi Kid Timekeep paziņot, kad laiks beigsies?</string>
     <string name="notif_rationale_text">Kad taimeris beigsies, parādīsim paziņojumu ar skaņu – arī tad, ja lietotne ir aizvērta.</string>
