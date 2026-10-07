@@ -38,7 +38,7 @@ data class TimerUiState(
 
 class TimerViewModel(
     private val timerId: String,
-    timers: TimerRepository,
+    private val timers: TimerRepository,
     private val service: TimerService,
     private val favourites: FavouriteLookRepository,
     private val settings: SettingsRepository,
@@ -87,11 +87,19 @@ class TimerViewModel(
      */
     suspend fun runTicker() = coroutineScope {
         launch {
-            var previous: RunState? = null
+            // Seed from a fresh read: the cached StateFlow value can be stale after the screen was stopped.
+            val fresh = timers.get(timerId)?.state
+            var previous: RunState? = fresh
             var played: Pair<String, Long>? = null
+            var first = true
             loaded.collect { l ->
                 val t = l?.timer
                 val st = t?.state
+                if (first) {
+                    first = false
+                    // Replayed stale value (e.g. Running while the timer finished meanwhile): ignore it.
+                    if (fresh is RunState.Finished && st !is RunState.Finished) return@collect
+                }
                 if (t != null && st is RunState.Finished && previous is RunState.Running) {
                     val key = t.id to st.finishedAtMs
                     if (key != played) {

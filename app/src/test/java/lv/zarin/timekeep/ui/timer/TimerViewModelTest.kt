@@ -212,6 +212,23 @@ class TimerViewModelTest {
     }
 
     @Test
+    fun finishedWhileStoppedDoesNotReplayOnReturn() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        val first = backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        first.cancel() // screen stopped
+        advanceTimeBy(10_000) // WhileSubscribed(5s) lapses; the cached value stays Running
+        clock.now = 60_000
+        service.finishIfOverdue("t") // receiver finished it and notified
+        backgroundScope.launch { vm.runTicker() } // screen started again
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
+    }
+
+    @Test
     fun finishedElsewhereFirstPlaysNoFeedback() = runTest(dispatcher) {
         seed(RunState.Running(0, 0))
         clock.now = 61_000
