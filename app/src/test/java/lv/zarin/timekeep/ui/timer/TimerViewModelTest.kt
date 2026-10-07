@@ -28,6 +28,10 @@ import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
 import lv.zarin.timekeep.testutil.RecordingAlarmScheduler
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.emitAll
+import lv.zarin.timekeep.domain.ports.TimerRepository
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -238,5 +242,30 @@ class TimerViewModelTest {
         advanceTimeBy(1_000)
         runCurrent()
         assertTrue(feedback.calls.isEmpty())
+    }
+
+    @Test
+    fun finishBeforeFirstLoadStillPlaysFeedback() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        // Room's first emission arrives late: until then `loaded` only holds its initial null.
+        val firstLoad = CompletableDeferred<Unit>()
+        val slowTimers = object : TimerRepository by timers {
+            override fun observeAll(): Flow<List<Timer>> = flow {
+                firstLoad.await()
+                emitAll(timers.observeAll())
+            }
+        }
+        val vm = TimerViewModel(
+            "t", slowTimers, service, favourites, FakeSettingsRepository(Settings()), clock,
+            lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+        )
+        backgroundScope.launch { vm.runTicker() }
+        runCurrent()
+        clock.now = 60_000
+        service.finishIfOverdue("t") // the alarm receiver finishes it; the screen is visible, so no notification
+        firstLoad.complete(Unit)
+        advanceTimeBy(100)
+        runCurrent()
+        assertEquals(1, feedback.calls.size)
     }
 }
