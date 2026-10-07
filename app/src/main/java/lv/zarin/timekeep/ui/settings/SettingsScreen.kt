@@ -53,7 +53,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import lv.zarin.timekeep.BuildConfig
 import lv.zarin.timekeep.R
-import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.ui.common.appContainer
 
@@ -117,14 +116,22 @@ private fun SwitchRow(label: Int, checked: Boolean, onChange: (Boolean) -> Unit)
     )
 }
 
+private fun appLocaleTag(): String? =
+    AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LanguageDropdown() {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val options = remember(context) { languageOptions(context) }
-    // Empty list = follow the system. Selecting recreates the activity, so this is re-read afterwards.
-    val currentTag = AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.language }
+    // Empty list = follow the system.
+    var currentTag by remember { mutableStateOf(appLocaleTag()) }
+    // Re-read when coming back (and the activity recreates after a change), so it never goes stale.
+    LifecycleResumeEffect(Unit) {
+        currentTag = appLocaleTag()
+        onPauseOrDispose { }
+    }
     val current = options.firstOrNull { it.tag == currentTag } ?: options.first()
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -152,8 +159,8 @@ private fun LanguageDropdown() {
                             AppCompatDelegate.setApplicationLocales(
                                 LocaleListCompat.forLanguageTags(option.tag ?: ""),
                             )
-                            // Channel names are stored by the system in the language they were created in.
-                            Notifications.ensureChannels(context)
+                            currentTag = option.tag
+                            // Notification channel names are renamed by MainActivity.onCreate after the recreation.
                         }
                     },
                 )

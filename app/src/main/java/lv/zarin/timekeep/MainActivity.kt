@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.ui.nav.AppNavHost
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
@@ -26,6 +27,8 @@ class MainActivity : AppCompatActivity() {
         // A recreated activity gets the original intent again; it was handled already.
         if (savedInstanceState == null) takeTimerId(intent)
         val container = (application as KidTimekeepApp).container
+        // Runs again after the recreation caused by a language change, so channel names follow the new language.
+        Notifications.ensureChannels(this)
         enableEdgeToEdge()
         setContent {
             val settings by container.settingsRepository.settings
