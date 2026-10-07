@@ -226,17 +226,18 @@ private fun SandRow(selected: SandColor, onPick: (SandColor) -> Unit) {
             val name = stringResource(sand.labelRes())
             Box(
                 Modifier
-                    .size(40.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .selectable(selected = isOn, role = Role.RadioButton, onClick = { onPick(sand) })
+                    .semantics { contentDescription = name }
                     .border(
                         BorderStroke(3.dp, if (isOn) MaterialTheme.colorScheme.primary else Color.Transparent),
                         CircleShape,
                     )
-                    .padding(5.dp)
+                    .padding(6.dp)
                     .clip(CircleShape)
                     .background(Color(sand.argb))
-                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape)
-                    .selectable(selected = isOn, role = Role.RadioButton, onClick = { onPick(sand) })
-                    .semantics { contentDescription = name },
+                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape),
             )
         }
     }

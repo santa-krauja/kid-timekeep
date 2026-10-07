@@ -22,6 +22,9 @@
     <string name="cd_resume">Turpināt</string>
     <string name="cd_preset_random_look">Katru reizi cits izskats</string>
     <string name="cd_timer_card">%1$s, vēl %2$s</string>
+    <string name="cd_timer_big">%1$s: atlicis %2$s no %3$s</string>
+    <string name="cd_paused_suffix">, pauzēts</string>
+    <string name="cd_timer_done">%1$s: laiks beidzies</string>
     <string name="cd_restart">Vēlreiz</string>
     <string name="preset_menu_edit">Labot</string>
     <string name="preset_menu_delete">Dzēst</string>

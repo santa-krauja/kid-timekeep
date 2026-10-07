@@ -315,9 +315,13 @@ private fun NowCard(
 ) {
     val done = timer.state is RunState.Finished || timer.isOverdue(nowMs)
     val paused = timer.state is RunState.Paused
-    val cardDescription = stringResource(
-        R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
-    )
+    val cardDescription = if (done) {
+        stringResource(R.string.cd_timer_done, timer.name)
+    } else {
+        stringResource(
+            R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
+        )
+    }
     Card(
         onClick = onOpen,
         modifier = Modifier.fillMaxWidth(),

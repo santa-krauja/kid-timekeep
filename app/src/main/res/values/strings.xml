@@ -21,6 +21,9 @@
     <string name="cd_resume">Go on</string>
     <string name="cd_preset_random_look">New look every time</string>
     <string name="cd_timer_card">%1$s, %2$s left</string>
+    <string name="cd_timer_big">%1$s: %2$s left of %3$s</string>
+    <string name="cd_paused_suffix">, paused</string>
+    <string name="cd_timer_done">%1$s: time\'s up</string>
     <string name="cd_restart">Again</string>
     <string name="preset_menu_edit">Edit</string>
     <string name="preset_menu_delete">Delete</string>

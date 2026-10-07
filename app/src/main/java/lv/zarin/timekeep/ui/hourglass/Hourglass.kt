@@ -31,9 +31,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import lv.zarin.timekeep.domain.hourglass.BulbShape
@@ -88,7 +90,8 @@ internal object SandClock {
  * 0 < progress < 1) a falling-sand stream animates; with reduced motion only its faint core line shows.
  * When [flipTrigger] changes (not on first composition) the whole stack rotates 0..180 degrees over 650 ms
  * while still drawing the pre-flip progress, then draws the live progress with an alpha 0.35..1 settle over
- * 260 ms. With reduced motion the switch is instant.
+ * 260 ms. With reduced motion the switch is instant. [announceDescription] makes TalkBack read
+ * [contentDescription] politely whenever it changes (used for the finished state only).
  */
 @Composable
 fun Hourglass(
@@ -98,6 +101,7 @@ fun Hourglass(
     modifier: Modifier = Modifier,
     flipTrigger: Int = 0,
     contentDescription: String? = null,
+    announceDescription: Boolean = false,
 ) {
     val topPainter = rememberVectorPainter(ImageVector.vectorResource(look.top.drawableRes()))
     val bottomPainter = rememberVectorPainter(ImageVector.vectorResource(look.bottom.drawableRes()))
@@ -165,6 +169,7 @@ fun Hourglass(
         Modifier.semantics {
             this.contentDescription = contentDescription
             role = Role.Image
+            if (announceDescription) liveRegion = LiveRegionMode.Polite
         }
     } else {
         Modifier
