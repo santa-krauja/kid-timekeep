@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- API 31-32 have no USE_EXACT_ALARM; API 30 needs neither. -->
     <uses-permission
@@ -36,6 +37,20 @@
         <receiver
             android:name=".alarm.TimeUpReceiver"
             android:exported="false" />
+
+        <!-- exported="false" still receives these: they are protected system broadcasts sent by the system
+             (BOOT_COMPLETED, TIME_SET, ...), which are delivered regardless of the exported flag. -->
+        <receiver
+            android:name=".alarm.SystemEventsReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
