@@ -18,9 +18,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.shadows.ShadowLooper
+import org.robolectric.annotation.Config
+import lv.zarin.timekeep.testutil.QuietKidTimekeepApp
+import lv.zarin.timekeep.testutil.pump
+import lv.zarin.timekeep.testutil.pumpUntil
+import lv.zarin.timekeep.testutil.pumpUntilText
 
 @RunWith(AndroidJUnit4::class)
+@Config(application = QuietKidTimekeepApp::class, qualifiers = "w411dp-h891dp")
 class EditTimerScreenTest {
     private val clock = FakeClock(100_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
@@ -36,47 +41,30 @@ class EditTimerScreenTest {
     // The preview glasses are not running, so the clock can auto-advance (performScrollTo needs it).
     private fun show() {
         rule.setContent { EditTimerScreen(presetId = null, onBack = {}, onStarted = { started = it }) }
-        pump()
+        rule.pump()
     }
-
-    private fun pump() {
-        rule.mainClock.advanceTimeBy(50)
-        ShadowLooper.idleMainLooper()
-    }
-
-    /** Bounded by pump count: with a paused looper, waitUntil's timeout clock may never advance. */
-    private fun waitFor(what: String, condition: () -> Boolean) {
-        repeat(200) {
-            pump()
-            if (condition()) return
-        }
-        throw AssertionError("Timed out waiting for $what")
-    }
-
-    private fun waitForText(text: String) =
-        waitFor(text) { rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun pickersHiddenUntilRequested() {
         show()
-        waitForText("Choose pictures & colours")
+        rule.pumpUntilText("Choose pictures & colours")
         rule.onNodeWithText("Top picture").assertDoesNotExist()
         rule.onNodeWithText("Choose pictures & colours").performScrollTo().performClick()
-        waitForText("Top picture")
+        rule.pumpUntilText("Top picture")
         rule.onNodeWithText("Favourite looks").assertExists()
         rule.onNodeWithText("Done").performClick()
-        waitForText("Choose pictures & colours")
+        rule.pumpUntilText("Choose pictures & colours")
         rule.onNodeWithText("Top picture").assertDoesNotExist()
     }
 
     @Test
     fun startCreatesRunAndReportsId() {
         show()
-        waitForText("Name")
+        rule.pumpUntilText("Name")
         rule.onNode(hasSetTextAction()).performTextInput("Tidy up")
         rule.onNodeWithText("30 s").performClick()
         rule.onNodeWithText("Start").performClick()
-        waitFor("start") { started != null }
+        rule.pumpUntil("start") { started != null }
         val run = runBlocking { app.container.timerRepository.get(started!!)!! }
         assertEquals("Tidy up", run.name)
         assertEquals(30_000L, run.durationMs)
