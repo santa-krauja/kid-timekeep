@@ -113,6 +113,8 @@
     <string name="settings_sound">Sound when done</string>
     <string name="settings_vibrate">Vibrate when done</string>
     <string name="settings_keep_screen_on">Keep screen on</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">System default</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>

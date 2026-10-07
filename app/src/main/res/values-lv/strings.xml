@@ -117,6 +117,8 @@
     <string name="settings_sound">Skaņa, kad laiks beidzies</string>
     <string name="settings_vibrate">Vibrācija, kad laiks beidzies</string>
     <string name="settings_keep_screen_on">Neizslēgt ekrānu</string>
+    <string name="settings_language">Valoda</string>
+    <string name="language_system">Sistēmas valoda</string>
     <string name="settings_theme">Motīvs</string>
     <string name="theme_system">Sistēmas noklusējums</string>
     <string name="theme_light">Gaišs</string>

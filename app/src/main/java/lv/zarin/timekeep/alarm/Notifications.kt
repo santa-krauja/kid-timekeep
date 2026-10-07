@@ -30,7 +30,14 @@ object Notifications {
     const val CHANNEL_SILENT = "time_up_silent"
     private val VIBRATION = longArrayOf(0, 400, 200, 400)
 
-    fun ensureChannels(context: Context) {
+    /**
+     * Context whose resources follow the per-app language. On API 33+ that is already true for any context;
+     * below that AppCompat only localises Activity contexts, so the application context needs wrapping.
+     */
+    private fun localized(context: Context): Context = ContextCompat.getContextForLanguage(context)
+
+    fun ensureChannels(base: Context) {
+        val context = localized(base)
         val nm = context.getSystemService(NotificationManager::class.java)
         val sound = NotificationChannel(
             CHANNEL_SOUND, context.getString(R.string.channel_time_up), NotificationManager.IMPORTANCE_HIGH,
@@ -49,8 +56,9 @@ object Notifications {
     }
 
     @SuppressLint("MissingPermission") // Checked below; a denied permission just means no notification.
-    fun showTimeUp(context: Context, timer: Timer, settings: Settings) {
-        ensureChannels(context)
+    fun showTimeUp(base: Context, timer: Timer, settings: Settings) {
+        val context = localized(base)
+        ensureChannels(base)
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED

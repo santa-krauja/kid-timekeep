@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
@@ -77,13 +78,13 @@ class SettingsScreenTest {
     @Test
     fun themeDropdownChangesMode() {
         show()
-        waitForText("System default")
-        rule.onNodeWithText("System default").performClick()
+        waitForTag("theme_dropdown")
+        rule.onNodeWithTag("theme_dropdown").performClick()
         waitForTag("theme_option_DARK")
         rule.onNodeWithTag("theme_option_DARK").performClick()
         waitFor("theme dark") { current().themeMode == ThemeMode.DARK }
         waitForText("Dark")
-        rule.onNodeWithText("Dark").performClick()
+        rule.onNodeWithTag("theme_dropdown").performClick()
         waitForTag("theme_option_LIGHT")
         rule.onNodeWithTag("theme_option_LIGHT").performClick()
         waitFor("theme light") { current().themeMode == ThemeMode.LIGHT }
@@ -91,11 +92,30 @@ class SettingsScreenTest {
     }
 
     @Test
+    @org.robolectric.annotation.Config(sdk = [30])
+    fun languageDropdownIsFirstAndSetsAppLocale() {
+        show()
+        waitForTag("language_dropdown")
+        rule.onNodeWithTag("language_dropdown").performClick()
+        waitForTag("language_option_lv")
+        rule.onNodeWithTag("language_option_lv").performClick()
+        try {
+            waitFor("lv locale") {
+                androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags() == "lv"
+            }
+        } finally {
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+            )
+        }
+    }
+
+    @Test
     fun aboutShowsLicense() {
         show()
         waitForText("Emoji: Noto Color Emoji, Apache License 2.0")
         rule.onNodeWithText("Emoji: Noto Color Emoji, Apache License 2.0", substring = false)
-            .performClick()
+            .performScrollTo().performClick()
         waitForText("Licences")
         waitForText("Close")
         // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.
