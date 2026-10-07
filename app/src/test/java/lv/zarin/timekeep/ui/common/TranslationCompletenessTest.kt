@@ -12,6 +12,8 @@ class TranslationCompletenessTest {
     private data class Entry(val type: String, val texts: Map<String, String>, val translatable: Boolean)
 
     private fun load(dir: String): Map<String, Entry> {
+        // Paths are relative to the working directory: Gradle runs unit tests from the module dir
+        // (app/), some IDE run configurations use the repo root, so try both.
         val file = listOf(File("src/main/res/$dir/strings.xml"), File("app/src/main/res/$dir/strings.xml"))
             .firstOrNull { it.exists() } ?: error("Missing $dir/strings.xml")
         val root = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement

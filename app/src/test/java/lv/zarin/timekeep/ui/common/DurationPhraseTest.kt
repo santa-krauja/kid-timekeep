@@ -1,7 +1,10 @@
 package lv.zarin.timekeep.ui.common
 
+import android.content.Context
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import lv.zarin.timekeep.R
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -55,9 +58,8 @@ class DurationPhraseTest {
     @Config(qualifiers = "lv")
     fun latvianZeroMinutesPlural() {
         // durationPhrase never emits "0 minutes"; check the raw plural so the zero form is covered.
-        val res = androidx.test.core.app.ApplicationProvider
-            .getApplicationContext<android.content.Context>().resources
-        val r = lv.zarin.timekeep.R.plurals.duration_minutes
+        val res = ApplicationProvider.getApplicationContext<Context>().resources
+        val r = R.plurals.duration_minutes
         assertEquals("0 minūšu", res.getQuantityString(r, 0, 0))
         assertEquals("1 minūte", res.getQuantityString(r, 1, 1))
         assertEquals("2 minūtes", res.getQuantityString(r, 2, 2))

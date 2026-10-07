@@ -28,10 +28,10 @@ So "1 minūte 30 sekunžu", "21 minūte", "11 minūšu", "2 stundas".
 | English | Latviešu | Note |
 |---|---|---|
 | timer | taimeris | |
-| preset | sagatave | "Sagataves", "Dzēst sagatavi?", "Saglabāt kā sagatavi" |
+| preset | saglabātais taimeris | "Saglabātie taimeri", "Dzēst saglabāto taimeri?", "Labot taimeri", "Saglabāt sarakstā"; delete message „%s“ tiks izdzēsts no saraksta (agrees with implied "taimeris") |
 | look (pictures + sand colours) | izskats | "Mīļākie izskati", "Katru reizi cits izskats" |
 | picture | attēls | |
-| sand | smiltis (pl.) | "Augšējās smiltis" |
+| sand | smiltis (pl.) | "Augšējās smiltis"; sand colour in TalkBack = "krāsa" |
 | hourglass | smilšu pulkstenis | |
 | Left / Passed | Atlicis / Pagājis | standalone labels |
 | "%s left" | "Vēl %s" | avoids gender/number agreement with the clock or phrase |
@@ -40,29 +40,34 @@ So "1 minūte 30 sekunžu", "21 minūte", "11 minūšu", "2 stundas".
 | Again | Vēlreiz | |
 | Time's up! | Laiks beidzies! | also notification text and channel name |
 | Done! | Gatavs! | |
-| Shuffle | Sajaukt | random look button |
+| Shuffle | Cits izskats | random look button (matches "Katru reizi cits izskats") |
 | Theme | Motīvs | as in Android ("Tumšais motīvs") |
 | Emoji | emocijzīmes | |
 
 Pictures: Sirds, Zvaigzne, Zieds, Smaidiņš, Saule, Mēness, Zivs, Kaķis, Suns, Mašīna, Koks,
 Tauriņš, Ābols, Varavīksne, Vienradzis, Raķete.
-Sand colours: Lavanda, Debesis, Piparmētra, Persiks, Smiltis, Rozā, Nakts, Citrons.
+Sand colours: Lavanda, Debesis, Piparmētra, Persiks, Smilškrāsa, Rozā, Nakts, Citrons.
 Seed presets (written once, in the device language at first launch): Zobu tīrīšana,
-Saģērbties, Lasīšana.
+Ģērbšanās, Lasīšana (all verbal nouns, so they read like names).
 
 ## Please double-check (native speaker)
 
-1. **"Sagatave" for preset.** Alternatives: "Gatavais taimeris", "Mans taimeris".
+1. **"Saglabātais taimeris" for preset** (section header "Saglabātie taimeri", "Labot taimeri",
+   "Saglabāt sarakstā"). Earlier draft used "sagatave", which was dropped: it suggests a blank
+   or draft. A shorter header "Saglabātie" is an option.
 2. **"Vēl %s"** for "%s left" on cards and in TalkBack ("Zobu tīrīšana, vēl 2 minūtes").
-   The large timer label uses "Atlicis" as in the spec.
-3. **"Pagājis 1:30 no 5:00"** (Passed … of …).
-4. **TalkBack look description:** "Augšā Sirds, smiltis Lavanda; apakšā Zvaigzne, smiltis
-   Debesis". The colour names are nouns, so "smiltis Lavanda" avoids adjective forms.
+   The large timer label uses "Atlicis" as in the spec (TalkBack reads it as a separate node).
+3. **"Pagājis 1:30 no 5:00"** (Passed … of …). Alternatives: "Pagājis: 1:30 no 5:00", "1:30 no 5:00".
+4. **TalkBack look description:** "Augšā Sirds, krāsa Lavanda; apakšā Zvaigzne, krāsa
+   Debesis". "krāsa" + noun colour name avoids declension and the "smiltis Smiltis" echo.
 5. **Stepper descriptions:** "Stundas: vairāk" / "Stundas: mazāk" / "Stundas: 2". This avoids
    the genitive ("vairāk stundu") that would need separate strings.
-6. **"Sajaukt"** for the shuffle-look button (maybe "Cits izskats"?).
+6. **"Cits izskats"** for the shuffle-look button (playful alternative: "Pārsteigums!").
 7. **"Sākt: %s"** for the start-preset button description (the colon avoids declining the
-   user's preset name).
-8. **Colour names:** "Debesis" (Sky) and "Smiltis" (Sand) are plural nouns, and "Rozā" is an
-   indeclinable adjective. They read fine as standalone labels.
-9. **Start over dialog:** "Smilšu pulkstenis apgriezīsies, un taimeris atkal sāks skaitīt no 5:00."
+   user's preset name). Alternative: "Sākt taimeri „%s“".
+8. **Colour names:** "Debesis" (Sky) is a plural noun, "Smilškrāsa" replaces "Smiltis" to avoid
+   "Augšējās smiltis: Smiltis", "Rozā" is an indeclinable adjective.
+9. **Zero plural form** uses the genitive ("11 minūšu", "vēl 10 minūšu"). If everyday
+   nominative ("11 minūtes") is preferred, make the zero items equal to the other items and
+   update `DurationPhraseTest`.
+10. **Start over dialog:** "Smilšu pulkstenis apgriezīsies, un taimeris atkal sāks skaitīt no 5:00."
