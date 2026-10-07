@@ -215,16 +215,16 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = { confirmStartOver = true }) {
+                if (!finished) OutlinedButton(onClick = { confirmStartOver = true }) {
                     Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
                 }
-                if (s.canPause || paused) {
+                if (!finished && (s.canPause || paused)) {
                     Button(onClick = vm::togglePause) {
                         Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, contentDescription = null)
                         Text(stringResource(if (paused) R.string.action_go_on else R.string.action_pause))
                     }
                 }
-                if (s.showAddMinute) {
+                if (!finished && s.showAddMinute) {
                     OutlinedButton(onClick = vm::addMinute, enabled = s.addMinuteEnabled) {
                         Text(stringResource(R.string.action_add_minute), maxLines = 1)
                     }

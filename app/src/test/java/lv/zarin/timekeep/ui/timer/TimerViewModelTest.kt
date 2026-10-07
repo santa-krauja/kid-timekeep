@@ -193,6 +193,25 @@ class TimerViewModelTest {
     }
 
     @Test
+    fun receiverFinishingVisibleTimerStillPlaysFeedbackOnce() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
+        // The alarm receiver finishes the timer before the ticker's own overdue check.
+        clock.now = 60_000
+        service.finishIfOverdue("t")
+        advanceTimeBy(100)
+        runCurrent()
+        assertEquals(1, feedback.calls.size)
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertEquals(1, feedback.calls.size)
+    }
+
+    @Test
     fun finishedElsewhereFirstPlaysNoFeedback() = runTest(dispatcher) {
         seed(RunState.Running(0, 0))
         clock.now = 61_000

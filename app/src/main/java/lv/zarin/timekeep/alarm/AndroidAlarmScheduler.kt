@@ -28,15 +28,15 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
     }
 
     override fun cancel(timerId: String) {
-        val pi = pendingIntent(timerId)
+        val pi = pendingIntent(timerId, PendingIntent.FLAG_NO_CREATE) ?: return
         alarmManager.cancel(pi)
         pi.cancel()
     }
 
-    private fun pendingIntent(timerId: String): PendingIntent {
+    private fun pendingIntent(timerId: String): PendingIntent = pendingIntent(timerId, PendingIntent.FLAG_UPDATE_CURRENT)!!
+
+    private fun pendingIntent(timerId: String, flag: Int): PendingIntent? {
         val intent = Intent(context, TimeUpReceiver::class.java).setData(Uri.parse("kidtimekeep://timer/$timerId"))
-        return PendingIntent.getBroadcast(
-            context, timerId.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        return PendingIntent.getBroadcast(context, timerId.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or flag)
     }
 }

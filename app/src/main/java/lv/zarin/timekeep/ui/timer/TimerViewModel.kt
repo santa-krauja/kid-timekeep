@@ -80,16 +80,32 @@ class TimerViewModel(
 
     fun nowMs(): Long = clock.nowMs()
 
-    /** Runs while the screen is started: finishes an overdue timer and plays the feedback once. */
+    /**
+     * Runs while the screen is started. Plays the feedback once when it observes the timer go from Running to
+     * Finished (whoever finished it: this ticker, the alarm receiver or another screen), and finishes an
+     * overdue timer itself in case no alarm did. Opening an already-Finished timer plays nothing.
+     */
     suspend fun runTicker() = coroutineScope {
-        // Keep `loaded` hot so the ticker can check overdue locally and leave the service alone until then.
-        launch { loaded.collect { } }
+        launch {
+            var previous: RunState? = null
+            var played: Pair<String, Long>? = null
+            loaded.collect { l ->
+                val t = l?.timer
+                val st = t?.state
+                if (t != null && st is RunState.Finished && previous is RunState.Running) {
+                    val key = t.id to st.finishedAtMs
+                    if (key != played) {
+                        played = key
+                        val s = settings.settings.first()
+                        feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
+                    }
+                }
+                previous = st
+            }
+        }
         while (true) {
             val timer = loaded.value?.timer
-            if (timer != null && timer.isOverdue(clock.nowMs()) && service.finishIfOverdue(timerId) != null) {
-                val s = settings.settings.first()
-                feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
-            }
+            if (timer != null && timer.isOverdue(clock.nowMs())) service.finishIfOverdue(timerId)
             delay(TICK_MS)
         }
     }

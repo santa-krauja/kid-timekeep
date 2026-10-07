@@ -3,6 +3,8 @@ package lv.zarin.timekeep.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +21,11 @@ class TimeUpReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 if (timerId != null) handle(app, timerId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Never crash from a background alarm; the next launch's reconcile() recovers.
+                Log.e(TAG, "Time's up handling failed", e)
             } finally {
                 pending?.finish()
                 onHandled()
@@ -34,6 +41,8 @@ class TimeUpReceiver : BroadcastReceiver() {
     }
 
     internal companion object {
+        private const val TAG = "TimeUpReceiver"
+
         /** Test hook: called after every delivery has been handled. */
         @VisibleForTesting
         @Volatile
