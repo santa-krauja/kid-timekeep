@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import lv.zarin.timekeep.data.db.AppDatabase
+import lv.zarin.timekeep.testutil.inMemoryDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
@@ -14,7 +15,6 @@ import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
-import lv.zarin.timekeep.testutil.FakeClock
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -31,7 +31,7 @@ class RepositoriesTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = AppDatabase.build(context, inMemory = true, clock = FakeClock(1_000L))
+        db = inMemoryDatabase(context)
     }
 
     @After
@@ -101,14 +101,5 @@ class RepositoriesTest {
         repo.delete("a")
         assertNull(repo.get("a"))
         assertEquals(emptyList<Timer>(), repo.getAll())
-    }
-
-    @Test
-    fun freshDatabaseHasThreeSeededPresets() = runTest {
-        val presets = RoomPresetRepository(db.presetDao()).observeAll().first()
-        assertEquals(listOf("Brush teeth", "Get dressed", "Reading"), presets.map { it.name })
-        assertEquals(listOf(120_000L, 600_000L, 900_000L), presets.map { it.durationMs })
-        assertEquals(listOf(0, 1, 2), presets.map { it.sortOrder })
-        assertEquals(listOf(null, null, null), presets.map { it.pinnedLook })
     }
 }

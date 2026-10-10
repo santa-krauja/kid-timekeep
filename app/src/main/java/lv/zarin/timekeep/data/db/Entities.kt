@@ -4,12 +4,16 @@ import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import lv.zarin.timekeep.domain.timer.PictureId
+import lv.zarin.timekeep.domain.timer.SandColor
+
+enum class RunStateType { RUNNING, PAUSED, FINISHED }
 
 data class LookColumns(
-    val topPicture: String,
-    val topSand: String,
-    val bottomPicture: String,
-    val bottomSand: String,
+    val topPicture: PictureId,
+    val topSand: SandColor,
+    val bottomPicture: PictureId,
+    val bottomSand: SandColor,
 )
 
 @Entity(tableName = "timers")
@@ -19,8 +23,7 @@ data class TimerEntity(
     val durationMs: Long,
     @Embedded(prefix = "look_") val look: LookColumns,
     val presetId: String?,
-    /** RUNNING, PAUSED or FINISHED. */
-    val stateType: String,
+    val stateType: RunStateType,
     val runningSinceMs: Long?,
     val elapsedMs: Long?,
     val finishedAtMs: Long?,

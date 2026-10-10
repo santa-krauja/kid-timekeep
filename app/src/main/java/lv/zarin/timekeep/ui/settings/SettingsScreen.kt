@@ -1,6 +1,8 @@
 package lv.zarin.timekeep.ui.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
@@ -55,6 +57,8 @@ import lv.zarin.timekeep.BuildConfig
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.ui.common.appContainer
+
+private const val SOURCE_URL = "https://github.com/santa-krauja/kid-timekeep"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -218,7 +222,15 @@ private fun AboutDialog(onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.about_license_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(stringResource(R.string.about_emoji_credit))
+                Text(stringResource(R.string.about_copyright))
+                Text(stringResource(R.string.about_app_license))
+                TextButton(onClick = {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_URL)))
+                    } catch (_: ActivityNotFoundException) {
+                    }
+                }) { Text(stringResource(R.string.about_source_code)) }
+                Text(stringResource(R.string.about_emoji_credit), modifier = Modifier.padding(top = 12.dp))
                 Text(licence, modifier = Modifier.padding(top = 12.dp))
             }
         },

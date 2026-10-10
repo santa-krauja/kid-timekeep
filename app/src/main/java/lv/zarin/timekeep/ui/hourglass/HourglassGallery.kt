@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.hourglass
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,7 +52,7 @@ private fun HourglassGalleryPreview() {
     widthDp = 460,
     heightDp = 1060,
     showBackground = true,
-    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
 )
 @Composable
 private fun HourglassGalleryDarkPreview() {

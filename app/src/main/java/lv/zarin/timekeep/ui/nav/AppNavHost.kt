@@ -33,15 +33,22 @@ fun AppNavHost(
                 onOpenSettings = { navController.navigate(SettingsRoute) },
                 onOpenTimer = { navController.navigate(TimerRoute(it)) },
                 onNewTimer = { navController.navigate(EditTimerRoute()) },
-                onEditPreset = { navController.navigate(EditTimerRoute(it)) },
+                onEditPreset = { navController.navigate(EditTimerRoute(presetId = it)) },
+                onEditTimer = { navController.navigate(EditTimerRoute(timerId = it)) },
             )
         }
         composable<TimerRoute> { entry ->
-            TimerScreen(entry.toRoute<TimerRoute>().timerId, onBack = { navController.popBackStack() })
+            TimerScreen(
+                entry.toRoute<TimerRoute>().timerId,
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(EditTimerRoute(timerId = it)) },
+            )
         }
         composable<EditTimerRoute> { entry ->
+            val route = entry.toRoute<EditTimerRoute>()
             EditTimerScreen(
-                presetId = entry.toRoute<EditTimerRoute>().presetId,
+                presetId = route.presetId,
+                timerId = route.timerId,
                 onBack = { navController.popBackStack() },
                 onStarted = { id ->
                     navController.navigate(TimerRoute(id)) {

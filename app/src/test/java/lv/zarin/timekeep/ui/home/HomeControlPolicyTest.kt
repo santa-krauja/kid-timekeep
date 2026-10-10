@@ -9,8 +9,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.control.Control
@@ -23,7 +24,8 @@ class HomeControlPolicyTest {
     init {
         val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>()
         app.allowNotifications()
-        app.container = AppContainer(app, inMemoryDb = true, controlPolicy = { it == Control.ADD_MINUTE })
+        app.container = TestAppContainer(app, controlPolicy = { it == Control.ADD_MINUTE })
+        seedStarterPresets(app.container)
     }
 
     @get:Rule
@@ -36,7 +38,7 @@ class HomeControlPolicyTest {
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.waitUntil(10_000) {
             rule.mainClock.advanceTimeBy(50)
-            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithContentDescription("Pause").assertDoesNotExist()
     }

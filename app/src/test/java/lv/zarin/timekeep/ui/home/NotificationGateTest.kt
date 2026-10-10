@@ -8,8 +8,9 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -20,7 +21,8 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(AndroidJUnit4::class)
 class NotificationGateTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -42,6 +44,15 @@ class NotificationGateTest {
             ShadowLooper.idleMainLooper()
             Thread.sleep(5)
             runBlocking { app.container.timerRepository.getAll().size } == 1
+        }
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithContentDescription("Back").performClick()
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isEmpty()
         }
         rule.onNodeWithContentDescription("Start Get dressed").performClick()
         rule.mainClock.advanceTimeBy(100)

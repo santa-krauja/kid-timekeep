@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.Settings
@@ -24,6 +25,7 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
@@ -83,7 +85,7 @@ class TimerViewModelTest {
 
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
-        lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+        AllowAllControlPolicy, feedback,
         clearNotification = { cleared += it },
     )
 
@@ -148,8 +150,33 @@ class TimerViewModelTest {
         val vm = vm()
         vm.state.onEach { }.launchIn(backgroundScope)
         runCurrent()
-        assertFalse(vm.state.value!!.addMinuteEnabled)
-        assertTrue(vm.state.value!!.showAddMinute)
+        assertEquals(
+            TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false, canEdit = true),
+            vm.state.value!!.controls,
+        )
+    }
+
+    @Test
+    fun phaseFollowsTimerState() = runTest(dispatcher) {
+        seed(RunState.Paused(10_000))
+        val vm = vm()
+        vm.state.onEach { }.launchIn(backgroundScope)
+        runCurrent()
+        assertEquals(TimerPhase.Paused, vm.state.value!!.phase)
+        seed(RunState.Finished(60_000))
+        runCurrent()
+        assertEquals(TimerPhase.Finished, vm.state.value!!.phase)
+        assertFalse(vm.state.value!!.keepScreenOn)
+    }
+
+    @Test
+    fun overdueRunningTimerIsInFinishedPhase() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        clock.now = 61_000
+        val vm = vm()
+        vm.state.onEach { }.launchIn(backgroundScope)
+        runCurrent()
+        assertEquals(TimerPhase.Finished, vm.state.value!!.phase)
     }
 
     @Test
@@ -257,7 +284,7 @@ class TimerViewModelTest {
         }
         val vm = TimerViewModel(
             "t", slowTimers, service, favourites, FakeSettingsRepository(Settings()), clock,
-            lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+            AllowAllControlPolicy, feedback,
         )
         backgroundScope.launch { vm.runTicker() }
         runCurrent()

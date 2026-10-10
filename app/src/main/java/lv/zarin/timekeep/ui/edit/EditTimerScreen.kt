@@ -38,9 +38,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -61,24 +61,22 @@ import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
-/**
- * Wireframe E1: New timer ([presetId] == null) or Edit preset. "Choose pictures & colours" swaps the form
- * for [LookPickerScreen] (E2) in place; system back closes it again.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTimerScreen(
-    presetId: String?,
     onBack: () -> Unit,
     onStarted: (timerId: String) -> Unit,
+    presetId: String? = null,
+    timerId: String? = null,
 ) {
+    val target = timerId?.let(EditTarget::RunTimer) ?: presetId?.let(EditTarget::Preset) ?: EditTarget.New
     val container = appContainer()
     val vm: EditTimerViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
                 EditTimerViewModel(
-                    presetId, container.presetRepository, container.favouriteLookRepository,
-                    container.timerService, container.lookPicker, container.clock, container.controlPolicy,
+                    target, container.presetRepository, container.favouriteLookRepository,
+                    container.timerRepository, container.timerService, container.lookPicker, container.clock, container.controlPolicy,
                 )
             }
         },
@@ -87,21 +85,10 @@ fun EditTimerScreen(
     val scope = rememberCoroutineScope()
     var lookOpen by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
-    var busy by remember { mutableStateOf(false) }
+    val isSaving by vm.isSaving.collectAsStateWithLifecycle()
+    val closed by vm.closed.collectAsStateWithLifecycle()
+    if (closed) LaunchedEffect(Unit) { onBack() }
     val notificationGate = rememberNotificationPermissionGate()
-
-    /** Runs [action] once at a time so double taps don't start two timers. */
-    fun act(action: suspend () -> Unit) {
-        if (busy) return
-        busy = true
-        scope.launch {
-            try {
-                action()
-            } finally {
-                busy = false
-            }
-        }
-    }
 
     BackHandler(enabled = lookOpen) { lookOpen = false }
 
@@ -123,7 +110,15 @@ fun EditTimerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(if (state.isEditingPreset) R.string.edit_preset_title else R.string.edit_new_title))
+                    Text(
+                        stringResource(
+                            when (state.target) {
+                                EditTarget.New -> R.string.edit_new_title
+                                is EditTarget.Preset -> R.string.edit_preset_title
+                                is EditTarget.RunTimer -> R.string.edit_timer_title
+                            },
+                        ),
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -137,23 +132,32 @@ fun EditTimerScreen(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (state.isEditingPreset) {
-                    if (state.canDelete) {
-                        OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.action_delete))
+                when (state.target) {
+                    is EditTarget.Preset -> {
+                        if (state.canDelete) {
+                            OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.action_delete))
+                            }
+                        }
+                        Button(
+                            onClick = { scope.launch { if (vm.savePreset()) onBack() } },
+                            modifier = Modifier.weight(1f),
+                            enabled = state.canEdit && !isSaving,
+                        ) {
+                            Text(stringResource(R.string.action_save))
                         }
                     }
-                    Button(
-                        onClick = { act { if (vm.savePreset()) onBack() } },
-                        modifier = Modifier.weight(1f),
-                        enabled = state.canEdit,
+                    is EditTarget.RunTimer -> Button(
+                        onClick = { scope.launch { if (vm.saveTimer()) onBack() } },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = state.canEdit && !isSaving,
                     ) {
                         Text(stringResource(R.string.action_save))
                     }
-                } else {
-                    Button(
-                        onClick = { notificationGate { act { vm.start()?.let(onStarted) } } },
+                    EditTarget.New -> Button(
+                        onClick = { notificationGate { scope.launch { vm.start()?.let(onStarted) } } },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSaving,
                     ) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)
                         Text(stringResource(R.string.action_start), modifier = Modifier.padding(start = 4.dp))
@@ -173,11 +177,7 @@ fun EditTimerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 isError = state.nameError,
-                supportingText = if (state.nameError) {
-                    { Text(stringResource(R.string.edit_name_error)) }
-                } else {
-                    null
-                },
+                supportingText = (@Composable { Text(stringResource(R.string.edit_name_error)) }).takeIf { state.nameError },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -185,7 +185,21 @@ fun EditTimerScreen(
             )
 
             FieldLabel(stringResource(R.string.edit_duration_label))
-            DurationPicker(state.durationMs, vm::setDuration)
+            DurationPicker(state.durationMs, vm::setDuration, enabled = state.durationEditable)
+            if (state.pauseFirstHint) {
+                Text(
+                    stringResource(R.string.edit_duration_pause_first),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (state.durationTooShort) {
+                Text(
+                    stringResource(R.string.edit_duration_too_short),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             Column(
                 Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -216,21 +230,29 @@ fun EditTimerScreen(
                 Text(stringResource(R.string.edit_choose_look), modifier = Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
-            if (!state.isEditingPreset) {
-                SwitchRow(
-                    text = stringResource(R.string.edit_save_as_preset),
-                    checked = state.saveAsPreset,
-                    onChange = vm::setSaveAsPreset,
-                    leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
+            when (state.target) {
+                EditTarget.New -> {
+                    SwitchRow(
+                        text = stringResource(R.string.edit_save_as_preset),
+                        checked = state.saveAsPreset,
+                        onChange = vm::setSaveAsPreset,
+                        leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    )
+                    SwitchRow(
+                        text = stringResource(R.string.edit_keep_look),
+                        checked = state.keepLook,
+                        onChange = vm::setKeepLook,
+                        enabled = state.saveAsPreset,
+                        indent = true,
+                    )
+                }
+                is EditTarget.Preset -> SwitchRow(
+                    text = stringResource(R.string.edit_keep_look),
+                    checked = state.keepLook,
+                    onChange = vm::setKeepLook,
                 )
+                is EditTarget.RunTimer -> Unit
             }
-            SwitchRow(
-                text = stringResource(R.string.edit_keep_look),
-                checked = state.keepLook,
-                onChange = vm::setKeepLook,
-                enabled = state.isEditingPreset || state.saveAsPreset,
-                indent = !state.isEditingPreset,
-            )
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -243,10 +265,7 @@ fun EditTimerScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    act {
-                        vm.deletePreset()
-                        onBack()
-                    }
+                    scope.launch { if (vm.deletePreset()) onBack() }
                 }) {
                     Text(stringResource(R.string.action_delete))
                 }
@@ -274,8 +293,8 @@ private fun SwitchRow(
             .padding(start = if (indent) 28.dp else 0.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (leading != null) {
-            leading()
+        leading?.let {
+            it()
             Spacer(Modifier.size(8.dp))
         }
         Text(

@@ -5,6 +5,7 @@ package lv.zarin.timekeep.domain.timer
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+const val MAX_NAME_LENGTH = 40
 const val MIN_DURATION_MS = 10_000L
 const val MAX_DURATION_MS = 14_400_000L
 

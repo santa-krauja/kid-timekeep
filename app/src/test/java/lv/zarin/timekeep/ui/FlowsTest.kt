@@ -9,11 +9,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
@@ -41,7 +43,8 @@ class FlowsTest {
     private val clock = FakeClock(1_000_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        it.container = TestAppContainer(it, clock = clock)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -88,11 +91,44 @@ class FlowsTest {
     }
 
     @Test
+    fun editRunningTimerRenamesItOnTheTimerScreen() {
+        openHome()
+        rule.onNodeWithContentDescription("Start Brush teeth").performClick()
+        rule.pumpUntilText("Pause")
+        rule.onNodeWithContentDescription("Edit timer").performClick()
+        rule.pumpUntilText("Save")
+        rule.onNodeWithText("Pause the timer to change its length").assertExists()
+        rule.onNode(hasSetTextAction()).performTextReplacement("Wash hands")
+        rule.onNodeWithText("Save").performClick()
+        rule.pumpUntilText("Pause")
+        rule.pumpUntil("renamed") { timers().single().name == "Wash hands" }
+        rule.pumpUntilText("Wash hands")
+        assertTrue(timers().single().state is RunState.Running)
+    }
+
+    @Test
+    fun editPausedTimerShowsTooShortErrorForShortDuration() {
+        openHome()
+        rule.onNodeWithContentDescription("Start Brush teeth").performClick()
+        rule.pumpUntilText("Pause")
+        clock.advance(60_000)
+        rule.onNodeWithText("Pause").performClick()
+        rule.pumpUntilText("Go on")
+        rule.onNodeWithContentDescription("Edit timer").performClick()
+        rule.pumpUntilText("Save")
+        rule.onNodeWithText("Pause the timer to change its length").assertDoesNotExist()
+        rule.onNodeWithText("30 s").performClick()
+        rule.onNodeWithText("Save").performClick()
+        rule.pumpUntilText("Must be longer than the time already passed")
+    }
+
+    @Test
     fun presetStartTwiceGivesDifferentLooks() {
         openHome()
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
-        // Preset row + one Now card.
-        rule.pumpUntilText("Brush teeth", count = 2)
+        rule.pumpUntilText("Pause")
+        rule.onNodeWithContentDescription("Back").performClick()
+        rule.pumpUntilNoText("Pause")
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.pumpUntil("second run stored") { timers().size == 2 }
 
@@ -105,14 +141,11 @@ class FlowsTest {
     fun startOverKeepsLook() {
         openHome()
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
-        rule.pumpUntilText("Brush teeth", count = 2)
+        rule.pumpUntilText("Pause")
         val before = timers().single()
 
         clock.advance(20_000)
         rule.pump(6)
-        // The Now card and the preset row both read "Brush teeth"; the card is the one that opens the timer.
-        rule.onNodeWithContentDescription("Brush teeth, ", substring = true).performClick()
-        rule.pumpUntilText("Pause")
         rule.onNodeWithContentDescription("Start over").performClick()
         rule.pumpUntilText("Start over?")
         rule.onNodeWithText("OK").performClick()

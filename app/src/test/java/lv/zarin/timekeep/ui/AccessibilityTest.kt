@@ -19,8 +19,9 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.domain.timer.Look
@@ -78,7 +79,8 @@ class AccessibilityTest {
     private val clock = FakeClock(100_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        it.container = TestAppContainer(it, clock = clock)
+        seedStarterPresets(it.container)
     }
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
     private val density get() = app.resources.displayMetrics.density
@@ -224,7 +226,8 @@ class AccessibilityTest {
 class HomeAccessibilityTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -256,7 +259,8 @@ class HomeAccessibilityTest {
 class HomeFinishedCardTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule

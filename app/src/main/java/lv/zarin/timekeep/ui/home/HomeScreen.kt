@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.home
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -23,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Casino
-import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
@@ -74,16 +74,20 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.alarm.Notifications
+import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
-import lv.zarin.timekeep.domain.timer.isOverdue
+import lv.zarin.timekeep.domain.timer.TimerPhase
+import lv.zarin.timekeep.domain.timer.phase
 import lv.zarin.timekeep.domain.timer.progress
 import lv.zarin.timekeep.domain.timer.remainingMs
+import lv.zarin.timekeep.ui.common.PauseToggleSpec
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.common.durationPhrase
+import lv.zarin.timekeep.ui.common.pauseToggleSpec
 import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.timer.TimerContent
@@ -95,6 +99,7 @@ fun HomeScreen(
     onOpenTimer: (String) -> Unit,
     onNewTimer: () -> Unit,
     onEditPreset: (String) -> Unit = {},
+    onEditTimer: (String) -> Unit = {},
 ) {
     val container = appContainer()
     val vm: HomeViewModel = viewModel(
@@ -117,7 +122,7 @@ fun HomeScreen(
     val startedId by vm.startedId.collectAsStateWithLifecycle()
     LaunchedEffect(startedId) {
         startedId?.let {
-            selectedId = it
+            if (twoPane) selectedId = it else onOpenTimer(it)
             vm.consumeStartedId()
         }
     }
@@ -158,7 +163,7 @@ fun HomeScreen(
                         }
                     } else {
                         key(shownId) {
-                            TimerContent(shownId, onClose = { selectedId = null }, showBack = false)
+                            TimerContent(shownId, onClose = { selectedId = null }, showBack = false, onEdit = onEditTimer)
                         }
                     }
                 }
@@ -223,11 +228,13 @@ private fun HomeList(
                 item(span = { GridItemSpan(maxLineSpan) }) { EmptyNow() }
             } else {
                 items(state.now, key = { it.id }) { timer ->
+                    val phase = timer.phase(nowMs)
                     NowCard(
                         timer = timer,
+                        phase = phase,
+                        toggle = pauseToggleSpec(phase, state.canPause),
                         nowMs = nowMs,
                         clock = clock,
-                        canPause = state.canPause,
                         selected = timer.id == selectedId,
                         onOpen = { onOpenTimer(timer.id) },
                         onToggle = { vm.togglePause(timer.id) },
@@ -310,27 +317,25 @@ private fun EmptyNow() {
 @Composable
 private fun NowCard(
     timer: Timer,
+    phase: TimerPhase,
+    toggle: PauseToggleSpec?,
     nowMs: Long,
     clock: Clock,
-    canPause: Boolean,
     selected: Boolean,
     onOpen: () -> Unit,
     onToggle: () -> Unit,
     onRestart: () -> Unit,
 ) {
-    val done = timer.state is RunState.Finished || timer.isOverdue(nowMs)
-    val paused = timer.state is RunState.Paused
-    val cardDescription = if (done) {
-        stringResource(R.string.cd_timer_done, timer.name)
-    } else {
-        stringResource(
+    val cardDescription = when (phase) {
+        TimerPhase.Finished -> stringResource(R.string.cd_timer_done, timer.name)
+        TimerPhase.Running, TimerPhase.Paused -> stringResource(
             R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
         )
     }
     Card(
         onClick = onOpen,
         modifier = Modifier.fillMaxWidth(),
-        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary).takeIf { selected },
     ) {
         Column(
             Modifier.padding(12.dp),
@@ -340,25 +345,19 @@ private fun NowCard(
                 Hourglass(
                     look = timer.look,
                     progress = { timer.progress(clock.nowMs()) },
-                    running = !paused && !done,
+                    running = phase == TimerPhase.Running,
                     modifier = Modifier.height(96.dp).aspectRatio(0.62f),
                     contentDescription = cardDescription,
                 )
-                if (!done) {
-                    if (canPause || paused) {
-                        IconButton(
-                            onClick = onToggle,
-                            modifier = Modifier.align(Alignment.TopEnd),
-                        ) {
-                            Icon(
-                                if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                                contentDescription = stringResource(if (paused) R.string.cd_resume else R.string.cd_pause),
-                            )
+                when (phase) {
+                    TimerPhase.Finished ->
+                        IconButton(onClick = onRestart, modifier = Modifier.align(Alignment.TopEnd)) {
+                            Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.cd_restart))
                         }
-                    }
-                } else {
-                    IconButton(onClick = onRestart, modifier = Modifier.align(Alignment.TopEnd)) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.cd_restart))
+                    TimerPhase.Running, TimerPhase.Paused -> toggle?.let {
+                        IconButton(onClick = onToggle, modifier = Modifier.align(Alignment.TopEnd)) {
+                            Icon(it.icon, contentDescription = stringResource(it.contentDescription))
+                        }
                     }
                 }
             }
@@ -369,26 +368,34 @@ private fun NowCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (done) {
-                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer) {
-                    Text(
-                        stringResource(R.string.timer_done_badge),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            } else {
-                val label = if (paused) R.string.timer_paused_label else R.string.timer_left_label
-                val clockText = lv.zarin.timekeep.domain.format.formatClock(timer.remainingMs(nowMs), roundUp = true)
-                Text(
-                    stringResource(label, clockText),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            when (phase) {
+                TimerPhase.Finished -> DoneBadge()
+                TimerPhase.Running -> TimeLeftText(R.string.timer_left_label, timer.remainingMs(nowMs))
+                TimerPhase.Paused -> TimeLeftText(R.string.timer_paused_label, timer.remainingMs(nowMs))
             }
         }
     }
+}
+
+@Composable
+private fun DoneBadge() {
+    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer) {
+        Text(
+            stringResource(R.string.timer_done_badge),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
+private fun TimeLeftText(@StringRes label: Int, remainingMs: Long) {
+    Text(
+        stringResource(label, formatClock(remainingMs, roundUp = true)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -403,19 +410,17 @@ private fun PresetRow(preset: Preset, onStart: () -> Unit, onLongPress: () -> Un
             Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val pinned = preset.pinnedLook
-            if (pinned != null) {
-                Hourglass(
+            when (val pinned = preset.pinnedLook) {
+                null -> Icon(
+                    Icons.Rounded.Casino,
+                    contentDescription = stringResource(R.string.cd_preset_random_look),
+                    modifier = Modifier.size(28.dp),
+                )
+                else -> Hourglass(
                     look = pinned,
                     progress = { 0f },
                     running = false,
                     modifier = Modifier.height(32.dp).aspectRatio(0.62f),
-                )
-            } else {
-                Icon(
-                    Icons.Rounded.Casino,
-                    contentDescription = stringResource(R.string.cd_preset_random_look),
-                    modifier = Modifier.size(28.dp),
                 )
             }
             Spacer(Modifier.size(12.dp))

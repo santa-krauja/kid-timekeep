@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.timer
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -60,26 +60,28 @@ import lv.zarin.timekeep.R
 import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.alarm.VisibleTimerTracker
 import lv.zarin.timekeep.domain.format.formatClock
-import lv.zarin.timekeep.domain.timer.RunState
+import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.domain.timer.elapsedMs
-import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.progress
 import lv.zarin.timekeep.domain.timer.remainingMs
 import lv.zarin.timekeep.ui.common.DurationLabel
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.durationPhrase
+import lv.zarin.timekeep.ui.common.pauseToggleSpec
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
 @Composable
-fun TimerScreen(timerId: String, onBack: () -> Unit) = TimerContent(timerId, onClose = onBack, showBack = true)
+fun TimerScreen(timerId: String, onBack: () -> Unit, onEdit: (String) -> Unit = {}) =
+    TimerContent(timerId, onClose = onBack, showBack = true, onEdit = onEdit)
 
 /**
  * The big timer. Used as the phone route (`showBack = true`) and as the tablet detail pane
  * (`showBack = false`); [onClose] also runs when the timer is dismissed or no longer exists.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
+fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit: (String) -> Unit = {}) {
     val landscape = currentWindowAdaptiveInfo().windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
     val container = appContainer()
     val vm: TimerViewModel = viewModel(
@@ -118,7 +120,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
             if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
         }
     }
-    if (state?.timer?.state is RunState.Finished) {
+    if (state?.phase == TimerPhase.Finished) {
         LaunchedEffect(timerId) { vm.onFinishedShown() }
     }
     if (missing) {
@@ -154,98 +156,32 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                         }
                     }
                 },
+                actions = {
+                    if (state?.controls?.canEdit == true) {
+                        IconButton(onClick = { onEdit(timerId) }) {
+                            Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.cd_edit_timer))
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
         val s = state ?: return@Scaffold
         val timer = s.timer
-        val paused = timer.state is RunState.Paused
-        val finished = timer.state is RunState.Finished
-        // Whole seconds only (durationPhrase rounds up), so the text changes at most once per second.
-        val bigDescription = when {
-            finished || timer.isOverdue(nowMs) -> stringResource(R.string.cd_timer_done, timer.name)
-            else -> stringResource(
-                R.string.cd_timer_big,
-                timer.name,
-                durationPhrase(timer.remainingMs(nowMs), roundUp = true),
-                durationPhrase(timer.durationMs, roundUp = true),
-            ) + if (paused) stringResource(R.string.cd_paused_suffix) else ""
-        }
         val hourglass: @Composable (Modifier) -> Unit = { mod ->
-            Box(mod, contentAlignment = Alignment.Center) {
-                Hourglass(
-                    look = timer.look,
-                    progress = { timer.progress(vm.nowMs()) },
-                    running = !paused && !finished,
-                    modifier = Modifier.fillMaxHeight(0.95f).aspectRatio(0.62f).alpha(if (paused) 0.55f else 1f),
-                    flipTrigger = s.flipTrigger,
-                    contentDescription = bigDescription,
-                    announceDescription = finished,
-                )
-                if (paused) {
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Text(
-                            stringResource(R.string.paused_badge),
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                    }
-                }
-            }
+            TimerHourglass(s, progress = { timer.progress(vm.nowMs()) }, description = bigDescription(s, nowMs), modifier = mod)
         }
-        val numbers: @Composable () -> Unit = {
-            if (s.showNumbers) {
-                Text(
-                    stringResource(R.string.timer_left),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                DurationLabel(
-                    ms = timer.remainingMs(nowMs),
-                    roundUp = true,
-                    style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
-                )
-                Text(
-                    stringResource(
-                        R.string.timer_passed_of,
-                        formatClock(timer.elapsedMs(nowMs), roundUp = false),
-                        formatClock(timer.durationMs, roundUp = true),
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        val numbers: @Composable () -> Unit = { if (s.showNumbers) TimerNumbers(timer, nowMs) }
         val controls: @Composable () -> Unit = {
-            FlowRow(
-                Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (!finished) OutlinedButton(onClick = { confirmStartOver = true }) {
-                    Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
-                }
-                if (!finished && (s.canPause || paused)) {
-                    Button(onClick = vm::togglePause) {
-                        Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, contentDescription = null)
-                        Text(stringResource(if (paused) R.string.action_go_on else R.string.action_pause))
-                    }
-                }
-                if (!finished && s.showAddMinute) {
-                    OutlinedButton(onClick = vm::addMinute, enabled = s.addMinuteEnabled) {
-                        Text(stringResource(R.string.action_add_minute), maxLines = 1)
-                    }
-                }
-            }
+            TimerControlsRow(
+                phase = s.phase,
+                controls = s.controls,
+                onStartOver = { confirmStartOver = true },
+                onTogglePause = vm::togglePause,
+                onAddMinute = vm::addMinute,
+            )
         }
         if (landscape) {
-            // Compact height (phone landscape): hourglass on the left, time and controls on the right.
             Row(
                 Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -268,25 +204,13 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
         }
 
         if (confirmStartOver) {
-            AlertDialog(
-                onDismissRequest = { confirmStartOver = false },
-                title = { Text(stringResource(R.string.start_over_title)) },
-                text = {
-                    Text(stringResource(R.string.start_over_message, formatClock(timer.durationMs, roundUp = true)))
-                },
-                confirmButton = {
-                    TextButton(onClick = { confirmStartOver = false; vm.restart() }) {
-                        Text(stringResource(R.string.action_ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { confirmStartOver = false }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                },
+            StartOverDialog(
+                durationMs = timer.durationMs,
+                onConfirm = { confirmStartOver = false; vm.restart() },
+                onDismiss = { confirmStartOver = false },
             )
         }
-        if (finished) {
+        if (s.phase == TimerPhase.Finished) {
             TimeUpOverlay(
                 timer = timer,
                 lookSaved = lookSaved,
@@ -296,4 +220,123 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
             )
         }
     }
+}
+
+@Composable
+private fun bigDescription(s: TimerUiState, nowMs: Long): String = when (s.phase) {
+    TimerPhase.Finished -> stringResource(R.string.cd_timer_done, s.timer.name)
+    TimerPhase.Running -> timeLeftDescription(s.timer, nowMs)
+    TimerPhase.Paused -> timeLeftDescription(s.timer, nowMs) + stringResource(R.string.cd_paused_suffix)
+}
+
+@Composable
+private fun timeLeftDescription(timer: Timer, nowMs: Long): String = stringResource(
+    R.string.cd_timer_big,
+    timer.name,
+    durationPhrase(timer.remainingMs(nowMs), roundUp = true),
+    durationPhrase(timer.durationMs, roundUp = true),
+)
+
+@Composable
+private fun TimerHourglass(s: TimerUiState, progress: () -> Float, description: String, modifier: Modifier) {
+    val paused = s.phase == TimerPhase.Paused
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Hourglass(
+            look = s.timer.look,
+            progress = progress,
+            running = s.phase == TimerPhase.Running,
+            modifier = Modifier.fillMaxHeight(0.95f).aspectRatio(0.62f).alpha(if (paused) 0.55f else 1f),
+            flipTrigger = s.flipTrigger,
+            contentDescription = description,
+            announceDescription = s.phase == TimerPhase.Finished,
+        )
+        if (paused) PausedBadge()
+    }
+}
+
+@Composable
+private fun PausedBadge() {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Text(
+            stringResource(R.string.paused_badge),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+        )
+    }
+}
+
+@Composable
+private fun TimerNumbers(timer: Timer, nowMs: Long) {
+    Text(
+        stringResource(R.string.timer_left),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    DurationLabel(
+        ms = timer.remainingMs(nowMs),
+        roundUp = true,
+        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
+    )
+    Text(
+        stringResource(
+            R.string.timer_passed_of,
+            formatClock(timer.elapsedMs(nowMs), roundUp = false),
+            formatClock(timer.durationMs, roundUp = true),
+        ),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TimerControlsRow(
+    phase: TimerPhase,
+    controls: TimerControls,
+    onStartOver: () -> Unit,
+    onTogglePause: () -> Unit,
+    onAddMinute: () -> Unit,
+) {
+    FlowRow(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (phase == TimerPhase.Finished) return@FlowRow
+        OutlinedButton(onClick = onStartOver) {
+            Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
+        }
+        pauseToggleSpec(phase, controls.canPause)?.let { toggle ->
+            Button(onClick = onTogglePause) {
+                Icon(toggle.icon, contentDescription = null)
+                Text(stringResource(toggle.label))
+            }
+        }
+        if (controls.showAddMinute) {
+            OutlinedButton(onClick = onAddMinute, enabled = controls.addMinuteEnabled) {
+                Text(stringResource(R.string.action_add_minute), maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StartOverDialog(durationMs: Long, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.start_over_title)) },
+        text = { Text(stringResource(R.string.start_over_message, formatClock(durationMs, roundUp = true))) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_ok)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
 }

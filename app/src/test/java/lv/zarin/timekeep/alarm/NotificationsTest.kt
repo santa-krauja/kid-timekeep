@@ -1,11 +1,18 @@
 package lv.zarin.timekeep.alarm
 
+import android.app.Application
 import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import lv.zarin.timekeep.MainActivity
+import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -20,13 +27,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class NotificationsTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    private fun grant() = shadowOf(context as android.app.Application)
+    private fun grant() = shadowOf(context as Application)
         .grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
 
     private fun timer(id: String = "t1", name: String = "Brush teeth") = Timer(
@@ -72,7 +80,7 @@ class NotificationsTest {
     @Test
     fun staleChannelsAreDeleted() {
         nm.createNotificationChannel(
-            android.app.NotificationChannel("time_up_old", "old", NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel("time_up_old", "old", NotificationManager.IMPORTANCE_HIGH),
         )
         Notifications.ensureChannels(context)
         assertNull(nm.getNotificationChannel("time_up_old"))
@@ -94,22 +102,22 @@ class NotificationsTest {
     }
 
     @Test
-    @org.robolectric.annotation.Config(sdk = [30]) // API < 33: AppCompat only localises Activity contexts
+    @Config(sdk = [30]) // API < 33: AppCompat only localises Activity contexts
     fun notificationAndChannelsFollowAppLocale() {
         grant()
         // On API < 33 the locale is only persisted (and so visible to non-Activity contexts) once an
         // AppCompat activity has synced it, as happens in the real app.
-        val scenario = androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
         scenario.onActivity {
-            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                androidx.core.os.LocaleListCompat.forLanguageTags("lv"),
+            AppCompatDelegate.setApplicationLocales(
+                LocaleListCompat.forLanguageTags("lv"),
             )
         }
         try {
             // AppCompat persists the locale on a background executor (API < 33), so wait for it.
             val deadline = System.currentTimeMillis() + 5_000
-            while (androidx.core.content.ContextCompat.getContextForLanguage(context)
-                    .getString(lv.zarin.timekeep.R.string.notification_time_up) != "Laiks beidzies!" &&
+            while (ContextCompat.getContextForLanguage(context)
+                    .getString(R.string.notification_time_up) != "Laiks beidzies!" &&
                 System.currentTimeMillis() < deadline
             ) Thread.sleep(20)
             Notifications.ensureChannels(context)
@@ -118,8 +126,8 @@ class NotificationsTest {
             assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {
-                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                    androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+                AppCompatDelegate.setApplicationLocales(
+                    LocaleListCompat.getEmptyLocaleList(),
                 )
             }
             scenario.close()
@@ -127,27 +135,27 @@ class NotificationsTest {
     }
 
     @Test
-    @org.robolectric.annotation.Config(sdk = [30])
+    @Config(sdk = [30])
     fun channelsAreRenamedWhenActivityRecreatesAfterLocaleSwitch() {
-        val scenario = androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             assertEquals("Time's up", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
             scenario.onActivity {
-                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                    androidx.core.os.LocaleListCompat.forLanguageTags("lv"),
+                AppCompatDelegate.setApplicationLocales(
+                    LocaleListCompat.forLanguageTags("lv"),
                 )
             }
             val deadline = System.currentTimeMillis() + 5_000
-            while (androidx.core.content.ContextCompat.getContextForLanguage(context)
-                    .getString(lv.zarin.timekeep.R.string.channel_time_up) != "Laiks beidzies" &&
+            while (ContextCompat.getContextForLanguage(context)
+                    .getString(R.string.channel_time_up) != "Laiks beidzies" &&
                 System.currentTimeMillis() < deadline
             ) Thread.sleep(20)
             scenario.recreate() // what a language change does; MainActivity.onCreate must rename the channels
             assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {
-                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                    androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+                AppCompatDelegate.setApplicationLocales(
+                    LocaleListCompat.getEmptyLocaleList(),
                 )
             }
             scenario.close()
