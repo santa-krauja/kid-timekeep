@@ -24,15 +24,22 @@ import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.MAX_DURATION_MS
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.domain.timer.isOverdue
+import lv.zarin.timekeep.domain.timer.phase
 
-data class TimerUiState(
-    val timer: Timer,
-    val showNumbers: Boolean,
-    val keepScreenOn: Boolean,
+data class TimerControls(
     val canPause: Boolean,
     val showAddMinute: Boolean,
     val addMinuteEnabled: Boolean,
+)
+
+data class TimerUiState(
+    val timer: Timer,
+    val phase: TimerPhase,
+    val controls: TimerControls,
+    val showNumbers: Boolean,
+    val keepScreenOn: Boolean,
     val flipTrigger: Int,
 )
 
@@ -63,13 +70,17 @@ class TimerViewModel(
 
     val state: StateFlow<TimerUiState?> = loaded.map { l ->
         val t = l?.timer ?: return@map null
+        val phase = t.phase(clock.nowMs())
         TimerUiState(
             timer = t,
+            phase = phase,
+            controls = TimerControls(
+                canPause = policy.isAllowed(Control.PAUSE),
+                showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
+                addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
+            ),
             showNumbers = l.settings.showNumbers,
-            keepScreenOn = l.settings.keepScreenOn && t.state !is RunState.Finished,
-            canPause = policy.isAllowed(Control.PAUSE),
-            showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
-            addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
+            keepScreenOn = l.settings.keepScreenOn && phase != TimerPhase.Finished,
             flipTrigger = l.flip,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

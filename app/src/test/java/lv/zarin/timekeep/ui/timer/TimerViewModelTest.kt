@@ -24,6 +24,7 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
@@ -148,8 +149,33 @@ class TimerViewModelTest {
         val vm = vm()
         vm.state.onEach { }.launchIn(backgroundScope)
         runCurrent()
-        assertFalse(vm.state.value!!.addMinuteEnabled)
-        assertTrue(vm.state.value!!.showAddMinute)
+        assertEquals(
+            TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false),
+            vm.state.value!!.controls,
+        )
+    }
+
+    @Test
+    fun phaseFollowsTimerState() = runTest(dispatcher) {
+        seed(RunState.Paused(10_000))
+        val vm = vm()
+        vm.state.onEach { }.launchIn(backgroundScope)
+        runCurrent()
+        assertEquals(TimerPhase.Paused, vm.state.value!!.phase)
+        seed(RunState.Finished(60_000))
+        runCurrent()
+        assertEquals(TimerPhase.Finished, vm.state.value!!.phase)
+        assertFalse(vm.state.value!!.keepScreenOn)
+    }
+
+    @Test
+    fun overdueRunningTimerIsInFinishedPhase() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        clock.now = 61_000
+        val vm = vm()
+        vm.state.onEach { }.launchIn(backgroundScope)
+        runCurrent()
+        assertEquals(TimerPhase.Finished, vm.state.value!!.phase)
     }
 
     @Test

@@ -13,19 +13,15 @@ import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.format.splitDuration
 
-/** Spoken-style phrase, e.g. "1 minute 30 seconds". Zero is "0 seconds". */
 @Composable
-fun durationPhrase(ms: Long, roundUp: Boolean): String {
-    val (h, m, s) = splitDuration(ms, roundUp)
-    val parts = buildList {
-        if (h > 0) add(pluralStringResource(R.plurals.duration_hours, h, h))
-        if (m > 0) add(pluralStringResource(R.plurals.duration_minutes, m, m))
-        if (s > 0 || (h == 0 && m == 0)) add(pluralStringResource(R.plurals.duration_seconds, s, s))
-    }
-    return parts.joinToString(" ")
-}
+fun durationPhrase(ms: Long, roundUp: Boolean): String = joinDuration(
+    ms,
+    roundUp,
+    hours = { pluralStringResource(R.plurals.duration_hours, it, it) },
+    minutes = { pluralStringResource(R.plurals.duration_minutes, it, it) },
+    seconds = { pluralStringResource(R.plurals.duration_seconds, it, it) },
+)
 
-/** Visual clock text (m:ss) whose accessibility text is the spoken phrase. */
 @Composable
 fun DurationLabel(
     ms: Long,
@@ -41,14 +37,27 @@ fun DurationLabel(
     )
 }
 
-/** Compact "2 min", "30 s", "1 h 30 min". */
 @Composable
-fun compactDuration(ms: Long): String {
-    val (h, m, s) = splitDuration(ms, roundUp = false)
-    val parts = buildList {
-        if (h > 0) add(stringResource(R.string.duration_short_hour, h))
-        if (m > 0) add(stringResource(R.string.duration_short_min, m))
-        if (s > 0 || (h == 0 && m == 0)) add(stringResource(R.string.duration_short_sec, s))
-    }
-    return parts.joinToString(" ")
+fun compactDuration(ms: Long): String = joinDuration(
+    ms,
+    roundUp = false,
+    hours = { stringResource(R.string.duration_short_hour, it) },
+    minutes = { stringResource(R.string.duration_short_min, it) },
+    seconds = { stringResource(R.string.duration_short_sec, it) },
+)
+
+@Composable
+private fun joinDuration(
+    ms: Long,
+    roundUp: Boolean,
+    hours: @Composable (Int) -> String,
+    minutes: @Composable (Int) -> String,
+    seconds: @Composable (Int) -> String,
+): String {
+    val (h, m, s) = splitDuration(ms, roundUp)
+    return listOfNotNull(
+        h.takeIf { it > 0 }?.let { hours(it) },
+        m.takeIf { it > 0 }?.let { minutes(it) },
+        s.takeIf { it > 0 || (h == 0 && m == 0) }?.let { seconds(it) },
+    ).joinToString(" ")
 }

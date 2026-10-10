@@ -1,6 +1,8 @@
 package lv.zarin.timekeep.ui.edit
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,7 @@ import lv.zarin.timekeep.domain.control.Control
 import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
+import lv.zarin.timekeep.domain.ports.PresetRepository
 import lv.zarin.timekeep.domain.timer.FavouriteLook
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.MAX_DURATION_MS
@@ -217,6 +220,29 @@ class EditTimerViewModelTest {
         vm.deleteFavourite(fav.id)
         runCurrent()
         assertEquals(listOf(fav), vm.state.value.favourites)
+    }
+
+    @Test
+    fun startRunsOnceAtATimeAndReportsSaving() = runTest(dispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        val slowPresets = object : PresetRepository by presets {
+            override suspend fun upsert(preset: Preset) {
+                gate.await()
+                presets.upsert(preset)
+            }
+        }
+        val vm = EditTimerViewModel(null, slowPresets, favourites, service, lookPicker, clock)
+        runCurrent()
+        vm.setName("Reading")
+        assertFalse(vm.isSaving.value)
+        val first = async { vm.start() }
+        runCurrent()
+        assertTrue(vm.isSaving.value)
+        assertNull(vm.start())
+        gate.complete(Unit)
+        assertNotNull(first.await())
+        assertFalse(vm.isSaving.value)
+        assertEquals(1, timers.observeAll().first().size)
     }
 
     @Test

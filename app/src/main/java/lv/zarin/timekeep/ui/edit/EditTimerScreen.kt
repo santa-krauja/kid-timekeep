@@ -40,7 +40,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -87,21 +86,8 @@ fun EditTimerScreen(
     val scope = rememberCoroutineScope()
     var lookOpen by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
-    var busy by remember { mutableStateOf(false) }
+    val isSaving by vm.isSaving.collectAsStateWithLifecycle()
     val notificationGate = rememberNotificationPermissionGate()
-
-    /** Runs [action] once at a time so double taps don't start two timers. */
-    fun act(action: suspend () -> Unit) {
-        if (busy) return
-        busy = true
-        scope.launch {
-            try {
-                action()
-            } finally {
-                busy = false
-            }
-        }
-    }
 
     BackHandler(enabled = lookOpen) { lookOpen = false }
 
@@ -144,16 +130,17 @@ fun EditTimerScreen(
                         }
                     }
                     Button(
-                        onClick = { act { if (vm.savePreset()) onBack() } },
+                        onClick = { scope.launch { if (vm.savePreset()) onBack() } },
                         modifier = Modifier.weight(1f),
-                        enabled = state.canEdit,
+                        enabled = state.canEdit && !isSaving,
                     ) {
                         Text(stringResource(R.string.action_save))
                     }
                 } else {
                     Button(
-                        onClick = { notificationGate { act { vm.start()?.let(onStarted) } } },
+                        onClick = { notificationGate { scope.launch { vm.start()?.let(onStarted) } } },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSaving,
                     ) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)
                         Text(stringResource(R.string.action_start), modifier = Modifier.padding(start = 4.dp))
@@ -173,11 +160,7 @@ fun EditTimerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 isError = state.nameError,
-                supportingText = if (state.nameError) {
-                    { Text(stringResource(R.string.edit_name_error)) }
-                } else {
-                    null
-                },
+                supportingText = (@Composable { Text(stringResource(R.string.edit_name_error)) }).takeIf { state.nameError },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -243,10 +226,7 @@ fun EditTimerScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    act {
-                        vm.deletePreset()
-                        onBack()
-                    }
+                    scope.launch { if (vm.deletePreset()) onBack() }
                 }) {
                     Text(stringResource(R.string.action_delete))
                 }
@@ -274,8 +254,8 @@ private fun SwitchRow(
             .padding(start = if (indent) 28.dp else 0.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (leading != null) {
-            leading()
+        leading?.let {
+            it()
             Spacer(Modifier.size(8.dp))
         }
         Text(

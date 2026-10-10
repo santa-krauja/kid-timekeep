@@ -71,6 +71,9 @@ class EditTimerViewModel(
     )
     val state: StateFlow<EditState> = _state.asStateFlow()
 
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
+
     /** The preset being edited, once loaded. */
     private var preset: Preset? = null
 
@@ -128,8 +131,8 @@ class EditTimerViewModel(
     }
 
     /** Starts a run (saving a preset first if asked). Returns the new timer id, or null when invalid. */
-    suspend fun start(): String? {
-        val s = validated() ?: return null
+    suspend fun start(): String? = exclusively(whenBusy = null) {
+        val s = validated() ?: return@exclusively null
         val name = s.name.trim()
         val savedPresetId = if (s.saveAsPreset) {
             val now = clock.nowMs()
@@ -149,14 +152,14 @@ class EditTimerViewModel(
         } else {
             null
         }
-        return service.startOneOff(name, s.durationMs, s.look, savedPresetId).id
+        service.startOneOff(name, s.durationMs, s.look, savedPresetId).id
     }
 
     /** Saves the edited preset. Returns false when editing is not allowed, the input is invalid or the preset is gone. */
-    suspend fun savePreset(): Boolean {
-        if (!policy.isAllowed(Control.EDIT)) return false
-        val s = validated() ?: return false
-        val p = preset ?: presetId?.let { presets.get(it) } ?: return false
+    suspend fun savePreset(): Boolean = exclusively(whenBusy = false) {
+        if (!policy.isAllowed(Control.EDIT)) return@exclusively false
+        val s = validated() ?: return@exclusively false
+        val p = preset ?: presetId?.let { presets.get(it) } ?: return@exclusively false
         presets.upsert(
             p.copy(
                 name = s.name.trim(),
@@ -165,12 +168,22 @@ class EditTimerViewModel(
                 updatedAtMs = clock.nowMs(),
             ),
         )
-        return true
+        true
     }
 
-    suspend fun deletePreset() {
-        if (!policy.isAllowed(Control.DELETE)) return
+    suspend fun deletePreset(): Boolean = exclusively(whenBusy = false) {
+        if (!policy.isAllowed(Control.DELETE)) return@exclusively false
         presetId?.let { presets.delete(it) }
+        true
+    }
+
+    private suspend fun <T> exclusively(whenBusy: T, action: suspend () -> T): T {
+        if (!_isSaving.compareAndSet(expect = false, update = true)) return whenBusy
+        return try {
+            action()
+        } finally {
+            _isSaving.value = false
+        }
     }
 
     private fun validated(): EditState? {
