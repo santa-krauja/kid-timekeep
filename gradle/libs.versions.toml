@@ -21,6 +21,7 @@ robolectric = "4.17"
 androidxTestCore = "1.7.0"
 turbine = "1.2.1"
 coreSplashscreen = "1.2.0"
+androidSdkCommon = "32.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +56,7 @@ material3-window-size = { group = "androidx.compose.material3", name = "material
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+android-sdk-common = { group = "com.android.tools", name = "sdk-common", version.ref = "androidSdkCommon" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 
 [plugins]
@@ -62,4 +64,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 room = { id = "androidx.room", version.ref = "room" }

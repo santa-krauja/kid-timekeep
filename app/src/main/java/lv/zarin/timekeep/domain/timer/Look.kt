@@ -9,7 +9,7 @@ enum class PictureId(val codepoint: String, val dominantArgb: Long) {
     BLOSSOM("1f338", 0xFFF7A8C8),
     SMILEY("1f60a", 0xFFFFCC33),
     SUN("2600", 0xFFFFB000),
-    MOON("1f319", 0xFFFFD75E),
+    MOON("1f31d", 0xFFFFD75E),
     FISH("1f41f", 0xFF4AA8FF),
     CAT("1f431", 0xFFF2B65A),
     DOG("1f436", 0xFFC68B59),
