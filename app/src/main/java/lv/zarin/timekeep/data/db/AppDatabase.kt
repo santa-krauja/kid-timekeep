@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import lv.zarin.timekeep.domain.ports.Clock
 import java.util.concurrent.Executor
 
@@ -12,6 +13,7 @@ import java.util.concurrent.Executor
     version = 1,
     exportSchema = true,
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun timerDao(): TimerDao
     abstract fun presetDao(): PresetDao
