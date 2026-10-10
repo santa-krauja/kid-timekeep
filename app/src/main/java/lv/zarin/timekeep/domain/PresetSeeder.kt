@@ -1,6 +1,8 @@
 package lv.zarin.timekeep.domain
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.PresetRepository
 import lv.zarin.timekeep.domain.ports.SeedFlagStore
@@ -15,8 +17,10 @@ class PresetSeeder(
     private val clock: Clock,
     private val ids: () -> String = ::newId,
 ) {
-    suspend fun seedIfNeeded(names: StarterPresetNames) {
-        if (flags.isSeeded()) return
+    private val mutex = Mutex()
+
+    suspend fun seedIfNeeded(names: StarterPresetNames) = mutex.withLock {
+        if (flags.isSeeded()) return@withLock
         if (presets.observeAll().first().isEmpty()) {
             val now = clock.nowMs()
             listOf(

@@ -13,9 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import lv.zarin.timekeep.domain.ports.SeedFlagStore
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import lv.zarin.timekeep.domain.ports.ThemeMode
@@ -34,20 +32,6 @@ fun settingsDataStore(
     scope = scope,
     produceFile = produceFile,
 )
-
-class DataStoreSeedFlagStore(private val dataStore: DataStore<Preferences>) : SeedFlagStore {
-    override suspend fun isSeeded(): Boolean = dataStore.data
-        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-        .first()[PRESETS_SEEDED] ?: false
-
-    override suspend fun markSeeded() {
-        dataStore.edit { it[PRESETS_SEEDED] = true }
-    }
-
-    private companion object {
-        val PRESETS_SEEDED = booleanPreferencesKey("presets_seeded")
-    }
-}
 
 class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>) : SettingsRepository {
     /** A read error (IOException) falls back to defaults; anything else is a bug and is rethrown. */
