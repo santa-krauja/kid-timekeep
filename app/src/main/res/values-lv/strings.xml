@@ -134,6 +134,8 @@
     <string name="about_version">Versija %1$s</string>
     <string name="about_emoji_credit">Emocijzīmes: Noto Color Emoji, Apache License 2.0</string>
     <string name="about_license_title">Licences</string>
+    <string name="about_app_license">Kid Timekeep ir brīva programmatūra ar GNU GPL v3 licenci.</string>
+    <string name="about_source_code">Pirmkods</string>
     <string name="action_close">Aizvērt</string>
     <string name="channel_time_up">Laiks beidzies</string>
     <string name="channel_time_up_sound_only">Laiks beidzies (tikai skaņa)</string>
