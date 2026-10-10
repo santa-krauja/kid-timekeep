@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Kid(Timekeep"
+rootProject.name = "KidTimekeep"
 include(":app")
