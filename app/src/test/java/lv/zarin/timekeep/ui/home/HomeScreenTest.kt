@@ -47,9 +47,9 @@ class HomeScreenTest {
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.waitUntil(10_000) {
             rule.mainClock.advanceTimeBy(50)
-            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Nothing running").assertDoesNotExist()
+        rule.onNodeWithText("Left").assertExists()
         runBlocking { check(app.container.timerRepository.getAll().single().name == "Brush teeth") }
     }
 

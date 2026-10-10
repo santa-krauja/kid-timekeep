@@ -93,8 +93,9 @@ class FlowsTest {
     fun presetStartTwiceGivesDifferentLooks() {
         openHome()
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
-        // Preset row + one Now card.
-        rule.pumpUntilText("Brush teeth", count = 2)
+        rule.pumpUntilText("Pause")
+        rule.onNodeWithContentDescription("Back").performClick()
+        rule.pumpUntilNoText("Pause")
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.pumpUntil("second run stored") { timers().size == 2 }
 
@@ -107,14 +108,11 @@ class FlowsTest {
     fun startOverKeepsLook() {
         openHome()
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
-        rule.pumpUntilText("Brush teeth", count = 2)
+        rule.pumpUntilText("Pause")
         val before = timers().single()
 
         clock.advance(20_000)
         rule.pump(6)
-        // The Now card and the preset row both read "Brush teeth"; the card is the one that opens the timer.
-        rule.onNodeWithContentDescription("Brush teeth, ", substring = true).performClick()
-        rule.pumpUntilText("Pause")
         rule.onNodeWithContentDescription("Start over").performClick()
         rule.pumpUntilText("Start over?")
         rule.onNodeWithText("OK").performClick()

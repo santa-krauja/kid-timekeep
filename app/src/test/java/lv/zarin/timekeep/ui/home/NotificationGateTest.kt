@@ -45,6 +45,15 @@ class NotificationGateTest {
             Thread.sleep(5)
             runBlocking { app.container.timerRepository.getAll().size } == 1
         }
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithContentDescription("Back").performClick()
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isEmpty()
+        }
         rule.onNodeWithContentDescription("Start Get dressed").performClick()
         rule.mainClock.advanceTimeBy(100)
         rule.onNodeWithText("Let Kid Timekeep tell you when time is up?").assertDoesNotExist()

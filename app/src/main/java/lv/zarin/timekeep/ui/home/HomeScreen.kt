@@ -121,7 +121,7 @@ fun HomeScreen(
     val startedId by vm.startedId.collectAsStateWithLifecycle()
     LaunchedEffect(startedId) {
         startedId?.let {
-            selectedId = it
+            if (twoPane) selectedId = it else onOpenTimer(it)
             vm.consumeStartedId()
         }
     }
