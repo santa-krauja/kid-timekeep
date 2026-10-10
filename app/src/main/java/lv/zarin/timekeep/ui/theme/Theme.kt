@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import lv.zarin.timekeep.domain.ports.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -32,9 +33,6 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F),
     */
 )
-
-/** Temporary: moves to domain in Task 7. */
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 @Composable
 fun KidTimekeepTheme(
