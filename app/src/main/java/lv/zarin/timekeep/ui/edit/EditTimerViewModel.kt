@@ -50,6 +50,7 @@ data class EditState(
     val durationError: Boolean,
     val durationTooShort: Boolean = false,
     val durationEditable: Boolean = true,
+    val pauseFirstHint: Boolean = false,
     val canEdit: Boolean = true,
     val canDelete: Boolean = true,
 )
@@ -82,6 +83,9 @@ class EditTimerViewModel(
     )
     val state: StateFlow<EditState> = _state.asStateFlow()
 
+    private val _closed = MutableStateFlow(false)
+    val closed: StateFlow<Boolean> = _closed.asStateFlow()
+
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
@@ -104,14 +108,20 @@ class EditTimerViewModel(
                         else s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
                     }
                 }
-                is EditTarget.RunTimer -> timers.get(target.id)?.let { t ->
-                    _state.update {
-                        it.copy(
-                            name = t.name,
-                            durationMs = t.durationMs,
-                            look = t.look,
-                            durationEditable = t.state is RunState.Paused,
-                        )
+                is EditTarget.RunTimer -> {
+                    val t = timers.get(target.id)
+                    if (t == null) {
+                        _closed.value = true
+                    } else {
+                        _state.update {
+                            it.copy(
+                                name = t.name,
+                                durationMs = t.durationMs,
+                                look = t.look,
+                                durationEditable = t.state is RunState.Paused,
+                                pauseFirstHint = t.state is RunState.Running,
+                            )
+                        }
                     }
                 }
             }
@@ -210,7 +220,7 @@ class EditTimerViewModel(
             EditResult.InvalidName -> _state.update { it.copy(nameError = true) }
             EditResult.DurationTooShort -> _state.update { it.copy(durationTooShort = true) }
             EditResult.DurationNeedsPause -> _state.update { it.copy(durationEditable = false) }
-            EditResult.NotFound, EditResult.NotAllowed -> Unit
+            EditResult.NotFound, EditResult.NotAllowed -> _closed.value = true
         }
         false
     }

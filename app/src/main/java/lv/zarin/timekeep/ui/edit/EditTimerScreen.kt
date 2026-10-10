@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -89,6 +90,8 @@ fun EditTimerScreen(
     var lookOpen by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val isSaving by vm.isSaving.collectAsStateWithLifecycle()
+    val closed by vm.closed.collectAsStateWithLifecycle()
+    if (closed) LaunchedEffect(Unit) { onBack() }
     val notificationGate = rememberNotificationPermissionGate()
 
     BackHandler(enabled = lookOpen) { lookOpen = false }
@@ -187,7 +190,7 @@ fun EditTimerScreen(
 
             FieldLabel(stringResource(R.string.edit_duration_label))
             DurationPicker(state.durationMs, vm::setDuration, enabled = state.durationEditable)
-            if (!state.durationEditable) {
+            if (state.pauseFirstHint) {
                 Text(
                     stringResource(R.string.edit_duration_pause_first),
                     style = MaterialTheme.typography.bodySmall,
@@ -231,23 +234,28 @@ fun EditTimerScreen(
                 Text(stringResource(R.string.edit_choose_look), modifier = Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
-            if (state.target !is EditTarget.RunTimer) {
-                val isPreset = state.target is EditTarget.Preset
-                if (!isPreset) {
+            when (state.target) {
+                EditTarget.New -> {
                     SwitchRow(
                         text = stringResource(R.string.edit_save_as_preset),
                         checked = state.saveAsPreset,
                         onChange = vm::setSaveAsPreset,
                         leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
                     )
+                    SwitchRow(
+                        text = stringResource(R.string.edit_keep_look),
+                        checked = state.keepLook,
+                        onChange = vm::setKeepLook,
+                        enabled = state.saveAsPreset,
+                        indent = true,
+                    )
                 }
-                SwitchRow(
+                is EditTarget.Preset -> SwitchRow(
                     text = stringResource(R.string.edit_keep_look),
                     checked = state.keepLook,
                     onChange = vm::setKeepLook,
-                    enabled = isPreset || state.saveAsPreset,
-                    indent = !isPreset,
                 )
+                is EditTarget.RunTimer -> Unit
             }
             Spacer(Modifier.height(8.dp))
         }

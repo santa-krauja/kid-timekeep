@@ -340,4 +340,27 @@ class EditTimerViewModelTest {
         assertFalse(vm.saveTimer())
         assertEquals("Tea", timers.get(t.id)!!.name)
     }
+
+    @Test
+    fun missingTimerAtLoadCloses() = runTest(dispatcher) {
+        val vm = vm(EditTarget.RunTimer("gone"))
+        assertTrue(vm.closed.value)
+    }
+
+    @Test
+    fun timerDismissedBeforeSaveCloses() = runTest(dispatcher) {
+        val t = runningTimer()
+        val vm = vm(EditTarget.RunTimer(t.id))
+        assertFalse(vm.closed.value)
+        service.dismiss(t.id)
+        assertFalse(vm.saveTimer())
+        assertTrue(vm.closed.value)
+        assertNull(timers.get(t.id))
+    }
+
+    @Test
+    fun pauseHintOnlyForRunningTimers() = runTest(dispatcher) {
+        assertTrue(vm(EditTarget.RunTimer(runningTimer().id)).state.value.pauseFirstHint)
+        assertFalse(vm(EditTarget.RunTimer(pausedTimer().id)).state.value.pauseFirstHint)
+    }
 }

@@ -107,6 +107,22 @@ class FlowsTest {
     }
 
     @Test
+    fun editPausedTimerShowsTooShortErrorForShortDuration() {
+        openHome()
+        rule.onNodeWithContentDescription("Start Brush teeth").performClick()
+        rule.pumpUntilText("Pause")
+        clock.advance(60_000)
+        rule.onNodeWithText("Pause").performClick()
+        rule.pumpUntilText("Go on")
+        rule.onNodeWithContentDescription("Edit timer").performClick()
+        rule.pumpUntilText("Save")
+        rule.onNodeWithText("Pause the timer to change its length").assertDoesNotExist()
+        rule.onNodeWithText("30 s").performClick()
+        rule.onNodeWithText("Save").performClick()
+        rule.pumpUntilText("Must be longer than the time already passed")
+    }
+
+    @Test
     fun presetStartTwiceGivesDifferentLooks() {
         openHome()
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
