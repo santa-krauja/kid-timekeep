@@ -22,6 +22,9 @@
     <string name="cd_resume">Turpināt</string>
     <string name="cd_preset_random_look">Katru reizi cits izskats</string>
     <string name="cd_timer_card">%1$s, vēl %2$s</string>
+    <string name="cd_timer_big">%1$s: vēl %2$s no %3$s</string>
+    <string name="cd_paused_suffix">, pauzēts</string>
+    <string name="cd_timer_done">%1$s: laiks beidzies</string>
     <string name="cd_restart">Vēlreiz</string>
     <string name="preset_menu_edit">Labot</string>
     <string name="preset_menu_delete">Dzēst</string>
@@ -129,7 +132,9 @@
     <string name="about_license_title">Licences</string>
     <string name="action_close">Aizvērt</string>
     <string name="channel_time_up">Laiks beidzies</string>
-    <string name="channel_time_up_silent">Laiks beidzies (bez skaņas)</string>
+    <string name="channel_time_up_sound_only">Laiks beidzies (tikai skaņa)</string>
+    <string name="channel_time_up_vibrate_only">Laiks beidzies (tikai vibrācija)</string>
+    <string name="channel_time_up_silent">Laiks beidzies (klusi)</string>
     <string name="notification_time_up">Laiks beidzies!</string>
     <string name="notif_rationale_title">Vai atļausi Kid Timekeep paziņot, kad laiks beigsies?</string>
     <string name="notif_rationale_text">Kad taimeris beigsies, parādīsim paziņojumu ar skaņu – arī tad, ja lietotne ir aizvērta.</string>

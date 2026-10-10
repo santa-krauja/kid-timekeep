@@ -13,6 +13,7 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -41,18 +42,55 @@ class NotificationsTest {
     @Test
     fun channelsCreated() {
         Notifications.ensureChannels(context)
-        val sound = nm.getNotificationChannel(Notifications.CHANNEL_SOUND)
+        val both = nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE)
+        val soundOnly = nm.getNotificationChannel(Notifications.CHANNEL_SOUND_ONLY)
+        val vibrateOnly = nm.getNotificationChannel(Notifications.CHANNEL_VIBRATE_ONLY)
         val silent = nm.getNotificationChannel(Notifications.CHANNEL_SILENT)
-        assertNotNull(sound)
-        assertNotNull(silent)
-        assertEquals(NotificationManager.IMPORTANCE_HIGH, sound.importance)
-        assertEquals(NotificationManager.IMPORTANCE_HIGH, silent.importance)
-        assertNotNull(sound.sound)
+        for (c in listOf(both, soundOnly, vibrateOnly, silent)) {
+            assertNotNull(c)
+            assertEquals(NotificationManager.IMPORTANCE_HIGH, c.importance)
+        }
+        assertNotNull(both.sound)
+        assertTrue(both.shouldVibrate())
+        assertNotNull(soundOnly.sound)
+        assertFalse(soundOnly.shouldVibrate())
+        assertNull(vibrateOnly.sound)
+        assertTrue(vibrateOnly.shouldVibrate())
         assertNull(silent.sound)
-        assertTrue(sound.shouldVibrate())
-        assertTrue(silent.shouldVibrate())
-        assertEquals("Time's up", sound.name.toString())
+        assertFalse(silent.shouldVibrate())
+        assertEquals("time_up", Notifications.CHANNEL_SOUND_VIBRATE)
+        assertEquals("time_up_sound_only", Notifications.CHANNEL_SOUND_ONLY)
+        assertEquals("time_up_vibrate_only", Notifications.CHANNEL_VIBRATE_ONLY)
+        assertEquals("time_up_silent", Notifications.CHANNEL_SILENT)
+        assertEquals("Time's up", both.name.toString())
+        assertEquals("Time's up (sound only)", soundOnly.name.toString())
+        assertEquals("Time's up (vibrate only)", vibrateOnly.name.toString())
         assertEquals("Time's up (silent)", silent.name.toString())
+        assertEquals(4, nm.notificationChannels.size)
+    }
+
+    @Test
+    fun staleChannelsAreDeleted() {
+        nm.createNotificationChannel(
+            android.app.NotificationChannel("time_up_old", "old", NotificationManager.IMPORTANCE_HIGH),
+        )
+        Notifications.ensureChannels(context)
+        assertNull(nm.getNotificationChannel("time_up_old"))
+    }
+
+    @Test
+    fun channelFollowsSoundAndVibrateSettings() {
+        grant()
+        val cases = mapOf(
+            Settings(soundOn = true, vibrateOn = true) to Notifications.CHANNEL_SOUND_VIBRATE,
+            Settings(soundOn = true, vibrateOn = false) to Notifications.CHANNEL_SOUND_ONLY,
+            Settings(soundOn = false, vibrateOn = true) to Notifications.CHANNEL_VIBRATE_ONLY,
+            Settings(soundOn = false, vibrateOn = false) to Notifications.CHANNEL_SILENT,
+        )
+        for ((settings, channel) in cases) {
+            Notifications.showTimeUp(context, timer(), settings)
+            assertEquals(settings.toString(), channel, posted().channelId)
+        }
     }
 
     @Test
@@ -77,7 +115,7 @@ class NotificationsTest {
             Notifications.ensureChannels(context)
             Notifications.showTimeUp(context, timer(), Settings())
             assertEquals("Laiks beidzies!", posted().extras.getString(Notification.EXTRA_TEXT))
-            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {
                 androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
@@ -93,7 +131,7 @@ class NotificationsTest {
     fun channelsAreRenamedWhenActivityRecreatesAfterLocaleSwitch() {
         val scenario = androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
         try {
-            assertEquals("Time's up", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+            assertEquals("Time's up", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
             scenario.onActivity {
                 androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
                     androidx.core.os.LocaleListCompat.forLanguageTags("lv"),
@@ -105,7 +143,7 @@ class NotificationsTest {
                 System.currentTimeMillis() < deadline
             ) Thread.sleep(20)
             scenario.recreate() // what a language change does; MainActivity.onCreate must rename the channels
-            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {
                 androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
@@ -123,19 +161,12 @@ class NotificationsTest {
         val n = posted()
         assertEquals("Brush teeth", n.extras.getString(Notification.EXTRA_TITLE))
         assertEquals("Time's up!", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
-        assertEquals(Notifications.CHANNEL_SOUND, n.channelId)
+        assertEquals(Notifications.CHANNEL_SOUND_VIBRATE, n.channelId)
         assertEquals(Notification.CATEGORY_ALARM, n.category)
         assertTrue(n.flags and Notification.FLAG_AUTO_CANCEL != 0)
         val intent = shadowOf(n.contentIntent).savedIntent
         assertEquals(MainActivity::class.java.name, intent.component?.className)
         assertEquals("t1", intent.getStringExtra(MainActivity.EXTRA_TIMER_ID))
-    }
-
-    @Test
-    fun silentChannelWhenSoundOff() {
-        grant()
-        Notifications.showTimeUp(context, timer(), Settings(soundOn = false))
-        assertEquals(Notifications.CHANNEL_SILENT, posted().channelId)
     }
 
     @Test

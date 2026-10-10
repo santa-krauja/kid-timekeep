@@ -75,6 +75,10 @@ class TimerService(
         }
     }
 
+    /**
+     * Removes a run (OK on a finished timer). Deliberately not gated by [Control.DELETE]: dismissing a finished
+     * timer clears the screen; it is not deleting a saved preset or look, which is what DELETE guards.
+     */
     suspend fun dismiss(id: String): Unit = mutex.withLock {
         timers.delete(id)
         alarms.cancel(id)

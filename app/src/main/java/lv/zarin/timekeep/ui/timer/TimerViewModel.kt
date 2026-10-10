@@ -93,7 +93,9 @@ class TimerViewModel(
             var played: Pair<String, Long>? = null
             var first = true
             loaded.collect { l ->
-                val t = l?.timer
+                // The initial null (nothing loaded yet) must not overwrite the fresh seed.
+                if (l == null) return@collect
+                val t = l.timer
                 val st = t?.state
                 if (first) {
                     first = false

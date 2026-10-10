@@ -24,13 +24,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
-import lv.zarin.timekeep.testutil.QuietKidTimekeepApp
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
-@Config(application = QuietKidTimekeepApp::class)
 class SystemEventsReceiverTest {
     private val clock = FakeClock(0)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {

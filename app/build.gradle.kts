@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -17,9 +19,34 @@ android {
         minSdk = 30
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // Release signing is read from an untracked keystore.properties at the repo root; without it the release APK is unsigned.
+    val keystoreFile = rootProject.file("keystore.properties")
+    val keystoreProps: Properties? = if (keystoreFile.exists()) {
+        Properties().apply { keystoreFile.inputStream().use { load(it) } }.also { props ->
+            listOf("storeFile", "storePassword", "keyAlias", "keyPassword").forEach { key ->
+                if (props.getProperty(key).isNullOrBlank()) error("keystore.properties is missing '$key'")
+            }
+            if (!rootProject.file(props.getProperty("storeFile")).exists()) {
+                error("keystore.properties: storeFile '${props.getProperty("storeFile")}' does not exist")
+            }
+        }
+    } else {
+        null
+    }
+    if (keystoreProps != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -28,6 +55,7 @@ android {
             isPseudoLocalesEnabled = true
         }
         release {
+            if (keystoreProps != null) signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")

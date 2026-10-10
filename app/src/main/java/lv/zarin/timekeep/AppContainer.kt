@@ -1,11 +1,12 @@
 package lv.zarin.timekeep
 
 import android.content.Context
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
+import lv.zarin.timekeep.data.settings.settingsDataStore
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import java.io.File
+import java.util.concurrent.Executor
 import java.util.UUID
 import lv.zarin.timekeep.data.db.AppDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
@@ -32,13 +33,16 @@ class AppContainer(
 ) {
     val appContext: Context = context.applicationContext
 
-    val database: AppDatabase by lazy { AppDatabase.build(appContext, inMemoryDb, clock) }
+    /** In-memory (test) databases run Room work on the calling thread so tests that pump the looper are deterministic. */
+    val database: AppDatabase by lazy {
+        AppDatabase.build(appContext, inMemoryDb, clock, queryExecutor = if (inMemoryDb) Executor(Runnable::run) else null)
+    }
     val timerRepository: TimerRepository by lazy { RoomTimerRepository(database.timerDao()) }
     val presetRepository: PresetRepository by lazy { RoomPresetRepository(database.presetDao()) }
     val favouriteLookRepository: FavouriteLookRepository by lazy { RoomFavouriteLookRepository(database.favouriteLookDao()) }
 
     val settingsRepository: SettingsRepository by lazy {
-        val dataStore = PreferenceDataStoreFactory.create {
+        val dataStore = settingsDataStore {
             if (inMemoryDb) {
                 File(appContext.cacheDir, "settings-test-${UUID.randomUUID()}.preferences_pb")
             } else {

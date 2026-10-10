@@ -23,6 +23,8 @@ data class HomeState(
     val now: List<Timer> = emptyList(),
     val presets: List<Preset> = emptyList(),
     val canPause: Boolean = true,
+    val canEdit: Boolean = true,
+    val canDelete: Boolean = true,
 )
 
 class HomeViewModel(
@@ -39,6 +41,8 @@ class HomeViewModel(
             now = ts.sortedWith(compareBy<Timer> { rank(it.state) }.thenBy { it.createdAtMs }),
             presets = ps,
             canPause = policy.isAllowed(Control.PAUSE),
+            canEdit = policy.isAllowed(Control.EDIT),
+            canDelete = policy.isAllowed(Control.DELETE),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
@@ -72,6 +76,7 @@ class HomeViewModel(
     }
 
     fun deletePreset(id: String) {
+        if (!policy.isAllowed(Control.DELETE)) return
         viewModelScope.launch { presets.delete(id) }
     }
 

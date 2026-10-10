@@ -78,7 +78,7 @@ fun EditTimerScreen(
             initializer {
                 EditTimerViewModel(
                     presetId, container.presetRepository, container.favouriteLookRepository,
-                    container.timerService, container.lookPicker, container.clock,
+                    container.timerService, container.lookPicker, container.clock, container.controlPolicy,
                 )
             }
         },
@@ -112,6 +112,7 @@ fun EditTimerScreen(
             onLookChange = vm::setLook,
             onSaveFavourite = vm::saveLookAsFavourite,
             onDeleteFavourite = vm::deleteFavourite,
+            canDelete = state.canDelete,
             onDone = { lookOpen = false },
         )
         return
@@ -137,12 +138,15 @@ fun EditTimerScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (state.isEditingPreset) {
-                    OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.action_delete))
+                    if (state.canDelete) {
+                        OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.action_delete))
+                        }
                     }
                     Button(
                         onClick = { act { if (vm.savePreset()) onBack() } },
                         modifier = Modifier.weight(1f),
+                        enabled = state.canEdit,
                     ) {
                         Text(stringResource(R.string.action_save))
                     }

@@ -21,6 +21,9 @@
     <string name="cd_resume">Go on</string>
     <string name="cd_preset_random_look">New look every time</string>
     <string name="cd_timer_card">%1$s, %2$s left</string>
+    <string name="cd_timer_big">%1$s: %2$s left of %3$s</string>
+    <string name="cd_paused_suffix">, paused</string>
+    <string name="cd_timer_done">%1$s: time\'s up</string>
     <string name="cd_restart">Again</string>
     <string name="preset_menu_edit">Edit</string>
     <string name="preset_menu_delete">Delete</string>
@@ -125,6 +128,8 @@
     <string name="about_license_title">Licences</string>
     <string name="action_close">Close</string>
     <string name="channel_time_up">Time\'s up</string>
+    <string name="channel_time_up_sound_only">Time\'s up (sound only)</string>
+    <string name="channel_time_up_vibrate_only">Time\'s up (vibrate only)</string>
     <string name="channel_time_up_silent">Time\'s up (silent)</string>
     <string name="notification_time_up">Time\'s up!</string>
     <string name="notif_rationale_title">Let Kid Timekeep tell you when time is up?</string>

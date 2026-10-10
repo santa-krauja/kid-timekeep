@@ -12,6 +12,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
+import lv.zarin.timekeep.domain.control.Control
+import lv.zarin.timekeep.domain.control.ControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.timer.FavouriteLook
@@ -65,8 +68,8 @@ class EditTimerViewModelTest {
     private val lookPicker = LookPicker()
     private val service = TimerService(timers, presets, RecordingAlarmScheduler(), clock, lookPicker)
 
-    private fun TestScope.vm(presetId: String? = null): EditTimerViewModel {
-        val vm = EditTimerViewModel(presetId, presets, favourites, service, lookPicker, clock)
+    private fun TestScope.vm(presetId: String? = null, policy: ControlPolicy = AllowAllControlPolicy): EditTimerViewModel {
+        val vm = EditTimerViewModel(presetId, presets, favourites, service, lookPicker, clock, policy)
         runCurrent()
         return vm
     }
@@ -189,5 +192,37 @@ class EditTimerViewModelTest {
         vm.deleteFavourite(fav.id)
         runCurrent()
         assertTrue(vm.state.value.favourites.isEmpty())
+    }
+
+    private val denyEditDelete = ControlPolicy { it != Control.EDIT && it != Control.DELETE }
+
+    @Test
+    fun deniedEditDoesNotSavePreset() = runTest(dispatcher) {
+        presets.upsert(Preset("p", "Reading", 900_000, null, null, 0, 0, 0))
+        val vm = vm("p", denyEditDelete)
+        assertFalse(vm.state.value.canEdit)
+        assertFalse(vm.state.value.canDelete)
+        vm.setName("Changed")
+        assertFalse(vm.savePreset())
+        assertEquals("Reading", presets.get("p")!!.name)
+    }
+
+    @Test
+    fun deniedDeleteKeepsPresetAndFavourites() = runTest(dispatcher) {
+        presets.upsert(Preset("p", "Reading", 900_000, null, null, 0, 0, 0))
+        val fav = favourites.add(pinned, 0)
+        val vm = vm("p", denyEditDelete)
+        vm.deletePreset()
+        assertNotNull(presets.get("p"))
+        vm.deleteFavourite(fav.id)
+        runCurrent()
+        assertEquals(listOf(fav), vm.state.value.favourites)
+    }
+
+    @Test
+    fun editAndDeleteAllowedByDefault() = runTest(dispatcher) {
+        val vm = vm()
+        assertTrue(vm.state.value.canEdit)
+        assertTrue(vm.state.value.canDelete)
     }
 }

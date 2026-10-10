@@ -19,13 +19,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import lv.zarin.timekeep.testutil.QuietKidTimekeepApp
 import lv.zarin.timekeep.testutil.pump
 import lv.zarin.timekeep.testutil.pumpUntil
 import lv.zarin.timekeep.testutil.pumpUntilText
 
 @RunWith(AndroidJUnit4::class)
-@Config(application = QuietKidTimekeepApp::class, qualifiers = "w411dp-h891dp")
+@Config(qualifiers = "w411dp-h891dp")
 class EditTimerScreenTest {
     private val clock = FakeClock(100_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
