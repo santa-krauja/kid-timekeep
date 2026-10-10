@@ -61,23 +61,25 @@ import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
 /**
- * Wireframe E1: New timer ([presetId] == null) or Edit preset. "Choose pictures & colours" swaps the form
+ * Wireframe E1: New timer, Edit preset ([presetId]) or Edit a running timer ([timerId]). "Choose pictures & colours" swaps the form
  * for [LookPickerScreen] (E2) in place; system back closes it again.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTimerScreen(
-    presetId: String?,
     onBack: () -> Unit,
     onStarted: (timerId: String) -> Unit,
+    presetId: String? = null,
+    timerId: String? = null,
 ) {
+    val target = timerId?.let(EditTarget::RunTimer) ?: presetId?.let(EditTarget::Preset) ?: EditTarget.New
     val container = appContainer()
     val vm: EditTimerViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
                 EditTimerViewModel(
-                    presetId, container.presetRepository, container.favouriteLookRepository,
-                    container.timerService, container.lookPicker, container.clock, container.controlPolicy,
+                    target, container.presetRepository, container.favouriteLookRepository,
+                    container.timerRepository, container.timerService, container.lookPicker, container.clock, container.controlPolicy,
                 )
             }
         },
@@ -109,7 +111,15 @@ fun EditTimerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(if (state.isEditingPreset) R.string.edit_preset_title else R.string.edit_new_title))
+                    Text(
+                        stringResource(
+                            when (state.target) {
+                                EditTarget.New -> R.string.edit_new_title
+                                is EditTarget.Preset -> R.string.edit_preset_title
+                                is EditTarget.RunTimer -> R.string.edit_timer_title
+                            },
+                        ),
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -123,21 +133,29 @@ fun EditTimerScreen(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (state.isEditingPreset) {
-                    if (state.canDelete) {
-                        OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.action_delete))
+                when (state.target) {
+                    is EditTarget.Preset -> {
+                        if (state.canDelete) {
+                            OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.action_delete))
+                            }
+                        }
+                        Button(
+                            onClick = { scope.launch { if (vm.savePreset()) onBack() } },
+                            modifier = Modifier.weight(1f),
+                            enabled = state.canEdit && !isSaving,
+                        ) {
+                            Text(stringResource(R.string.action_save))
                         }
                     }
-                    Button(
-                        onClick = { scope.launch { if (vm.savePreset()) onBack() } },
-                        modifier = Modifier.weight(1f),
+                    is EditTarget.RunTimer -> Button(
+                        onClick = { scope.launch { if (vm.saveTimer()) onBack() } },
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = state.canEdit && !isSaving,
                     ) {
                         Text(stringResource(R.string.action_save))
                     }
-                } else {
-                    Button(
+                    EditTarget.New -> Button(
                         onClick = { notificationGate { scope.launch { vm.start()?.let(onStarted) } } },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isSaving,
@@ -168,7 +186,21 @@ fun EditTimerScreen(
             )
 
             FieldLabel(stringResource(R.string.edit_duration_label))
-            DurationPicker(state.durationMs, vm::setDuration)
+            DurationPicker(state.durationMs, vm::setDuration, enabled = state.durationEditable)
+            if (!state.durationEditable) {
+                Text(
+                    stringResource(R.string.edit_duration_pause_first),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (state.durationTooShort) {
+                Text(
+                    stringResource(R.string.edit_duration_too_short),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             Column(
                 Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -199,21 +231,24 @@ fun EditTimerScreen(
                 Text(stringResource(R.string.edit_choose_look), modifier = Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
-            if (!state.isEditingPreset) {
+            if (state.target !is EditTarget.RunTimer) {
+                val isPreset = state.target is EditTarget.Preset
+                if (!isPreset) {
+                    SwitchRow(
+                        text = stringResource(R.string.edit_save_as_preset),
+                        checked = state.saveAsPreset,
+                        onChange = vm::setSaveAsPreset,
+                        leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    )
+                }
                 SwitchRow(
-                    text = stringResource(R.string.edit_save_as_preset),
-                    checked = state.saveAsPreset,
-                    onChange = vm::setSaveAsPreset,
-                    leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    text = stringResource(R.string.edit_keep_look),
+                    checked = state.keepLook,
+                    onChange = vm::setKeepLook,
+                    enabled = isPreset || state.saveAsPreset,
+                    indent = !isPreset,
                 )
             }
-            SwitchRow(
-                text = stringResource(R.string.edit_keep_look),
-                checked = state.keepLook,
-                onChange = vm::setKeepLook,
-                enabled = state.isEditingPreset || state.saveAsPreset,
-                indent = !state.isEditingPreset,
-            )
             Spacer(Modifier.height(8.dp))
         }
     }

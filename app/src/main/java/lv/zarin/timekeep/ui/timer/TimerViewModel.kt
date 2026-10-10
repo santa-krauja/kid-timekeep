@@ -32,6 +32,7 @@ data class TimerControls(
     val canPause: Boolean,
     val showAddMinute: Boolean,
     val addMinuteEnabled: Boolean,
+    val canEdit: Boolean,
 )
 
 data class TimerUiState(
@@ -78,6 +79,7 @@ class TimerViewModel(
                 canPause = policy.isAllowed(Control.PAUSE),
                 showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
                 addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
+                canEdit = policy.isAllowed(Control.EDIT),
             ),
             showNumbers = l.settings.showNumbers,
             keepScreenOn = l.settings.keepScreenOn && phase != TimerPhase.Finished,

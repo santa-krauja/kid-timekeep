@@ -11,6 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.domain.control.Control
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.RunState
@@ -36,13 +37,15 @@ class TimerScreenTest {
 
     private var backs = 0
 
+    private var edited: String? = null
+
     private fun show(state: RunState) {
         runBlocking {
             app.container.timerRepository.upsert(Timer("t", "Brush teeth", 120_000, look, null, state, 0, 0))
         }
         // Hourglasses animate forever, so the clock is driven by hand.
         rule.mainClock.autoAdvance = false
-        rule.setContent { TimerScreen("t", onBack = { backs++ }) }
+        rule.setContent { TimerScreen("t", onBack = { backs++ }, onEdit = { edited = it }) }
     }
 
     /** Drives frames by hand and lets Room / ViewModel work on the main looper run. */
@@ -87,5 +90,21 @@ class TimerScreenTest {
             pump()
             runBlocking { (app.container.timerRepository.get("t")!!.state as RunState.Running).sinceMs == 100_000L }
         }
+    }
+
+    @Test
+    fun editButtonOpensEditForThisTimer() {
+        show(RunState.Running(sinceMs = 100_000, elapsedBeforeMs = 0))
+        waitForText("Pause")
+        rule.onNodeWithContentDescription("Edit timer").performClick()
+        assertEquals("t", edited)
+    }
+
+    @Test
+    fun editButtonIsHiddenWhenPolicyDeniesEdit() {
+        app.container = TestAppContainer(app, clock = clock, controlPolicy = { it != Control.EDIT })
+        show(RunState.Running(sinceMs = 100_000, elapsedBeforeMs = 0))
+        waitForText("Pause")
+        rule.onNodeWithContentDescription("Edit timer").assertDoesNotExist()
     }
 }

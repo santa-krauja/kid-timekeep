@@ -76,6 +76,10 @@
     <string name="edit_save_as_preset">Save as preset</string>
     <string name="edit_keep_look">Keep this look every time</string>
     <string name="action_start">Start</string>
+    <string name="cd_edit_timer">Edit timer</string>
+    <string name="edit_duration_pause_first">Pause the timer to change its length</string>
+    <string name="edit_duration_too_short">Must be longer than the time already passed</string>
+    <string name="edit_timer_title">Edit timer</string>
     <string name="action_save">Save</string>
     <string name="action_done">Done</string>
     <string name="look_title">Pictures &amp; colours</string>

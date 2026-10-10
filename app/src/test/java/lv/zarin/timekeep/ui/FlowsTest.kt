@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
@@ -87,6 +88,22 @@ class FlowsTest {
         rule.pumpUntilNoText("Time's up!")
         rule.pumpUntilText("Nothing running")
         assertEquals(emptyList<Timer>(), timers())
+    }
+
+    @Test
+    fun editRunningTimerRenamesItOnTheTimerScreen() {
+        openHome()
+        rule.onNodeWithContentDescription("Start Brush teeth").performClick()
+        rule.pumpUntilText("Pause")
+        rule.onNodeWithContentDescription("Edit timer").performClick()
+        rule.pumpUntilText("Save")
+        rule.onNodeWithText("Pause the timer to change its length").assertExists()
+        rule.onNode(hasSetTextAction()).performTextReplacement("Wash hands")
+        rule.onNodeWithText("Save").performClick()
+        rule.pumpUntilText("Pause")
+        rule.pumpUntil("renamed") { timers().single().name == "Wash hands" }
+        rule.pumpUntilText("Wash hands")
+        assertTrue(timers().single().state is RunState.Running)
     }
 
     @Test

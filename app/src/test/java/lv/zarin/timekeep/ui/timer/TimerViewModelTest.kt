@@ -150,7 +150,7 @@ class TimerViewModelTest {
         vm.state.onEach { }.launchIn(backgroundScope)
         runCurrent()
         assertEquals(
-            TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false),
+            TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false, canEdit = true),
             vm.state.value!!.controls,
         )
     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -71,7 +72,8 @@ import lv.zarin.timekeep.ui.common.pauseToggleSpec
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
 @Composable
-fun TimerScreen(timerId: String, onBack: () -> Unit) = TimerContent(timerId, onClose = onBack, showBack = true)
+fun TimerScreen(timerId: String, onBack: () -> Unit, onEdit: (String) -> Unit = {}) =
+    TimerContent(timerId, onClose = onBack, showBack = true, onEdit = onEdit)
 
 /**
  * The big timer. Used as the phone route (`showBack = true`) and as the tablet detail pane
@@ -79,7 +81,7 @@ fun TimerScreen(timerId: String, onBack: () -> Unit) = TimerContent(timerId, onC
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
+fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit: (String) -> Unit = {}) {
     val landscape = currentWindowAdaptiveInfo().windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
     val container = appContainer()
     val vm: TimerViewModel = viewModel(
@@ -151,6 +153,13 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                     if (showBack) {
                         IconButton(onClick = onClose) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        }
+                    }
+                },
+                actions = {
+                    if (state?.controls?.canEdit == true) {
+                        IconButton(onClick = { onEdit(timerId) }) {
+                            Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.cd_edit_timer))
                         }
                     }
                 },

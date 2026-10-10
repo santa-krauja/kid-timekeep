@@ -80,6 +80,10 @@
     <string name="edit_save_as_preset">Saglabāt sarakstā</string>
     <string name="edit_keep_look">Vienmēr izmantot šo izskatu</string>
     <string name="action_start">Sākt</string>
+    <string name="cd_edit_timer">Labot taimeri</string>
+    <string name="edit_duration_pause_first">Lai mainītu ilgumu, vispirms nopauzē taimeri</string>
+    <string name="edit_duration_too_short">Jābūt garākam par jau pagājušo laiku</string>
+    <string name="edit_timer_title">Labot taimeri</string>
     <string name="action_save">Saglabāt</string>
     <string name="action_done">Gatavs</string>
     <string name="look_title">Attēli un krāsas</string>

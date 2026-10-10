@@ -99,6 +99,7 @@ fun HomeScreen(
     onOpenTimer: (String) -> Unit,
     onNewTimer: () -> Unit,
     onEditPreset: (String) -> Unit = {},
+    onEditTimer: (String) -> Unit = {},
 ) {
     val container = appContainer()
     val vm: HomeViewModel = viewModel(
@@ -162,7 +163,7 @@ fun HomeScreen(
                         }
                     } else {
                         key(shownId) {
-                            TimerContent(shownId, onClose = { selectedId = null }, showBack = false)
+                            TimerContent(shownId, onClose = { selectedId = null }, showBack = false, onEdit = onEditTimer)
                         }
                     }
                 }

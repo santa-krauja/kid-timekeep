@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import lv.zarin.timekeep.domain.EditResult
 import lv.zarin.timekeep.domain.TimerService
 import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
 import lv.zarin.timekeep.domain.control.Control
@@ -16,18 +17,26 @@ import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.PresetRepository
+import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.FavouriteLook
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.MAX_DURATION_MS
+import lv.zarin.timekeep.domain.timer.MAX_NAME_LENGTH
 import lv.zarin.timekeep.domain.timer.MIN_DURATION_MS
 import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.Preset
+import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.isValidDuration
 import lv.zarin.timekeep.domain.timer.newId
 
-const val MAX_NAME_LENGTH = 40
 const val DEFAULT_DURATION_MS = 5 * 60_000L
+
+sealed interface EditTarget {
+    data object New : EditTarget
+    data class Preset(val id: String) : EditTarget
+    data class RunTimer(val id: String) : EditTarget
+}
 
 data class EditState(
     val name: String,
@@ -35,19 +44,21 @@ data class EditState(
     val look: Look,
     val saveAsPreset: Boolean,
     val keepLook: Boolean,
-    val isEditingPreset: Boolean,
+    val target: EditTarget,
     val favourites: List<FavouriteLook>,
     val nameError: Boolean,
     val durationError: Boolean,
+    val durationTooShort: Boolean = false,
+    val durationEditable: Boolean = true,
     val canEdit: Boolean = true,
     val canDelete: Boolean = true,
 )
 
-/** New timer (presetId == null) or Edit preset. */
 class EditTimerViewModel(
-    private val presetId: String?,
+    private val target: EditTarget,
     private val presets: PresetRepository,
     private val favourites: FavouriteLookRepository,
+    private val timers: TimerRepository,
     private val service: TimerService,
     private val lookPicker: LookPicker,
     private val clock: Clock,
@@ -61,7 +72,7 @@ class EditTimerViewModel(
             look = PLACEHOLDER_LOOK,
             saveAsPreset = false,
             keepLook = false,
-            isEditingPreset = presetId != null,
+            target = target,
             favourites = emptyList(),
             nameError = false,
             durationError = false,
@@ -79,12 +90,30 @@ class EditTimerViewModel(
 
     init {
         viewModelScope.launch {
-            val p = presetId?.let { presets.get(it) }
-            preset = p
-            val look = p?.pinnedLook ?: service.suggestLook()
-            _state.update { s ->
-                if (p == null) s.copy(look = look)
-                else s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+            when (target) {
+                EditTarget.New -> {
+                    val look = service.suggestLook()
+                    _state.update { it.copy(look = look) }
+                }
+                is EditTarget.Preset -> {
+                    val p = presets.get(target.id)
+                    preset = p
+                    val look = p?.pinnedLook ?: service.suggestLook()
+                    _state.update { s ->
+                        if (p == null) s.copy(look = look)
+                        else s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+                    }
+                }
+                is EditTarget.RunTimer -> timers.get(target.id)?.let { t ->
+                    _state.update {
+                        it.copy(
+                            name = t.name,
+                            durationMs = t.durationMs,
+                            look = t.look,
+                            durationEditable = t.state is RunState.Paused,
+                        )
+                    }
+                }
             }
         }
         viewModelScope.launch {
@@ -101,7 +130,7 @@ class EditTimerViewModel(
     /** Clamped to [MIN_DURATION_MS, MAX_DURATION_MS]. */
     fun setDuration(ms: Long) {
         val clamped = ms.coerceIn(MIN_DURATION_MS, MAX_DURATION_MS)
-        _state.update { it.copy(durationMs = clamped, durationError = false) }
+        _state.update { it.copy(durationMs = clamped, durationError = false, durationTooShort = false) }
     }
 
     fun shuffle() {
@@ -159,7 +188,7 @@ class EditTimerViewModel(
     suspend fun savePreset(): Boolean = exclusively(whenBusy = false) {
         if (!policy.isAllowed(Control.EDIT)) return@exclusively false
         val s = validated() ?: return@exclusively false
-        val p = preset ?: presetId?.let { presets.get(it) } ?: return@exclusively false
+        val p = preset ?: (target as? EditTarget.Preset)?.let { presets.get(it.id) } ?: return@exclusively false
         presets.upsert(
             p.copy(
                 name = s.name.trim(),
@@ -171,9 +200,24 @@ class EditTimerViewModel(
         true
     }
 
+    suspend fun saveTimer(): Boolean = exclusively(whenBusy = false) {
+        val id = (target as? EditTarget.RunTimer)?.id ?: return@exclusively false
+        if (!policy.isAllowed(Control.EDIT)) return@exclusively false
+        val s = validated() ?: return@exclusively false
+        val result = service.editTimer(id, s.name, s.durationMs.takeIf { s.durationEditable }, s.look)
+        when (result) {
+            EditResult.Saved -> return@exclusively true
+            EditResult.InvalidName -> _state.update { it.copy(nameError = true) }
+            EditResult.DurationTooShort -> _state.update { it.copy(durationTooShort = true) }
+            EditResult.DurationNeedsPause -> _state.update { it.copy(durationEditable = false) }
+            EditResult.NotFound, EditResult.NotAllowed -> Unit
+        }
+        false
+    }
+
     suspend fun deletePreset(): Boolean = exclusively(whenBusy = false) {
         if (!policy.isAllowed(Control.DELETE)) return@exclusively false
-        presetId?.let { presets.delete(it) }
+        (target as? EditTarget.Preset)?.let { presets.delete(it.id) }
         true
     }
 
