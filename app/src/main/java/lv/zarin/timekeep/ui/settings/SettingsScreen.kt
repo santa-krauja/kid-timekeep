@@ -2,6 +2,7 @@ package lv.zarin.timekeep.ui.settings
 
 import android.content.Intent
 import android.provider.Settings
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,6 +80,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+            LanguageDropdown()
             SwitchRow(R.string.settings_show_numbers, settings.showNumbers, vm::setShowNumbers)
             SwitchRow(R.string.settings_sound, settings.soundOn, vm::setSound)
             SwitchRow(R.string.settings_vibrate, settings.vibrateOn, vm::setVibrate)
@@ -113,6 +116,59 @@ private fun SwitchRow(label: Int, checked: Boolean, onChange: (Boolean) -> Unit)
     )
 }
 
+private fun appLocaleTag(): String? =
+    AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguageDropdown() {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val options = remember(context) { languageOptions(context) }
+    // Empty list = follow the system.
+    var currentTag by remember { mutableStateOf(appLocaleTag()) }
+    // Re-read when coming back (and the activity recreates after a change), so it never goes stale.
+    LifecycleResumeEffect(Unit) {
+        currentTag = appLocaleTag()
+        onPauseOrDispose { }
+    }
+    val current = options.firstOrNull { it.tag == currentTag } ?: options.first()
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        OutlinedTextField(
+            value = current.label,
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text(stringResource(R.string.settings_language)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                .testTag("language_dropdown"),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    modifier = Modifier.testTag("language_option_${option.tag ?: "system"}"),
+                    text = { Text(option.label) },
+                    onClick = {
+                        expanded = false
+                        if (option != current) {
+                            AppCompatDelegate.setApplicationLocales(
+                                LocaleListCompat.forLanguageTags(option.tag ?: ""),
+                            )
+                            currentTag = option.tag
+                            // Notification channel names are renamed by MainActivity.onCreate after the recreation.
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThemeDropdown(mode: ThemeMode, onSelect: (ThemeMode) -> Unit) {
@@ -134,7 +190,8 @@ private fun ThemeDropdown(mode: ThemeMode, onSelect: (ThemeMode) -> Unit) {
             singleLine = true,
             label = { Text(stringResource(R.string.settings_theme)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                .testTag("theme_dropdown"),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ThemeMode.entries.forEach { m ->

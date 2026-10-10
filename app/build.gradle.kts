@@ -23,6 +23,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Adds the en-XA (accented, long) and ar-XB (RTL) pseudo-locales to the system language list for QA.
+            isPseudoLocalesEnabled = true
+        }
         release {
             optimization {
                 enable = true
@@ -48,7 +52,7 @@ android {
     lint {
         abortOnError = true
         checkDependencies = true
-        error += listOf("HardcodedText")
+        error += listOf("HardcodedText", "MissingTranslation")
     }
 }
 

@@ -56,6 +56,67 @@ class NotificationsTest {
     }
 
     @Test
+    @org.robolectric.annotation.Config(sdk = [30]) // API < 33: AppCompat only localises Activity contexts
+    fun notificationAndChannelsFollowAppLocale() {
+        grant()
+        // On API < 33 the locale is only persisted (and so visible to non-Activity contexts) once an
+        // AppCompat activity has synced it, as happens in the real app.
+        val scenario = androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
+        scenario.onActivity {
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                androidx.core.os.LocaleListCompat.forLanguageTags("lv"),
+            )
+        }
+        try {
+            // AppCompat persists the locale on a background executor (API < 33), so wait for it.
+            val deadline = System.currentTimeMillis() + 5_000
+            while (androidx.core.content.ContextCompat.getContextForLanguage(context)
+                    .getString(lv.zarin.timekeep.R.string.notification_time_up) != "Laiks beidzies!" &&
+                System.currentTimeMillis() < deadline
+            ) Thread.sleep(20)
+            Notifications.ensureChannels(context)
+            Notifications.showTimeUp(context, timer(), Settings())
+            assertEquals("Laiks beidzies!", posted().extras.getString(Notification.EXTRA_TEXT))
+            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+        } finally {
+            scenario.onActivity {
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+                )
+            }
+            scenario.close()
+        }
+    }
+
+    @Test
+    @org.robolectric.annotation.Config(sdk = [30])
+    fun channelsAreRenamedWhenActivityRecreatesAfterLocaleSwitch() {
+        val scenario = androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
+        try {
+            assertEquals("Time's up", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+            scenario.onActivity {
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.forLanguageTags("lv"),
+                )
+            }
+            val deadline = System.currentTimeMillis() + 5_000
+            while (androidx.core.content.ContextCompat.getContextForLanguage(context)
+                    .getString(lv.zarin.timekeep.R.string.channel_time_up) != "Laiks beidzies" &&
+                System.currentTimeMillis() < deadline
+            ) Thread.sleep(20)
+            scenario.recreate() // what a language change does; MainActivity.onCreate must rename the channels
+            assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND).name.toString())
+        } finally {
+            scenario.onActivity {
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+                )
+            }
+            scenario.close()
+        }
+    }
+
+    @Test
     fun timeUpNotificationHasNameAndDeepLink() {
         grant()
         Notifications.showTimeUp(context, timer(), Settings())

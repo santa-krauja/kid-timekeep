@@ -111,9 +111,10 @@ private fun NumberStepper(label: String, value: Int, max: Int, onChange: (Int) -
         IconButton(onClick = { onChange(if (value >= max) 0 else value + 1) }) {
             Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = stringResource(R.string.cd_increase, label))
         }
+        val valueDescription = stringResource(R.string.cd_stepper_value, label, value)
         Text(
             value.toString().padStart(2, '0'),
-            modifier = Modifier.semantics { contentDescription = "$label $value" },
+            modifier = Modifier.semantics { contentDescription = valueDescription },
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
