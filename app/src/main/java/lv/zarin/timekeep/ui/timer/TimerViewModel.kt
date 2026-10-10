@@ -38,13 +38,15 @@ data class TimerUiState(
 
 class TimerViewModel(
     private val timerId: String,
-    timers: TimerRepository,
+    private val timers: TimerRepository,
     private val service: TimerService,
     private val favourites: FavouriteLookRepository,
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val policy: ControlPolicy = AllowAllControlPolicy,
     private val feedback: TimeUpFeedback,
+    /** Removes the time's-up notification of a timer id (no-op in tests). */
+    private val clearNotification: (String) -> Unit = {},
 ) : ViewModel() {
 
     private val flip = MutableStateFlow(0)
@@ -78,16 +80,40 @@ class TimerViewModel(
 
     fun nowMs(): Long = clock.nowMs()
 
-    /** Runs while the screen is started: finishes an overdue timer and plays the feedback once. */
+    /**
+     * Runs while the screen is started. Plays the feedback once when it observes the timer go from Running to
+     * Finished (whoever finished it: this ticker, the alarm receiver or another screen), and finishes an
+     * overdue timer itself in case no alarm did. Opening an already-Finished timer plays nothing.
+     */
     suspend fun runTicker() = coroutineScope {
-        // Keep `loaded` hot so the ticker can check overdue locally and leave the service alone until then.
-        launch { loaded.collect { } }
+        launch {
+            // Seed from a fresh read: the cached StateFlow value can be stale after the screen was stopped.
+            val fresh = timers.get(timerId)?.state
+            var previous: RunState? = fresh
+            var played: Pair<String, Long>? = null
+            var first = true
+            loaded.collect { l ->
+                val t = l?.timer
+                val st = t?.state
+                if (first) {
+                    first = false
+                    // Replayed stale value (e.g. Running while the timer finished meanwhile): ignore it.
+                    if (fresh is RunState.Finished && st !is RunState.Finished) return@collect
+                }
+                if (t != null && st is RunState.Finished && previous is RunState.Running) {
+                    val key = t.id to st.finishedAtMs
+                    if (key != played) {
+                        played = key
+                        val s = settings.settings.first()
+                        feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
+                    }
+                }
+                previous = st
+            }
+        }
         while (true) {
             val timer = loaded.value?.timer
-            if (timer != null && timer.isOverdue(clock.nowMs()) && service.finishIfOverdue(timerId) != null) {
-                val s = settings.settings.first()
-                feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
-            }
+            if (timer != null && timer.isOverdue(clock.nowMs())) service.finishIfOverdue(timerId)
             delay(TICK_MS)
         }
     }
@@ -104,6 +130,7 @@ class TimerViewModel(
 
     fun restart() {
         flip.value += 1
+        clearNotification(timerId)
         viewModelScope.launch { service.restart(timerId) }
     }
 
@@ -114,8 +141,12 @@ class TimerViewModel(
     }
 
     fun dismiss() {
+        clearNotification(timerId)
         viewModelScope.launch { service.dismiss(timerId) }
     }
+
+    /** The Finished timer is on screen, so a leftover notification for it is stale. */
+    fun onFinishedShown() = clearNotification(timerId)
 
     fun saveLookAsFavourite() {
         val look = state.value?.timer?.look ?: return

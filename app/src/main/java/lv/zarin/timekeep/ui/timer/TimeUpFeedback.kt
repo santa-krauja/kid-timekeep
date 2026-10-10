@@ -12,6 +12,7 @@ interface TimeUpFeedback {
 
 class AndroidTimeUpFeedback(private val context: Context) : TimeUpFeedback {
     override fun play(sound: Boolean, vibrate: Boolean) {
+        android.util.Log.d("TimeUpFeedback", "play sound=$sound vibrate=$vibrate")
         if (sound) {
             runCatching {
                 RingtoneManager.getRingtone(

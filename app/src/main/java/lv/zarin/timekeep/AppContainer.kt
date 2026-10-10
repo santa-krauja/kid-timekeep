@@ -11,7 +11,7 @@ import lv.zarin.timekeep.data.db.AppDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
-import lv.zarin.timekeep.alarm.NoOpAlarmScheduler
+import lv.zarin.timekeep.alarm.AndroidAlarmScheduler
 import lv.zarin.timekeep.domain.TimerService
 import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
 import lv.zarin.timekeep.domain.control.ControlPolicy
@@ -50,8 +50,7 @@ class AppContainer(
 
     val lookPicker = LookPicker()
 
-    // Task 21 replaces this with the AlarmManager adapter.
-    val alarmScheduler: AlarmScheduler = NoOpAlarmScheduler
+    val alarmScheduler: AlarmScheduler by lazy { AndroidAlarmScheduler(appContext) }
 
     val timerService: TimerService by lazy {
         TimerService(timerRepository, presetRepository, alarmScheduler, clock, lookPicker, controlPolicy)

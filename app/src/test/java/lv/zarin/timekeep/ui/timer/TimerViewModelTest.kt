@@ -75,9 +75,12 @@ class TimerViewModelTest {
     private val alarms = RecordingAlarmScheduler()
     private val service = TimerService(timers, InMemoryPresetRepository(), alarms, clock, LookPicker())
 
+    private val cleared = mutableListOf<String>()
+
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
         lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+        clearNotification = { cleared += it },
     )
 
     private suspend fun seed(state: RunState, duration: Long = 60_000) =
@@ -119,6 +122,20 @@ class TimerViewModelTest {
         assertEquals(1, s.flipTrigger)
         assertEquals(look, s.timer.look)
         assertTrue(s.timer.state is RunState.Running)
+    }
+
+    @Test
+    fun restartDismissAndShowingFinishedClearNotification() = runTest(dispatcher) {
+        seed(RunState.Finished(60_000))
+        val vm = vm()
+        vm.restart()
+        runCurrent()
+        assertEquals(listOf("t"), cleared)
+        vm.dismiss()
+        runCurrent()
+        assertEquals(listOf("t", "t"), cleared)
+        vm.onFinishedShown()
+        assertEquals(listOf("t", "t", "t"), cleared)
     }
 
     @Test
@@ -171,6 +188,42 @@ class TimerViewModelTest {
         val vm = vm()
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
+    }
+
+    @Test
+    fun receiverFinishingVisibleTimerStillPlaysFeedbackOnce() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        assertTrue(feedback.calls.isEmpty())
+        // The alarm receiver finishes the timer before the ticker's own overdue check.
+        clock.now = 60_000
+        service.finishIfOverdue("t")
+        advanceTimeBy(100)
+        runCurrent()
+        assertEquals(1, feedback.calls.size)
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertEquals(1, feedback.calls.size)
+    }
+
+    @Test
+    fun finishedWhileStoppedDoesNotReplayOnReturn() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        val first = backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        first.cancel() // screen stopped
+        advanceTimeBy(10_000) // WhileSubscribed(5s) lapses; the cached value stays Running
+        clock.now = 60_000
+        service.finishIfOverdue("t") // receiver finished it and notified
+        backgroundScope.launch { vm.runTicker() } // screen started again
+        advanceTimeBy(2_000)
         runCurrent()
         assertTrue(feedback.calls.isEmpty())
     }

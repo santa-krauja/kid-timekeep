@@ -64,4 +64,17 @@ class HomeViewModelTest {
         runCurrent()
         assertEquals(false, vm.state.value.canPause)
     }
+
+    @Test
+    fun restartClearsNotification() = runTest {
+        val timers = InMemoryTimerRepository()
+        val clock = FakeClock(0)
+        val service = TimerService(timers, InMemoryPresetRepository(), RecordingAlarmScheduler(), clock, LookPicker())
+        timers.upsert(timer("fin", RunState.Finished(5), 1))
+        val cleared = mutableListOf<String>()
+        val vm = HomeViewModel(timers, InMemoryPresetRepository(), service, clock, clearNotification = { cleared += it })
+        vm.restart("fin")
+        runCurrent()
+        assertEquals(listOf("fin"), cleared)
+    }
 }

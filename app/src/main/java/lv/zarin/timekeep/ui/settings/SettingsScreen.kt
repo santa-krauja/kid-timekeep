@@ -1,5 +1,7 @@
 package lv.zarin.timekeep.ui.settings
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +41,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -78,6 +82,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             SwitchRow(R.string.settings_sound, settings.soundOn, vm::setSound)
             SwitchRow(R.string.settings_vibrate, settings.vibrateOn, vm::setVibrate)
             SwitchRow(R.string.settings_keep_screen_on, settings.keepScreenOn, vm::setKeepScreenOn)
+            NotificationsRow()
             ThemeDropdown(settings.themeMode, vm::setTheme)
             ListItem(
                 modifier = Modifier.clickable(
@@ -161,5 +166,35 @@ private fun AboutDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } },
+    )
+}
+
+@Composable
+private fun NotificationsRow() {
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
+    // The user may change this in system settings and come back.
+    LifecycleResumeEffect(Unit) {
+        allowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        onPauseOrDispose { }
+    }
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(stringResource(R.string.settings_notifications)) },
+        trailingContent = {
+            if (allowed) {
+                Text(stringResource(R.string.notif_allowed), modifier = Modifier.testTag("notif_allowed"))
+            } else {
+                TextButton(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+                        )
+                    },
+                    modifier = Modifier.testTag("notif_turn_on"),
+                ) { Text(stringResource(R.string.notif_turn_on)) }
+            }
+        },
     )
 }

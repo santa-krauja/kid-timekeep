@@ -101,4 +101,20 @@ class SettingsScreenTest {
         // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.
         waitForText("Licensed under the Apache License, Version 2.0", substring = true)
     }
+
+    @Test
+    fun notificationsRowShowsAllowedOrTurnOn() {
+        val nm = app.getSystemService(android.app.NotificationManager::class.java)
+        org.robolectric.Shadows.shadowOf(nm).setNotificationsEnabled(true)
+        show()
+        rule.onNodeWithText("Allowed ✓").assertExists()
+    }
+
+    @Test
+    fun notificationsRowOffersTurnOnWhenDisabled() {
+        val nm = app.getSystemService(android.app.NotificationManager::class.java)
+        org.robolectric.Shadows.shadowOf(nm).setNotificationsEnabled(false)
+        show()
+        rule.onNodeWithText("Turn on").assertExists()
+    }
 }

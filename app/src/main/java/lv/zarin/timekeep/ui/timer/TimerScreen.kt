@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -56,6 +57,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
+import lv.zarin.timekeep.alarm.Notifications
+import lv.zarin.timekeep.alarm.VisibleTimerTracker
 import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.elapsedMs
@@ -86,6 +89,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                     container.favouriteLookRepository, container.settingsRepository,
                     container.clock, container.controlPolicy,
                     AndroidTimeUpFeedback(container.appContext),
+                    clearNotification = { Notifications.cancel(container.appContext, it) },
                 )
             }
         },
@@ -96,6 +100,24 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
 
     LaunchedEffect(lifecycle, vm) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { vm.runTicker() }
+    }
+    DisposableEffect(lifecycle, timerId) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> VisibleTimerTracker.visibleTimerId = timerId
+                Lifecycle.Event.ON_STOP ->
+                    if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
+        }
+    }
+    if (state?.timer?.state is RunState.Finished) {
+        LaunchedEffect(timerId) { vm.onFinishedShown() }
     }
     if (missing) {
         LaunchedEffect(Unit) { onClose() }
@@ -193,16 +215,16 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = { confirmStartOver = true }) {
+                if (!finished) OutlinedButton(onClick = { confirmStartOver = true }) {
                     Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_start_over))
                 }
-                if (s.canPause || paused) {
+                if (!finished && (s.canPause || paused)) {
                     Button(onClick = vm::togglePause) {
                         Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, contentDescription = null)
                         Text(stringResource(if (paused) R.string.action_go_on else R.string.action_pause))
                     }
                 }
-                if (s.showAddMinute) {
+                if (!finished && s.showAddMinute) {
                     OutlinedButton(onClick = vm::addMinute, enabled = s.addMinuteEnabled) {
                         Text(stringResource(R.string.action_add_minute), maxLines = 1)
                     }
