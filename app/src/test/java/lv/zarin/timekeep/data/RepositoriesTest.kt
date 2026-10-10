@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import lv.zarin.timekeep.data.db.AppDatabase
+import lv.zarin.timekeep.testutil.inMemoryDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
@@ -30,7 +31,7 @@ class RepositoriesTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = AppDatabase.build(context, inMemory = true)
+        db = inMemoryDatabase(context)
     }
 
     @After

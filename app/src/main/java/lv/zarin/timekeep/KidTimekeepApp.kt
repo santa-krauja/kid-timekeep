@@ -20,7 +20,7 @@ open class KidTimekeepApp : Application() {
     override fun onCreate() {
         super.onCreate()
         if (!::container.isInitialized) {
-            container = AppContainer(this)
+            container = DefaultAppContainer(this)
         }
         Notifications.ensureChannels(this)
         if (!reconcileOnLaunch()) return

@@ -9,7 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 class TimerScreenTest {
     private val clock = FakeClock(100_000)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        it.container = TestAppContainer(it, clock = clock)
     }
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
 

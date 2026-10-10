@@ -8,7 +8,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit
 class TimeUpReceiverTest {
     private val clock = FakeClock(0)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        it.container = TestAppContainer(it, clock = clock)
     }
     private val nm = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val look = Look(PictureId.STAR, SandColor.SKY, PictureId.HEART, SandColor.PEACH)

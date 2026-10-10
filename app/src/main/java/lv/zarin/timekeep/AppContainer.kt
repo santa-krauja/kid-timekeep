@@ -4,18 +4,14 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import lv.zarin.timekeep.data.settings.DataStoreSeedFlagStore
-import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
-import lv.zarin.timekeep.data.settings.settingsDataStore
-import lv.zarin.timekeep.domain.ports.SettingsRepository
-import java.io.File
-import java.util.concurrent.Executor
-import java.util.UUID
+import lv.zarin.timekeep.alarm.AndroidAlarmScheduler
 import lv.zarin.timekeep.data.db.AppDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
-import lv.zarin.timekeep.alarm.AndroidAlarmScheduler
+import lv.zarin.timekeep.data.settings.DataStoreSeedFlagStore
+import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
+import lv.zarin.timekeep.data.settings.settingsDataStore
 import lv.zarin.timekeep.domain.PresetSeeder
 import lv.zarin.timekeep.domain.StarterPresetNames
 import lv.zarin.timekeep.domain.TimerService
@@ -26,53 +22,52 @@ import lv.zarin.timekeep.domain.ports.AlarmScheduler
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.PresetRepository
+import lv.zarin.timekeep.domain.ports.SettingsRepository
 import lv.zarin.timekeep.domain.ports.SystemClock
 import lv.zarin.timekeep.domain.ports.TimerRepository
 
-/** Hand-wired dependencies. Fields are added by later tasks. */
-class AppContainer(
-    context: Context,
-    val inMemoryDb: Boolean = false,
-    val clock: Clock = SystemClock,
-    val controlPolicy: ControlPolicy = AllowAllControlPolicy,
-) {
-    val appContext: Context = context.applicationContext
-
-    /** In-memory (test) databases run Room work on the calling thread so tests that pump the looper are deterministic. */
-    val database: AppDatabase by lazy {
-        AppDatabase.build(appContext, inMemoryDb, queryExecutor = if (inMemoryDb) Executor(Runnable::run) else null)
-    }
-    val timerRepository: TimerRepository by lazy { RoomTimerRepository(database.timerDao()) }
-    val presetRepository: PresetRepository by lazy { RoomPresetRepository(database.presetDao()) }
-    val favouriteLookRepository: FavouriteLookRepository by lazy { RoomFavouriteLookRepository(database.favouriteLookDao()) }
-
-    private val settingsDataStore: DataStore<Preferences> by lazy {
-        settingsDataStore {
-            if (inMemoryDb) {
-                File(appContext.cacheDir, "settings-test-${UUID.randomUUID()}.preferences_pb")
-            } else {
-                appContext.preferencesDataStoreFile("settings")
-            }
-        }
-    }
-
-    val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(settingsDataStore) }
-
-    val presetSeeder: PresetSeeder by lazy {
-        PresetSeeder(presetRepository, DataStoreSeedFlagStore(settingsDataStore), clock)
-    }
+interface AppContainer {
+    val appContext: Context
+    val clock: Clock
+    val controlPolicy: ControlPolicy
+    val timerRepository: TimerRepository
+    val presetRepository: PresetRepository
+    val favouriteLookRepository: FavouriteLookRepository
+    val settingsRepository: SettingsRepository
+    val presetSeeder: PresetSeeder
+    val lookPicker: LookPicker
+    val alarmScheduler: AlarmScheduler
+    val timerService: TimerService
 
     fun starterPresetNames() = StarterPresetNames(
         teeth = appContext.getString(R.string.seed_preset_teeth),
         dressed = appContext.getString(R.string.seed_preset_dressed),
         reading = appContext.getString(R.string.seed_preset_reading),
     )
+}
 
-    val lookPicker = LookPicker()
+class DefaultAppContainer(context: Context) : AppContainer {
+    override val appContext: Context = context.applicationContext
+    override val clock: Clock = SystemClock
+    override val controlPolicy: ControlPolicy = AllowAllControlPolicy
+    override val lookPicker = LookPicker()
 
-    val alarmScheduler: AlarmScheduler by lazy { AndroidAlarmScheduler(appContext) }
+    private val database: AppDatabase by lazy { AppDatabase.build(appContext) }
+    private val settingsDataStore: DataStore<Preferences> by lazy {
+        settingsDataStore { appContext.preferencesDataStoreFile("settings") }
+    }
 
-    val timerService: TimerService by lazy {
+    override val timerRepository: TimerRepository by lazy { RoomTimerRepository(database.timerDao()) }
+    override val presetRepository: PresetRepository by lazy { RoomPresetRepository(database.presetDao()) }
+    override val favouriteLookRepository: FavouriteLookRepository by lazy {
+        RoomFavouriteLookRepository(database.favouriteLookDao())
+    }
+    override val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(settingsDataStore) }
+    override val presetSeeder: PresetSeeder by lazy {
+        PresetSeeder(presetRepository, DataStoreSeedFlagStore(settingsDataStore), clock)
+    }
+    override val alarmScheduler: AlarmScheduler by lazy { AndroidAlarmScheduler(appContext) }
+    override val timerService: TimerService by lazy {
         TimerService(timerRepository, presetRepository, alarmScheduler, clock, lookPicker, controlPolicy)
     }
 }

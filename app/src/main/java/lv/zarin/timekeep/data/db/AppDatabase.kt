@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import java.util.concurrent.Executor
 
 @Database(
     entities = [TimerEntity::class, PresetEntity::class, FavouriteLookEntity::class],
@@ -21,28 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         const val NAME = "kidtimekeep.db"
 
-        /**
-         * The single construction path, used by production and tests. [queryExecutor] (null = Room's default
-         * background executors) lets tests run every query and transaction on the calling thread, so the
-         * Robolectric main looper they pump is the only thread doing work; it also allows main-thread queries.
-         */
-        fun build(
-            context: Context,
-            inMemory: Boolean,
-            queryExecutor: Executor? = null,
-        ): AppDatabase {
-            val app = context.applicationContext
-            val builder = if (inMemory) {
-                Room.inMemoryDatabaseBuilder(app, AppDatabase::class.java)
-            } else {
-                Room.databaseBuilder(app, AppDatabase::class.java, NAME)
-            }
-            if (queryExecutor != null) {
-                builder.setQueryExecutor(queryExecutor)
-                    .setTransactionExecutor(queryExecutor)
-                    .allowMainThreadQueries()
-            }
-            return builder.build()
-        }
+        fun build(context: Context): AppDatabase =
+            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME).build()
     }
 }

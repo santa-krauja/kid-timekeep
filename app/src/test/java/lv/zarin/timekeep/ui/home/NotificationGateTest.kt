@@ -8,7 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
@@ -21,7 +21,7 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(AndroidJUnit4::class)
 class NotificationGateTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
         seedStarterPresets(it.container)
     }
 

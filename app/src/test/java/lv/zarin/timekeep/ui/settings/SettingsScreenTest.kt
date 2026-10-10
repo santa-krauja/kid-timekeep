@@ -14,7 +14,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.testutil.FakeClock
@@ -30,7 +30,7 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true, clock = FakeClock(100_000))
+        it.container = TestAppContainer(it, clock = FakeClock(100_000))
     }
     private val repo get() = app.container.settingsRepository
 
