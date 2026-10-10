@@ -74,6 +74,7 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.alarm.Notifications
+import lv.zarin.timekeep.domain.format.formatClock
 import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
@@ -380,7 +381,7 @@ private fun NowCard(
                 }
             } else {
                 val label = if (paused) R.string.timer_paused_label else R.string.timer_left_label
-                val clockText = lv.zarin.timekeep.domain.format.formatClock(timer.remainingMs(nowMs), roundUp = true)
+                val clockText = formatClock(timer.remainingMs(nowMs), roundUp = true)
                 Text(
                     stringResource(label, clockText),
                     style = MaterialTheme.typography.bodyMedium,

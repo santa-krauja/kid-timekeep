@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.hourglass
 
+import android.content.Context
 import android.graphics.drawable.VectorDrawable
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
@@ -14,7 +15,7 @@ import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class EmojiResourcesTest {
-    private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
     fun everyPictureHasALoadableVector() {

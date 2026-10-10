@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.timer
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,7 +187,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean) {
                     Surface(
                         shape = RoundedCornerShape(50),
                         color = MaterialTheme.colorScheme.surface,
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         Text(
                             stringResource(R.string.paused_badge),

@@ -1,5 +1,7 @@
 package lv.zarin.timekeep.ui.settings
 
+import android.app.NotificationManager
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -7,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.core.os.LocaleListCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
@@ -20,6 +23,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(AndroidJUnit4::class)
@@ -92,7 +97,7 @@ class SettingsScreenTest {
     }
 
     @Test
-    @org.robolectric.annotation.Config(sdk = [30])
+    @Config(sdk = [30])
     fun languageDropdownIsFirstAndSetsAppLocale() {
         show()
         waitForTag("language_dropdown")
@@ -101,11 +106,11 @@ class SettingsScreenTest {
         rule.onNodeWithTag("language_option_lv").performClick()
         try {
             waitFor("lv locale") {
-                androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags() == "lv"
+                AppCompatDelegate.getApplicationLocales().toLanguageTags() == "lv"
             }
         } finally {
-            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                androidx.core.os.LocaleListCompat.getEmptyLocaleList(),
+            AppCompatDelegate.setApplicationLocales(
+                LocaleListCompat.getEmptyLocaleList(),
             )
         }
     }
@@ -127,16 +132,16 @@ class SettingsScreenTest {
 
     @Test
     fun notificationsRowShowsAllowedOrTurnOn() {
-        val nm = app.getSystemService(android.app.NotificationManager::class.java)
-        org.robolectric.Shadows.shadowOf(nm).setNotificationsEnabled(true)
+        val nm = app.getSystemService(NotificationManager::class.java)
+        shadowOf(nm).setNotificationsEnabled(true)
         show()
         rule.onNodeWithText("Allowed ✓").assertExists()
     }
 
     @Test
     fun notificationsRowOffersTurnOnWhenDisabled() {
-        val nm = app.getSystemService(android.app.NotificationManager::class.java)
-        org.robolectric.Shadows.shadowOf(nm).setNotificationsEnabled(false)
+        val nm = app.getSystemService(NotificationManager::class.java)
+        shadowOf(nm).setNotificationsEnabled(false)
         show()
         rule.onNodeWithText("Turn on").assertExists()
     }

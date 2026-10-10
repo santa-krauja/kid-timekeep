@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.alarm
 
+import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -80,7 +81,7 @@ class TimeUpReceiverTest {
         deliver("t1")
         assertTrue(shadowOf(nm).allNotifications.isEmpty())
         // The early fire re-arms the alarm instead of stranding the timer.
-        val am = app.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val am = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         assertEquals(10_000L, shadowOf(am).scheduledAlarms.single().triggerAtTime)
     }
 
