@@ -123,6 +123,7 @@ class SettingsScreenTest {
             .performScrollTo().performClick()
         waitForText("Licences")
         waitForText("Close")
+        waitForText("Copyright (C) 2026 Santa Zarina")
         waitForText("Kid Timekeep is free software under the GNU GPL v3.")
         waitForText("Source code")
         // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.

@@ -61,10 +61,6 @@ import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.rememberNotificationPermissionGate
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 
-/**
- * Wireframe E1: New timer, Edit preset ([presetId]) or Edit a running timer ([timerId]). "Choose pictures & colours" swaps the form
- * for [LookPickerScreen] (E2) in place; system back closes it again.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTimerScreen(

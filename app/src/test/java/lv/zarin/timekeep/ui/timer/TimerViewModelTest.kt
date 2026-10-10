@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lv.zarin.timekeep.domain.TimerService
+import lv.zarin.timekeep.domain.control.AllowAllControlPolicy
 import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.Settings
@@ -84,7 +85,7 @@ class TimerViewModelTest {
 
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
-        lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+        AllowAllControlPolicy, feedback,
         clearNotification = { cleared += it },
     )
 
@@ -283,7 +284,7 @@ class TimerViewModelTest {
         }
         val vm = TimerViewModel(
             "t", slowTimers, service, favourites, FakeSettingsRepository(Settings()), clock,
-            lv.zarin.timekeep.domain.control.AllowAllControlPolicy, feedback,
+            AllowAllControlPolicy, feedback,
         )
         backgroundScope.launch { vm.runTicker() }
         runCurrent()

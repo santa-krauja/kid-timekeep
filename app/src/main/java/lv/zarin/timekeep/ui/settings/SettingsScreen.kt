@@ -222,6 +222,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.about_license_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.about_copyright))
                 Text(stringResource(R.string.about_app_license))
                 TextButton(onClick = {
                     try {

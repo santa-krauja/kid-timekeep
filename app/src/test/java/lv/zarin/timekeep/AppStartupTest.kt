@@ -1,6 +1,7 @@
 package lv.zarin.timekeep
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -33,7 +34,7 @@ class AppStartupTest {
     @Test
     fun cancellationDuringSeedingPropagates() = runTest {
         assertThrows(CancellationException::class.java) {
-            kotlinx.coroutines.runBlocking {
+            runBlocking {
                 AppStartup.launch(seed = { throw CancellationException("x") }, reconcile = { calls += "reconcile" })
             }
         }
