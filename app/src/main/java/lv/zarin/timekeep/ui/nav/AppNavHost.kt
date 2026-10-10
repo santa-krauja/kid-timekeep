@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import lv.zarin.timekeep.ui.edit.EditTimerScreen
 import lv.zarin.timekeep.ui.home.HomeScreen
 import lv.zarin.timekeep.ui.settings.SettingsScreen
@@ -21,10 +22,23 @@ fun AppNavHost(navController: NavHostController, startTimerId: String? = null) {
                 onOpenSettings = { navController.navigate(SettingsRoute) },
                 onOpenTimer = { navController.navigate(TimerRoute(it)) },
                 onNewTimer = { navController.navigate(EditTimerRoute()) },
+                onEditPreset = { navController.navigate(EditTimerRoute(it)) },
             )
         }
-        composable<TimerRoute> { TimerScreen(onBack = { navController.popBackStack() }) }
-        composable<EditTimerRoute> { EditTimerScreen(onBack = { navController.popBackStack() }) }
+        composable<TimerRoute> { entry ->
+            TimerScreen(entry.toRoute<TimerRoute>().timerId, onBack = { navController.popBackStack() })
+        }
+        composable<EditTimerRoute> { entry ->
+            EditTimerScreen(
+                presetId = entry.toRoute<EditTimerRoute>().presetId,
+                onBack = { navController.popBackStack() },
+                onStarted = { id ->
+                    navController.navigate(TimerRoute(id)) {
+                        popUpTo<EditTimerRoute> { inclusive = true }
+                    }
+                },
+            )
+        }
         composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
     }
 }

@@ -1,0 +1,38 @@
+package lv.zarin.timekeep.ui.home
+
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.MainActivity
+import lv.zarin.timekeep.domain.control.Control
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class HomeControlPolicyTest {
+    init {
+        val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>()
+        app.container = AppContainer(app, inMemoryDb = true, controlPolicy = { it != Control.PAUSE })
+    }
+
+    @get:Rule
+    val rule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun noPauseButtonWhenPolicyDeniesPause() {
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithContentDescription("Start Brush teeth").performClick()
+        rule.waitUntil(10_000) {
+            rule.mainClock.advanceTimeBy(50)
+            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+        }
+        rule.onNodeWithContentDescription("Pause").assertDoesNotExist()
+    }
+}
