@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import org.junit.Rule
@@ -25,6 +26,7 @@ class HomeScreenTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
         it.container = AppContainer(it, inMemoryDb = true)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule

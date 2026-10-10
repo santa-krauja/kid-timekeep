@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.domain.timer.Look
@@ -79,6 +80,7 @@ class AccessibilityTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
         it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        seedStarterPresets(it.container)
     }
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
     private val density get() = app.resources.displayMetrics.density
@@ -225,6 +227,7 @@ class HomeAccessibilityTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
         it.container = AppContainer(it, inMemoryDb = true)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -257,6 +260,7 @@ class HomeFinishedCardTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
         it.container = AppContainer(it, inMemoryDb = true)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule

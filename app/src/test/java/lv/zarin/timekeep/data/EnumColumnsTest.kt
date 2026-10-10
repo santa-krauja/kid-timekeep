@@ -11,7 +11,6 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
-import lv.zarin.timekeep.testutil.FakeClock
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -26,7 +25,7 @@ class EnumColumnsTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = AppDatabase.build(context, inMemory = true, clock = FakeClock(1_000L))
+        db = AppDatabase.build(context, inMemory = true)
     }
 
     @After

@@ -7,6 +7,11 @@ import lv.zarin.timekeep.alarm.VisibleTimerTracker
 
 /** Shared reconcile entry point for app launch and system broadcasts. */
 object AppStartup {
+    suspend fun launch(container: AppContainer, context: Context) {
+        container.presetSeeder.seedIfNeeded(container.starterPresetNames())
+        reconcile(container, context)
+    }
+
     /**
      * Finishes overdue timers, re-arms alarms of the running ones, and posts a time's-up notification for each
      * timer finished by this call (except the one whose screen is visible).

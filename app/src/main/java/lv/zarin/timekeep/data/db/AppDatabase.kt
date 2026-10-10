@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import lv.zarin.timekeep.domain.ports.Clock
 import java.util.concurrent.Executor
 
 @Database(
@@ -30,7 +29,6 @@ abstract class AppDatabase : RoomDatabase() {
         fun build(
             context: Context,
             inMemory: Boolean,
-            clock: Clock,
             queryExecutor: Executor? = null,
         ): AppDatabase {
             val app = context.applicationContext
@@ -44,7 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .setTransactionExecutor(queryExecutor)
                     .allowMainThreadQueries()
             }
-            return builder.addCallback(SeedPresets(app, clock)).build()
+            return builder.build()
         }
     }
 }

@@ -1,8 +1,13 @@
 package lv.zarin.timekeep
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import lv.zarin.timekeep.data.settings.DataStoreSeedFlagStore
 import lv.zarin.timekeep.data.settings.DataStoreSettingsRepository
+import lv.zarin.timekeep.domain.PresetSeeder
+import lv.zarin.timekeep.domain.StarterPresetNames
 import lv.zarin.timekeep.data.settings.settingsDataStore
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import java.io.File
@@ -35,22 +40,33 @@ class AppContainer(
 
     /** In-memory (test) databases run Room work on the calling thread so tests that pump the looper are deterministic. */
     val database: AppDatabase by lazy {
-        AppDatabase.build(appContext, inMemoryDb, clock, queryExecutor = if (inMemoryDb) Executor(Runnable::run) else null)
+        AppDatabase.build(appContext, inMemoryDb, queryExecutor = if (inMemoryDb) Executor(Runnable::run) else null)
     }
     val timerRepository: TimerRepository by lazy { RoomTimerRepository(database.timerDao()) }
     val presetRepository: PresetRepository by lazy { RoomPresetRepository(database.presetDao()) }
     val favouriteLookRepository: FavouriteLookRepository by lazy { RoomFavouriteLookRepository(database.favouriteLookDao()) }
 
-    val settingsRepository: SettingsRepository by lazy {
-        val dataStore = settingsDataStore {
+    private val settingsDataStore: DataStore<Preferences> by lazy {
+        settingsDataStore {
             if (inMemoryDb) {
                 File(appContext.cacheDir, "settings-test-${UUID.randomUUID()}.preferences_pb")
             } else {
                 appContext.preferencesDataStoreFile("settings")
             }
         }
-        DataStoreSettingsRepository(dataStore)
     }
+
+    val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(settingsDataStore) }
+
+    val presetSeeder: PresetSeeder by lazy {
+        PresetSeeder(presetRepository, DataStoreSeedFlagStore(settingsDataStore), clock)
+    }
+
+    fun starterPresetNames() = StarterPresetNames(
+        teeth = appContext.getString(R.string.seed_preset_teeth),
+        dressed = appContext.getString(R.string.seed_preset_dressed),
+        reading = appContext.getString(R.string.seed_preset_reading),
+    )
 
     val lookPicker = LookPicker()
 

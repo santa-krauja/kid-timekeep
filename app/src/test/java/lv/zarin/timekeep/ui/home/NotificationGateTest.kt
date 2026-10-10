@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -21,6 +22,7 @@ import org.robolectric.shadows.ShadowLooper
 class NotificationGateTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.container = AppContainer(it, inMemoryDb = true)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
