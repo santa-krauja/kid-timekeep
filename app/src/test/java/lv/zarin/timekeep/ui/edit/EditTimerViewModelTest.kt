@@ -80,8 +80,9 @@ class EditTimerViewModelTest {
     @Test
     fun startWithPresetSavesPresetAndStartsRun() = runTest(dispatcher) {
         val vm = vm()
-        assertTrue(vm.state.value.saveAsPreset)
+        assertFalse(vm.state.value.saveAsPreset)
         assertFalse(vm.state.value.isEditingPreset)
+        vm.setSaveAsPreset(true)
         vm.setName("  Reading ")
         vm.setDuration(900_000)
         val look = vm.state.value.look
@@ -103,7 +104,6 @@ class EditTimerViewModelTest {
     fun startWithoutPresetCreatesOneOff() = runTest(dispatcher) {
         val vm = vm()
         vm.setName("Tidy up")
-        vm.setSaveAsPreset(false)
         val id = vm.start()
         assertNotNull(id)
         assertNull(timers.get(id!!)!!.presetId)
@@ -114,6 +114,7 @@ class EditTimerViewModelTest {
     fun keepLookPinsLook() = runTest(dispatcher) {
         val vm = vm()
         vm.setName("Bath")
+        vm.setSaveAsPreset(true)
         vm.setLook(pinned)
         vm.setKeepLook(true)
         vm.start()
@@ -234,6 +235,7 @@ class EditTimerViewModelTest {
         val vm = EditTimerViewModel(null, slowPresets, favourites, service, lookPicker, clock)
         runCurrent()
         vm.setName("Reading")
+        vm.setSaveAsPreset(true)
         assertFalse(vm.isSaving.value)
         val first = async { vm.start() }
         runCurrent()

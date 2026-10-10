@@ -1,5 +1,9 @@
 package lv.zarin.timekeep.ui.edit
 
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -54,6 +58,18 @@ class EditTimerScreenTest {
         rule.onNodeWithText("Done").performClick()
         rule.pumpUntilText("Choose pictures & colours")
         rule.onNodeWithText("Top picture").assertDoesNotExist()
+    }
+
+    @Test
+    fun keepLookIsDisabledUntilSaveAsPresetIsOn() {
+        show()
+        rule.pumpUntilText("Save as preset")
+        rule.onNodeWithText("Save as preset").performScrollTo().assertIsOff()
+        rule.onNodeWithText("Keep this look every time").performScrollTo().assertIsNotEnabled()
+        rule.onNodeWithText("Save as preset").performClick()
+        rule.pump(2)
+        rule.onNodeWithText("Save as preset").assertIsOn()
+        rule.onNodeWithText("Keep this look every time").assertIsEnabled()
     }
 
     @Test

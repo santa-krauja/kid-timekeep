@@ -59,7 +59,7 @@ class EditTimerViewModel(
             name = "",
             durationMs = DEFAULT_DURATION_MS,
             look = PLACEHOLDER_LOOK,
-            saveAsPreset = presetId == null,
+            saveAsPreset = false,
             keepLook = false,
             isEditingPreset = presetId != null,
             favourites = emptyList(),
