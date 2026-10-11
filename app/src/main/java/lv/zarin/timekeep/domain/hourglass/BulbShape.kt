@@ -6,7 +6,6 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-/** Geometry of the triangular hourglass in a logical 100 x 128 box. Ported from the approved prototype. */
 object BulbShape {
     const val WIDTH = 100f
     const val HEIGHT = 128f
@@ -24,7 +23,6 @@ object BulbShape {
     private const val EXPONENT = 1.12f
     private const val SHOULDER = 0.07f
 
-    /** Half of the glass width at logical height [y]; 0 outside the bulbs. */
     fun halfWidth(y: Float): Float {
         if (y < TOP0 || y > BOT1) return 0f
         if (y >= TOP1 && y <= BOT0) return NECK
@@ -39,11 +37,9 @@ object BulbShape {
 
     internal fun gauss(x: Float, s: Float): Float = exp(-(x * x) / (s * s))
 
-    /**
-     * Sand surface height at [x]. Top sand dips into a funnel (y = level + amp·g), bottom sand forms
-     * a mound (y = level − amp·g). Clamped to the bulb's own half.
-     */
-    fun surfaceY(top: Boolean, level: Float, amp: Float, x: Float): Float =
-        if (top) min(TOP1, level + amp * gauss(x - CX, SIG_TOP))
-        else max(BOT0, level - amp * gauss(x - CX, SIG_BOT))
+    fun surfaceY(top: Boolean, level: Float, amp: Float, x: Float): Float = if (top) {
+        min(TOP1, level + amp * gauss(x - CX, SIG_TOP))
+    } else {
+        max(BOT0, level - amp * gauss(x - CX, SIG_BOT))
+    }
 }

@@ -33,12 +33,12 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
 
-    private fun timer(id: String, state: RunState, created: Long) =
-        Timer(id, id, 60_000, look, null, state, created, created)
+    private fun timer(id: String, state: RunState, created: Long) = Timer(id, id, 60_000, look, null, state, created, created)
 
     @Test
     fun nowSortedRunningPausedFinished() = runTest {

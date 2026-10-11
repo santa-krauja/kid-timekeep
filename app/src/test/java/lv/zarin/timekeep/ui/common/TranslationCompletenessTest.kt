@@ -7,13 +7,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.w3c.dom.Element
 
-/** Plain JVM check that values-lv covers every translatable key in values, with matching placeholders. */
 class TranslationCompletenessTest {
     private data class Entry(val type: String, val texts: Map<String, String>, val translatable: Boolean)
 
     private fun load(dir: String): Map<String, Entry> {
-        // Paths are relative to the working directory: Gradle runs unit tests from the module dir
-        // (app/), some IDE run configurations use the repo root, so try both.
+        // Gradle runs unit tests from app/, some IDE run configurations from the repo root.
         val file = listOf(File("src/main/res/$dir/strings.xml"), File("app/src/main/res/$dir/strings.xml"))
             .firstOrNull { it.exists() } ?: error("Missing $dir/strings.xml")
         val root = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement

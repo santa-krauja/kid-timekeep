@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    The MVP keeps all data on this device (backup comes in a later version). allowBackup="false" turns off
-    cloud backup; on Android 12+ device-to-device transfer ignores that flag, so every domain is excluded here.
--->
+<!-- allowBackup="false" does not stop Android 12+ device-to-device transfer, so every domain is excluded. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

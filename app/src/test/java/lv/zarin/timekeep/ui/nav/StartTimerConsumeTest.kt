@@ -5,14 +5,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.navigation.NavHostController
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.TestAppContainer
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +43,10 @@ class StartTimerConsumeTest {
                 nav.addOnDestinationChangedListener(l)
                 onDispose { nav.removeOnDestinationChangedListener(l) }
             }
-            AppNavHost(nav, startTimerId = pending, onStartTimerConsumed = { consumedCalls++; pending = null })
+            AppNavHost(nav, startTimerId = pending, onStartTimerConsumed = {
+                consumedCalls++
+                pending = null
+            })
         }
         rule.mainClock.autoAdvance = false
         repeat(200) {
@@ -54,7 +57,6 @@ class StartTimerConsumeTest {
         }
         assertEquals(1, consumedCalls)
         assertEquals(1, timerArrivals)
-        // Recomposition (as after recreation) with the id already consumed must not navigate again.
         rule.runOnIdle { }
         repeat(5) { rule.mainClock.advanceTimeBy(50) }
         assertEquals(1, consumedCalls)

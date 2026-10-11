@@ -5,13 +5,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface RunState {
-    @Serializable @SerialName("running")
+    @Serializable
+    @SerialName("running")
     data class Running(val sinceMs: Long, val elapsedBeforeMs: Long) : RunState
 
-    @Serializable @SerialName("paused")
+    @Serializable
+    @SerialName("paused")
     data class Paused(val elapsedMs: Long) : RunState
 
-    @Serializable @SerialName("finished")
+    @Serializable
+    @SerialName("finished")
     data class Finished(val finishedAtMs: Long) : RunState
 }
 
@@ -24,5 +27,5 @@ data class Timer(
     val presetId: String?,
     val state: RunState,
     val createdAtMs: Long,
-    val updatedAtMs: Long,
+    val updatedAtMs: Long
 )

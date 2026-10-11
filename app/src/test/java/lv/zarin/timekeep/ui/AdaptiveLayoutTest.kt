@@ -9,11 +9,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
-import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
+import lv.zarin.timekeep.testutil.TestAppContainer
+import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +34,6 @@ class AdaptiveLayoutTest {
         rule.waitUntil(5_000) {
             rule.onAllNodesWithContentDescription("Start Brush teeth").fetchSemanticsNodes().isNotEmpty()
         }
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
     }
@@ -95,11 +94,10 @@ class AdaptiveLayoutTest {
     @Config(qualifiers = "w1280dp-h800dp")
     fun tabletTappingNowCardSelectsIt() {
         startBrushTeeth()
-        waitForCount("Brush teeth", 3) // preset row + card + detail title
+        waitForCount("Brush teeth", 3)
         rule.onNodeWithContentDescription("Start Get dressed").performClick()
         waitForCount("Get dressed", 3)
         waitForCount("Brush teeth", 2)
-        // The Now cards come before the preset rows; the first one is Brush teeth.
         rule.onAllNodesWithText("Brush teeth")[0].performClick()
         waitForCount("Brush teeth", 3)
         waitForCount("Get dressed", 2)

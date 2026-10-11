@@ -7,19 +7,18 @@ import android.os.Vibrator
 import android.util.Log
 import lv.zarin.timekeep.BuildConfig
 
-/** In-app sound and vibration played once when a timer finishes while the screen is open. */
 interface TimeUpFeedback {
     fun play(sound: Boolean, vibrate: Boolean)
 }
 
 class AndroidTimeUpFeedback(private val context: Context) : TimeUpFeedback {
     override fun play(sound: Boolean, vibrate: Boolean) {
-        // QA evidence on debug builds only.
         if (BuildConfig.DEBUG) Log.d("TimeUpFeedback", "play sound=$sound vibrate=$vibrate")
         if (sound) {
             runCatching {
                 RingtoneManager.getRingtone(
-                    context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    context,
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 )?.play()
             }
         }

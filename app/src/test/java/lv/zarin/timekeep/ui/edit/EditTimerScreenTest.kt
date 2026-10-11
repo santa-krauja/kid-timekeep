@@ -4,28 +4,27 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
+import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.pump
+import lv.zarin.timekeep.testutil.pumpUntil
+import lv.zarin.timekeep.testutil.pumpUntilText
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import lv.zarin.timekeep.testutil.pump
-import lv.zarin.timekeep.testutil.pumpUntil
-import lv.zarin.timekeep.testutil.pumpUntilText
 
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w411dp-h891dp")
@@ -41,7 +40,6 @@ class EditTimerScreenTest {
 
     private var started: String? = null
 
-    // The preview glasses are not running, so the clock can auto-advance (performScrollTo needs it).
     private fun show() {
         rule.setContent { EditTimerScreen(presetId = null, onBack = {}, onStarted = { started = it }) }
         rule.pump()

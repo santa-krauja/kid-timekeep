@@ -14,7 +14,6 @@ open class KidTimekeepApp : Application() {
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    /** Tests turn this off so the launch reconcile can't race with a container they swap in afterwards. */
     protected open fun reconcileOnLaunch(): Boolean = true
 
     override fun onCreate() {
@@ -24,7 +23,6 @@ open class KidTimekeepApp : Application() {
         }
         Notifications.ensureChannels(this)
         if (!reconcileOnLaunch()) return
-        // The process may have been killed while a timer ran: finish/notify/re-arm from timestamps.
         appScope.launch {
             try {
                 AppStartup.launch(container, this@KidTimekeepApp)

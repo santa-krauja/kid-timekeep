@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -15,13 +16,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.semantics.SemanticsNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.domain.timer.Look
@@ -30,7 +28,9 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.ui.edit.EditTimerScreen
 import lv.zarin.timekeep.ui.settings.SettingsScreen
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
@@ -44,20 +44,18 @@ import org.robolectric.shadows.ShadowLooper
 
 private fun flatten(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::flatten)
 
-/** Every node with a click action needs a spoken label and a >= 48 dp touch target. */
 private fun assertClickablesAccessible(root: SemanticsNode, density: Float, screen: String) {
     val clickables = flatten(root).filter { it.config.contains(SemanticsActions.OnClick) }
     assertTrue("$screen: no clickables found", clickables.isNotEmpty())
     for (n in clickables) {
-        // Off-screen items of scrolling containers are not laid out; they are checked when scrolled in.
         val cfg = n.config
         val label = buildList {
             cfg.getOrNull(SemanticsProperties.ContentDescription)?.let { addAll(it) }
             cfg.getOrNull(SemanticsProperties.Text)?.let { t -> addAll(t.map { it.text }) }
             cfg.getOrNull(SemanticsProperties.EditableText)?.let { add(it.text) }
         }.joinToString("").trim()
-        // Text fields are labelled by their placeholder/label child; accept a text-input role as labelled.
-        val labelled = label.isNotEmpty() || cfg.contains(SemanticsActions.SetText)
+        val labelledByTextFieldChild = cfg.contains(SemanticsActions.SetText)
+        val labelled = label.isNotEmpty() || labelledByTextFieldChild
         assertTrue("$screen: clickable node ${n.id} has no label: $cfg", labelled)
         val b = n.touchBoundsInRoot
         val w = b.width / density
@@ -72,7 +70,6 @@ private fun contrast(a: Color, b: Color): Double {
     return (maxOf(l1, l2) + 0.05) / (minOf(l1, l2) + 0.05)
 }
 
-// Large window so scrolling lists are laid out unclipped and touch bounds are meaningful.
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w1000dp-h3000dp-mdpi")
 class AccessibilityTest {
@@ -115,7 +112,6 @@ class AccessibilityTest {
 
     @Test
     fun hourglassHasTimePhrase() {
-        // 7 minutes elapsed of 15 -> 8 left.
         showTimer(RunState.Running(sinceMs = 100_000 - 7 * 60_000L, elapsedBeforeMs = 0))
         waitForCd("Reading: 8 minutes left of 15 minutes")
     }
@@ -134,7 +130,6 @@ class AccessibilityTest {
 
     @Test
     fun overdueRunningTimerReadsTimesUp() {
-        // Started 20 minutes ago on a 15 minute timer, not yet reconciled to Finished.
         showTimer(RunState.Running(sinceMs = 100_000 - 20 * 60_000L, elapsedBeforeMs = 0))
         waitForCd("Reading: time's up")
     }
@@ -153,8 +148,8 @@ class AccessibilityTest {
         val nodes = flatten(rule.onRoot().fetchSemanticsNode())
         fun SemanticsNode.cd() = config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().joinToString()
         fun SemanticsNode.text() = config.getOrNull(SemanticsProperties.Text).orEmpty().joinToString { it.text }
-        // Compose sorts TalkBack traversal geometrically (top, then left) unless traversalIndex is set,
-        // so the order is by screen position. Tree order differs (Scaffold slots content first).
+
+        // TalkBack order follows screen position (Compose sorts geometrically), not semantics tree order.
         fun top(pred: (SemanticsNode) -> Boolean) = nodes.first(pred).boundsInRoot.top
         val title = top { it.text() == "Reading" }
         val hourglass = top { it.cd().startsWith("Reading: ") }
@@ -162,7 +157,7 @@ class AccessibilityTest {
         val controls = top { it.cd() == "Start over" }
         assertTrue(
             "title<hourglass<time<controls: $title $hourglass $time $controls",
-            title < hourglass && hourglass < time && time < controls,
+            title < hourglass && hourglass < time && time < controls
         )
     }
 
@@ -207,7 +202,7 @@ class AccessibilityTest {
             "onPrimaryContainer/primaryContainer" to (cs.onPrimaryContainer to cs.primaryContainer),
             "onSecondaryContainer/secondaryContainer" to (cs.onSecondaryContainer to cs.secondaryContainer),
             "primary/surface" to (cs.primary to cs.surface),
-            "secondary/surface" to (cs.secondary to cs.surface),
+            "secondary/surface" to (cs.secondary to cs.surface)
         )
         for ((label, p) in pairs) {
             val c = contrast(p.first, p.second)
@@ -237,12 +232,11 @@ class HomeAccessibilityTest {
     fun homeClickablesHaveLabelsAndSize() {
         rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
         val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         val now = app.container.clock.nowMs()
         runBlocking {
             app.container.timerRepository.upsert(
-                Timer("t", "Tidy", 120_000, look, null, RunState.Running(now, 0), 0, 0),
+                Timer("t", "Tidy", 120_000, look, null, RunState.Running(now, 0), 0, 0)
             )
         }
         rule.waitUntil(10_000) {
@@ -250,7 +244,9 @@ class HomeAccessibilityTest {
             rule.onAllNodesWithContentDescription("Pause").fetchSemanticsNodes().isNotEmpty()
         }
         assertClickablesAccessible(
-            rule.onRoot().fetchSemanticsNode(), app.resources.displayMetrics.density, "home",
+            rule.onRoot().fetchSemanticsNode(),
+            app.resources.displayMetrics.density,
+            "home"
         )
     }
 }

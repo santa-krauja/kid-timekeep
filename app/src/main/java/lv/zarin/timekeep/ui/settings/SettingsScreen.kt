@@ -65,7 +65,7 @@ private const val SOURCE_URL = "https://github.com/santa-krauja/kid-timekeep"
 fun SettingsScreen(onBack: () -> Unit) {
     val container = appContainer()
     val vm: SettingsViewModel = viewModel(
-        factory = viewModelFactory { initializer { SettingsViewModel(container.settingsRepository) } },
+        factory = viewModelFactory { initializer { SettingsViewModel(container.settingsRepository) } }
     )
     val settings by vm.settings.collectAsStateWithLifecycle()
     var showAbout by remember { mutableStateOf(false) }
@@ -79,9 +79,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back))
                     }
-                },
+                }
             )
-        },
+        }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
             LanguageDropdown()
@@ -94,7 +94,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             ListItem(
                 modifier = Modifier.clickable(
                     onClickLabel = stringResource(R.string.settings_about),
-                    role = Role.Button,
+                    role = Role.Button
                 ) { showAbout = true },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 headlineContent = { Text(stringResource(R.string.settings_about)) },
@@ -103,7 +103,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME))
                         Text(stringResource(R.string.about_emoji_credit))
                     }
-                },
+                }
             )
         }
     }
@@ -116,12 +116,11 @@ private fun SwitchRow(label: Int, checked: Boolean, onChange: (Boolean) -> Unit)
         modifier = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         headlineContent = { Text(stringResource(label)) },
-        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) }
     )
 }
 
-private fun appLocaleTag(): String? =
-    AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
+private fun appLocaleTag(): String? = AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,9 +128,7 @@ private fun LanguageDropdown() {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val options = remember(context) { languageOptions(context) }
-    // Empty list = follow the system.
     var currentTag by remember { mutableStateOf(appLocaleTag()) }
-    // Re-read when coming back (and the activity recreates after a change), so it never goes stale.
     LifecycleResumeEffect(Unit) {
         currentTag = appLocaleTag()
         onPauseOrDispose { }
@@ -140,7 +137,7 @@ private fun LanguageDropdown() {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         OutlinedTextField(
             value = current.label,
@@ -150,7 +147,7 @@ private fun LanguageDropdown() {
             label = { Text(stringResource(R.string.settings_language)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                .testTag("language_dropdown"),
+                .testTag("language_dropdown")
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
@@ -161,12 +158,11 @@ private fun LanguageDropdown() {
                         expanded = false
                         if (option != current) {
                             AppCompatDelegate.setApplicationLocales(
-                                LocaleListCompat.forLanguageTags(option.tag ?: ""),
+                                LocaleListCompat.forLanguageTags(option.tag ?: "")
                             )
                             currentTag = option.tag
-                            // Notification channel names are renamed by MainActivity.onCreate after the recreation.
                         }
-                    },
+                    }
                 )
             }
         }
@@ -185,7 +181,7 @@ private fun ThemeDropdown(mode: ThemeMode, onSelect: (ThemeMode) -> Unit) {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         OutlinedTextField(
             value = stringResource(label(mode)),
@@ -195,14 +191,17 @@ private fun ThemeDropdown(mode: ThemeMode, onSelect: (ThemeMode) -> Unit) {
             label = { Text(stringResource(R.string.settings_theme)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                .testTag("theme_dropdown"),
+                .testTag("theme_dropdown")
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ThemeMode.entries.forEach { m ->
                 DropdownMenuItem(
                     modifier = Modifier.testTag("theme_option_${m.name}"),
                     text = { Text(stringResource(label(m))) },
-                    onClick = { onSelect(m); expanded = false },
+                    onClick = {
+                        onSelect(m)
+                        expanded = false
+                    }
                 )
             }
         }
@@ -234,7 +233,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
                 Text(licence, modifier = Modifier.padding(top = 12.dp))
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
     )
 }
 
@@ -242,7 +241,6 @@ private fun AboutDialog(onDismiss: () -> Unit) {
 private fun NotificationsRow() {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
-    // The user may change this in system settings and come back.
     LifecycleResumeEffect(Unit) {
         allowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
         onPauseOrDispose { }
@@ -258,12 +256,12 @@ private fun NotificationsRow() {
                     onClick = {
                         context.startActivity(
                             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                         )
                     },
-                    modifier = Modifier.testTag("notif_turn_on"),
+                    modifier = Modifier.testTag("notif_turn_on")
                 ) { Text(stringResource(R.string.notif_turn_on)) }
             }
-        },
+        }
     )
 }

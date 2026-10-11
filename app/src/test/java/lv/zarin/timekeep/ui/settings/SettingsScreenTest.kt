@@ -3,8 +3,8 @@ package lv.zarin.timekeep.ui.settings
 import android.app.NotificationManager
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -14,10 +14,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -54,8 +54,7 @@ class SettingsScreenTest {
     private fun waitForText(text: String, substring: Boolean = false) =
         waitFor(text) { rule.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun waitForTag(tag: String) =
-        waitFor(tag) { rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitForTag(tag: String) = waitFor(tag) { rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
 
     private fun current() = runBlocking { repo.settings.first() }
 
@@ -110,7 +109,7 @@ class SettingsScreenTest {
             }
         } finally {
             AppCompatDelegate.setApplicationLocales(
-                LocaleListCompat.getEmptyLocaleList(),
+                LocaleListCompat.getEmptyLocaleList()
             )
         }
     }
@@ -126,7 +125,6 @@ class SettingsScreenTest {
         waitForText("Copyright (C) 2026 Santa Zarina")
         waitForText("Kid Timekeep is free software under the GNU GPL v3.")
         waitForText("Source code")
-        // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.
         waitForText("Licensed under the Apache License, Version 2.0", substring = true)
         // Apache-2.0 4(a)/(b): the full licence text and a notice that the files were modified.
         waitForText("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION", substring = true)

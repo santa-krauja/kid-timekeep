@@ -2,8 +2,8 @@
 
 package lv.zarin.timekeep.domain.ports
 
-import kotlin.time.ExperimentalTime
 import kotlin.time.Clock as KClock
+import kotlin.time.ExperimentalTime
 
 fun interface Clock {
     fun nowMs(): Long

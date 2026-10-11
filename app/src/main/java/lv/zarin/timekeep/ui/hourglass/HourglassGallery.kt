@@ -16,11 +16,6 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
 
-/*
- * Design-time gallery only (not wired into navigation): every picture on every sand colour, plus a
- * large sample. Each small glass is half run so both the wiped top and the revealed bottom show.
- */
-
 private val sampleLook = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
 @Composable
@@ -33,7 +28,7 @@ private fun Gallery() {
                         look = Look(picture, sand, picture, sand),
                         progress = { 0.5f },
                         running = false,
-                        modifier = Modifier.width(48.dp),
+                        modifier = Modifier.width(48.dp)
                     )
                 }
             }
@@ -52,7 +47,7 @@ private fun HourglassGalleryPreview() {
     widthDp = 460,
     heightDp = 1060,
     showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun HourglassGalleryDarkPreview() {

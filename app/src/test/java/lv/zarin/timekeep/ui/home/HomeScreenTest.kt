@@ -12,11 +12,11 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
-import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
+import lv.zarin.timekeep.testutil.TestAppContainer
+import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,8 +32,7 @@ class HomeScreenTest {
     @get:Rule
     val rule = createAndroidComposeRule<MainActivity>()
 
-    private fun waitForPresets() =
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
+    private fun waitForPresets() = rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun seededPresetsShownAndStartCreatesRun() {
@@ -42,7 +41,6 @@ class HomeScreenTest {
         rule.onNodeWithText("Brush teeth").assertIsDisplayed()
         rule.onNodeWithText("Get dressed").assertIsDisplayed()
         rule.onNodeWithText("Reading").assertIsDisplayed()
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.waitUntil(10_000) {

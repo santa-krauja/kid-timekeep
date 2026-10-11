@@ -2,8 +2,8 @@ package lv.zarin.timekeep.ui.edit
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -26,9 +26,9 @@ import lv.zarin.timekeep.domain.timer.MAX_DURATION_MS
 import lv.zarin.timekeep.domain.timer.MIN_DURATION_MS
 import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.Preset
+import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
-import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
@@ -63,6 +63,7 @@ class EditTimerViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     private val pinned = Look(PictureId.SUN, SandColor.SKY, PictureId.MOON, SandColor.NIGHT)
@@ -73,9 +74,8 @@ class EditTimerViewModelTest {
     private val lookPicker = LookPicker()
     private val service = TimerService(timers, presets, RecordingAlarmScheduler(), clock, lookPicker)
 
-    private fun TestScope.vm(presetId: String? = null, policy: ControlPolicy = AllowAllControlPolicy): EditTimerViewModel {
-        return vm(presetId?.let(EditTarget::Preset) ?: EditTarget.New, policy)
-    }
+    private fun TestScope.vm(presetId: String? = null, policy: ControlPolicy = AllowAllControlPolicy): EditTimerViewModel =
+        vm(presetId?.let(EditTarget::Preset) ?: EditTarget.New, policy)
 
     private fun TestScope.vm(target: EditTarget, policy: ControlPolicy = AllowAllControlPolicy): EditTimerViewModel {
         val vm = EditTimerViewModel(target, presets, favourites, timers, service, lookPicker, clock, policy)
@@ -133,7 +133,6 @@ class EditTimerViewModelTest {
         vm.start()
         assertEquals(pinned, presets.observeAll().first().single().pinnedLook)
 
-        // Editing that preset starts with keepLook on and the pinned look; turning it off unpins.
         val presetId = presets.observeAll().first().single().id
         val edit = vm(presetId)
         assertEquals(EditTarget.Preset(presetId), edit.state.value.target)

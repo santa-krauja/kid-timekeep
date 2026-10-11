@@ -21,7 +21,7 @@ private val EMOJI = listOf(
     "apple" to "1f34e",
     "rainbow" to "1f308",
     "unicorn" to "1f984",
-    "rocket" to "1f680",
+    "rocket" to "1f680"
 )
 
 private const val BASE = "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/2D/svg/"
@@ -41,11 +41,16 @@ fun main(args: Array<String>) {
             if (warnings.isNotBlank()) println("[$name] warnings: ${warnings.trim()}")
             val text = xml.toString(Charsets.UTF_8)
             val paths = Regex("<path").findAll(text).count()
-            if (paths < 3) { println("[$name] ERROR only $paths paths"); failed++; continue }
+            if (paths < 3) {
+                println("[$name] ERROR only $paths paths")
+                failed++
+                continue
+            }
             File(outDir, "emoji_$name.xml").writeText(text)
             println("[$name] ok ($paths paths)")
         } catch (e: Exception) {
-            println("[$name] FAILED: $e"); failed++
+            println("[$name] FAILED: $e")
+            failed++
         }
     }
     check(failed == 0) { "$failed emoji failed" }

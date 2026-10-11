@@ -52,7 +52,7 @@ data class EditState(
     val durationEditable: Boolean = true,
     val pauseFirstHint: Boolean = false,
     val canEdit: Boolean = true,
-    val canDelete: Boolean = true,
+    val canDelete: Boolean = true
 )
 
 class EditTimerViewModel(
@@ -63,7 +63,7 @@ class EditTimerViewModel(
     private val service: TimerService,
     private val lookPicker: LookPicker,
     private val clock: Clock,
-    private val policy: ControlPolicy = AllowAllControlPolicy,
+    private val policy: ControlPolicy = AllowAllControlPolicy
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -78,8 +78,8 @@ class EditTimerViewModel(
             nameError = false,
             durationError = false,
             canEdit = policy.isAllowed(Control.EDIT),
-            canDelete = policy.isAllowed(Control.DELETE),
-        ),
+            canDelete = policy.isAllowed(Control.DELETE)
+        )
     )
     val state: StateFlow<EditState> = _state.asStateFlow()
 
@@ -89,7 +89,6 @@ class EditTimerViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    /** The preset being edited, once loaded. */
     private var preset: Preset? = null
 
     init {
@@ -104,8 +103,11 @@ class EditTimerViewModel(
                     preset = p
                     val look = p?.pinnedLook ?: service.suggestLook()
                     _state.update { s ->
-                        if (p == null) s.copy(look = look)
-                        else s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+                        if (p == null) {
+                            s.copy(look = look)
+                        } else {
+                            s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+                        }
                     }
                 }
                 is EditTarget.RunTimer -> {
@@ -119,7 +121,7 @@ class EditTimerViewModel(
                                 durationMs = t.durationMs,
                                 look = t.look,
                                 durationEditable = t.state is RunState.Paused,
-                                pauseFirstHint = t.state is RunState.Running,
+                                pauseFirstHint = t.state is RunState.Running
                             )
                         }
                     }
@@ -131,13 +133,11 @@ class EditTimerViewModel(
         }
     }
 
-    /** Input longer than [MAX_NAME_LENGTH] is ignored. */
     fun setName(name: String) {
         if (name.length > MAX_NAME_LENGTH) return
         _state.update { it.copy(name = name, nameError = false) }
     }
 
-    /** Clamped to [MIN_DURATION_MS, MAX_DURATION_MS]. */
     fun setDuration(ms: Long) {
         val clamped = ms.coerceIn(MIN_DURATION_MS, MAX_DURATION_MS)
         _state.update { it.copy(durationMs = clamped, durationError = false, durationTooShort = false) }
@@ -169,7 +169,6 @@ class EditTimerViewModel(
         _state.update { it.copy(keepLook = on) }
     }
 
-    /** Starts a run (saving a preset first if asked). Returns the new timer id, or null when invalid. */
     suspend fun start(): String? = exclusively(whenBusy = null) {
         val s = validated() ?: return@exclusively null
         val name = s.name.trim()
@@ -184,7 +183,7 @@ class EditTimerViewModel(
                 lastLook = s.look,
                 sortOrder = order,
                 createdAtMs = now,
-                updatedAtMs = now,
+                updatedAtMs = now
             )
             presets.upsert(p)
             p.id
@@ -194,7 +193,6 @@ class EditTimerViewModel(
         service.startOneOff(name, s.durationMs, s.look, savedPresetId).id
     }
 
-    /** Saves the edited preset. Returns false when editing is not allowed, the input is invalid or the preset is gone. */
     suspend fun savePreset(): Boolean = exclusively(whenBusy = false) {
         if (!policy.isAllowed(Control.EDIT)) return@exclusively false
         val s = validated() ?: return@exclusively false
@@ -204,8 +202,8 @@ class EditTimerViewModel(
                 name = s.name.trim(),
                 durationMs = s.durationMs,
                 pinnedLook = s.look.takeIf { s.keepLook },
-                updatedAtMs = clock.nowMs(),
-            ),
+                updatedAtMs = clock.nowMs()
+            )
         )
         true
     }
@@ -252,7 +250,6 @@ class EditTimerViewModel(
     }
 
     private companion object {
-        /** Shown only until the first suggestion arrives. */
         val PLACEHOLDER_LOOK = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
     }
 }

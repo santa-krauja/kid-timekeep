@@ -30,7 +30,6 @@ sealed interface EditResult {
     data object DurationNeedsPause : EditResult
 }
 
-/** Application core: orchestrates timer transitions, persistence and alarms. */
 class TimerService(
     private val timers: TimerRepository,
     private val presets: PresetRepository,
@@ -38,7 +37,7 @@ class TimerService(
     private val clock: Clock,
     private val lookPicker: LookPicker,
     private val policy: ControlPolicy = AllowAllControlPolicy,
-    private val ids: () -> String = ::newId,
+    private val ids: () -> String = ::newId
 ) {
     private val mutex = Mutex()
 
@@ -55,15 +54,14 @@ class TimerService(
         timer
     }
 
-    suspend fun startOneOff(name: String, durationMs: Long, look: Look, presetId: String? = null): Timer =
-        mutex.withLock {
-            require(isValidDuration(durationMs)) { "Invalid duration: $durationMs" }
-            val timer = TimerActions.newRun(ids(), name.trim(), durationMs, look, presetId, clock.nowMs())
-            save(timer)
-            timer
-        }
+    suspend fun startOneOff(name: String, durationMs: Long, look: Look, presetId: String? = null): Timer = mutex.withLock {
+        require(isValidDuration(durationMs)) { "Invalid duration: $durationMs" }
+        val timer = TimerActions.newRun(ids(), name.trim(), durationMs, look, presetId, clock.nowMs())
+        save(timer)
+        timer
+    }
 
-    suspend fun pause(id: String): Unit {
+    suspend fun pause(id: String) {
         if (!policy.isAllowed(Control.PAUSE)) return
         transition(id) { TimerActions.pause(it, clock.nowMs()) }
     }
@@ -72,7 +70,7 @@ class TimerService(
 
     suspend fun restart(id: String): Unit = transition(id) { TimerActions.restart(it, clock.nowMs()) }
 
-    suspend fun addMinute(id: String): Unit {
+    suspend fun addMinute(id: String) {
         if (!policy.isAllowed(Control.ADD_MINUTE)) return
         transition(id) { TimerActions.addMinute(it, clock.nowMs()) }
     }
@@ -96,44 +94,42 @@ class TimerService(
                 name = trimmed,
                 durationMs = newDuration ?: t.durationMs,
                 look = look ?: t.look,
-                updatedAtMs = now,
-            ),
+                updatedAtMs = now
+            )
         )
         EditResult.Saved
     }
 
-    /** Returns the timer only if this call finished it. */
     suspend fun finishIfOverdue(id: String): Timer? = mutex.withLock {
         val t = timers.get(id) ?: return@withLock null
         finishOverdue(t, clock.nowMs()) ?: run {
-            if (t.state is RunState.Running) syncAlarm(t) // early or stale fire: re-arm
+            if (t.state is RunState.Running) syncAlarm(t)
             null
         }
     }
 
-    /**
-     * Removes a run (OK on a finished timer). Deliberately not gated by [Control.DELETE]: dismissing a finished
-     * timer clears the screen; it is not deleting a saved preset or look, which is what DELETE guards.
-     */
+    // Not gated by Control.DELETE: dismissing a finished run is not deleting a saved preset or look.
     suspend fun dismiss(id: String): Unit = mutex.withLock {
         timers.delete(id)
         alarms.cancel(id)
     }
 
-    /** Finishes overdue running timers (returned) and reschedules alarms of the other running ones. */
     suspend fun reconcile(): List<Timer> = mutex.withLock {
         val now = clock.nowMs()
         val finished = mutableListOf<Timer>()
         for (t in timers.getAll()) {
             val done = finishOverdue(t, now)
-            if (done != null) finished += done else if (t.state is RunState.Running) syncAlarm(t)
+            if (done != null) {
+                finished += done
+            } else if (t.state is RunState.Running) {
+                syncAlarm(t)
+            }
         }
         finished
     }
 
     private suspend fun transition(id: String, change: (Timer) -> Timer): Unit = mutex.withLock {
         val t = timers.get(id) ?: return@withLock
-        // An overdue Running timer is finished first, so actions never strand or shortchange it.
         val current = TimerActions.finish(t, clock.nowMs()).takeIf { t.isOverdue(clock.nowMs()) } ?: t
         val updated = change(current)
         if (updated === t) return@withLock
@@ -157,6 +153,5 @@ class TimerService(
         if (at != null) alarms.schedule(t.id, at) else alarms.cancel(t.id)
     }
 
-    private suspend fun activeLooks(): Set<Look> =
-        timers.getAll().filter { it.state !is RunState.Finished }.map { it.look }.toSet()
+    private suspend fun activeLooks(): Set<Look> = timers.getAll().filter { it.state !is RunState.Finished }.map { it.look }.toSet()
 }

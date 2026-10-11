@@ -37,7 +37,6 @@ class HourglassRenderTest {
     private val background = Color(0xFF102030)
     private val look = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
-    /** Pixel colour at logical hourglass coordinates; the 200x256 dp box has the exact 100:128 aspect. */
     private fun ImageBitmap.at(x: Float, y: Float): Color {
         val s = minOf(width / BulbShape.WIDTH, height / BulbShape.HEIGHT)
         val ox = (width - BulbShape.WIDTH * s) / 2
@@ -58,14 +57,11 @@ class HourglassRenderTest {
             rule.waitForIdle()
             rule.onNodeWithTag("box").captureToImage()
         }
-        // Outside the glass the box background shows through.
         assertEquals(background, shots.getValue(0f).at(2f, 64f))
-        // Full top bulb at p = 0, full bottom bulb at p = 1.
         val topFull = shots.getValue(0f).at(50f, 40f)
         val bottomFull = shots.getValue(1f).at(50f, 110f)
         assertNotEquals(background, topFull)
         assertNotEquals(background, bottomFull)
-        // The sand actually moves: the same pixels differ once that bulb is empty.
         assertNotEquals(topFull, shots.getValue(1f).at(50f, 40f))
         assertNotEquals(bottomFull, shots.getValue(0f).at(50f, 110f))
     }

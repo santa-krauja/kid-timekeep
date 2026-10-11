@@ -17,12 +17,8 @@ import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.timer.Timer
 
-/**
- * "Time's up" notifications. Notification id = `timerId.hashCode()`.
- *
- * Sound and vibration are channel properties on Android 8+, so there is one channel per combination of the
- * Sound and Vibrate settings and [showTimeUp] picks the matching one. Channels we no longer create are deleted.
- */
+// Sound and vibration are fixed per channel once created, so there is one channel per combination.
+// Never change the ids: the user's per-channel settings are keyed by them; unknown ids are deleted.
 object Notifications {
     const val CHANNEL_SOUND_VIBRATE = "time_up"
     const val CHANNEL_SOUND_ONLY = "time_up_sound_only"
@@ -36,10 +32,9 @@ object Notifications {
         Spec(CHANNEL_SOUND_VIBRATE, R.string.channel_time_up, sound = true, vibrate = true),
         Spec(CHANNEL_SOUND_ONLY, R.string.channel_time_up_sound_only, sound = true, vibrate = false),
         Spec(CHANNEL_VIBRATE_ONLY, R.string.channel_time_up_vibrate_only, sound = false, vibrate = true),
-        Spec(CHANNEL_SILENT, R.string.channel_time_up_silent, sound = false, vibrate = false),
+        Spec(CHANNEL_SILENT, R.string.channel_time_up_silent, sound = false, vibrate = false)
     )
 
-    /** The channel matching the Sound and Vibrate settings. */
     fun channelFor(settings: Settings): String = when {
         settings.soundOn && settings.vibrateOn -> CHANNEL_SOUND_VIBRATE
         settings.soundOn -> CHANNEL_SOUND_ONLY
@@ -47,10 +42,7 @@ object Notifications {
         else -> CHANNEL_SILENT
     }
 
-    /**
-     * Context whose resources follow the per-app language. On API 33+ that is already true for any context;
-     * below that AppCompat only localises Activity contexts, so the application context needs wrapping.
-     */
+    // Below API 33 AppCompat only localises Activity contexts, so other contexts need wrapping.
     private fun localized(context: Context): Context = ContextCompat.getContextForLanguage(context)
 
     fun ensureChannels(base: Context) {
@@ -82,10 +74,14 @@ object Notifications {
             .putExtra(MainActivity.EXTRA_TIMER_ID, timer.id)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = PendingIntent.getActivity(
-            context, timer.id.hashCode(), open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            context,
+            timer.id.hashCode(),
+            open,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification = NotificationCompat.Builder(
-            context, channelFor(settings),
+            context,
+            channelFor(settings)
         )
             .setSmallIcon(R.drawable.ic_stat_hourglass)
             .setContentTitle(timer.name)

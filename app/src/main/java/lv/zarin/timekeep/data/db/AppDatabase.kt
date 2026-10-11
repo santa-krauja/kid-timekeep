@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
 @Database(
     entities = [TimerEntity::class, PresetEntity::class, FavouriteLookEntity::class],
     version = 1,
-    exportSchema = true,
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -20,7 +20,6 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         const val NAME = "kidtimekeep.db"
 
-        fun build(context: Context): AppDatabase =
-            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME).build()
+        fun build(context: Context): AppDatabase = Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME).build()
     }
 }

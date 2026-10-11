@@ -8,7 +8,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The MVP is local-only: nothing is backed up or transferred (restored stale timers and prefs misbehave). */
 @RunWith(AndroidJUnit4::class)
 class BackupConfigTest {
     @Test

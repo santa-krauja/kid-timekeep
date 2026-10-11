@@ -48,8 +48,7 @@
             android:name=".alarm.TimeUpReceiver"
             android:exported="false" />
 
-        <!-- exported="false" still receives these: they are protected system broadcasts sent by the system
-             (BOOT_COMPLETED, TIME_SET, ...), which are delivered regardless of the exported flag. -->
+        <!-- Protected system broadcasts are delivered despite exported="false". -->
         <receiver
             android:name=".alarm.SystemEventsReceiver"
             android:exported="false">

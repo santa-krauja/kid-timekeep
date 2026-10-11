@@ -19,21 +19,16 @@ fun durationPhrase(ms: Long, roundUp: Boolean): String = joinDuration(
     roundUp,
     hours = { pluralStringResource(R.plurals.duration_hours, it, it) },
     minutes = { pluralStringResource(R.plurals.duration_minutes, it, it) },
-    seconds = { pluralStringResource(R.plurals.duration_seconds, it, it) },
+    seconds = { pluralStringResource(R.plurals.duration_seconds, it, it) }
 )
 
 @Composable
-fun DurationLabel(
-    ms: Long,
-    roundUp: Boolean,
-    modifier: Modifier = Modifier,
-    style: TextStyle = LocalTextStyle.current,
-) {
+fun DurationLabel(ms: Long, roundUp: Boolean, modifier: Modifier = Modifier, style: TextStyle = LocalTextStyle.current) {
     val phrase = durationPhrase(ms, roundUp)
     Text(
         text = formatClock(ms, roundUp),
         modifier = modifier.semantics { contentDescription = phrase },
-        style = style,
+        style = style
     )
 }
 
@@ -43,7 +38,7 @@ fun compactDuration(ms: Long): String = joinDuration(
     roundUp = false,
     hours = { stringResource(R.string.duration_short_hour, it) },
     minutes = { stringResource(R.string.duration_short_min, it) },
-    seconds = { stringResource(R.string.duration_short_sec, it) },
+    seconds = { stringResource(R.string.duration_short_sec, it) }
 )
 
 @Composable
@@ -52,12 +47,12 @@ private fun joinDuration(
     roundUp: Boolean,
     hours: @Composable (Int) -> String,
     minutes: @Composable (Int) -> String,
-    seconds: @Composable (Int) -> String,
+    seconds: @Composable (Int) -> String
 ): String {
     val (h, m, s) = splitDuration(ms, roundUp)
     return listOfNotNull(
         h.takeIf { it > 0 }?.let { hours(it) },
         m.takeIf { it > 0 }?.let { minutes(it) },
-        s.takeIf { it > 0 || (h == 0 && m == 0) }?.let { seconds(it) },
+        s.takeIf { it > 0 || (h == 0 && m == 0) }?.let { seconds(it) }
     ).joinToString(" ")
 }

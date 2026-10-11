@@ -26,10 +26,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        // A recreated activity gets the original intent again; it was handled already.
-        if (savedInstanceState == null) takeTimerId(intent)
+        val intentAlreadyHandled = savedInstanceState != null
+        if (!intentAlreadyHandled) takeTimerId(intent)
         val container = (application as KidTimekeepApp).container
-        // Runs again after the recreation caused by a language change, so channel names follow the new language.
+        // Re-runs on the recreation after a language change, so channel names follow the new language.
         Notifications.ensureChannels(this)
         enableEdgeToEdge()
         setContent {
@@ -37,14 +37,17 @@ class MainActivity : AppCompatActivity() {
                 .collectAsStateWithLifecycle(initialValue = Settings())
             val dark = isDarkTheme(settings.themeMode)
             DisposableEffect(dark) {
-                // Transparent bars; icon contrast follows the resolved theme, not the system.
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
-                        Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { dark },
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT,
+                        detectDarkMode = { dark }
                     ),
                     navigationBarStyle = SystemBarStyle.auto(
-                        Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { dark },
-                    ),
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT,
+                        detectDarkMode = { dark }
+                    )
                 )
                 onDispose { }
             }
@@ -52,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                 AppNavHost(
                     navController = rememberNavController(),
                     startTimerId = startTimerId,
-                    onStartTimerConsumed = { startTimerId = null },
+                    onStartTimerConsumed = { startTimerId = null }
                 )
             }
         }
@@ -64,7 +67,6 @@ class MainActivity : AppCompatActivity() {
         takeTimerId(intent)
     }
 
-    /** Reads the notification deep-link extra and removes it so it is only ever handled once. */
     private fun takeTimerId(intent: Intent?) {
         val id = intent?.getStringExtra(EXTRA_TIMER_ID) ?: return
         intent.removeExtra(EXTRA_TIMER_ID)

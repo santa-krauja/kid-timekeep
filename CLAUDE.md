@@ -12,10 +12,11 @@ Gradle needs the JDK bundled with Android Studio (the repo requires toolchain 25
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew assembleDebug            # build
 ./gradlew testDebugUnitTest        # unit tests (JUnit4, Robolectric)
-./gradlew lintDebug                # lint (abortOnError; HardcodedText is an error)
+./gradlew lintDebug                # lint (abortOnError; HardcodedText and MissingTranslation are errors)
+./gradlew ktlintCheck              # Kotlin style (.editorconfig); ./gradlew ktlintFormat fixes most issues
 ```
 
-CI (`.github/workflows/android.yml`) runs all three on pull requests and pushes to `main`, using JDK 25.
+CI (`.github/workflows/android.yml`) runs these plus `assembleRelease` on pull requests and pushes to `main`, using JDK 25.
 Run them from the repo root before opening a PR.
 
 ## Release
@@ -55,6 +56,9 @@ exact-alarm permission declaration form must be completed for the listing.
   Lint treats `HardcodedText` as an error. The app name "Kid Timekeep" is `translatable="false"`.
 - Time is derived from stored timestamps, never counted. Remaining time rounds up, elapsed rounds down.
 - No network permission and no foreground service. Alarms use `USE_EXACT_ALARM` + `setExactAndAllowWhileIdle`.
+- Code explains itself through names and types. No KDoc or comments that restate the code or narrate
+  history; comment only genuine edge cases (platform quirks, deliberate workarounds, legal notices).
+- Use imports, never inline fully-qualified names.
 - minSdk 30, targetSdk/compileSdk 37. `applicationId` and namespace stay `lv.zarin.timekeep`.
 
 ## Git and PRs

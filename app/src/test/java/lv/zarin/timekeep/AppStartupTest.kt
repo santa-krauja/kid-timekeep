@@ -1,13 +1,13 @@
 package lv.zarin.timekeep
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.coroutines.cancellation.CancellationException
 
 @RunWith(AndroidJUnit4::class)
 class AppStartupTest {

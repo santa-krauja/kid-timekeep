@@ -1,9 +1,12 @@
 package lv.zarin.timekeep.ui.timer
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -19,6 +22,7 @@ import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.ports.SettingsRepository
+import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.FavouriteLook
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -30,10 +34,6 @@ import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
 import lv.zarin.timekeep.testutil.RecordingAlarmScheduler
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.emitAll
-import lv.zarin.timekeep.domain.ports.TimerRepository
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,6 +71,7 @@ class TimerViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
@@ -86,7 +87,7 @@ class TimerViewModelTest {
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
         AllowAllControlPolicy, feedback,
-        clearNotification = { cleared += it },
+        clearNotification = { cleared += it }
     )
 
     private suspend fun seed(state: RunState, duration: Long = 60_000) =
@@ -152,7 +153,7 @@ class TimerViewModelTest {
         runCurrent()
         assertEquals(
             TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false, canEdit = true),
-            vm.state.value!!.controls,
+            vm.state.value!!.controls
         )
     }
 
@@ -231,7 +232,6 @@ class TimerViewModelTest {
         advanceTimeBy(500)
         runCurrent()
         assertTrue(feedback.calls.isEmpty())
-        // The alarm receiver finishes the timer before the ticker's own overdue check.
         clock.now = 60_000
         service.finishIfOverdue("t")
         advanceTimeBy(100)
@@ -249,11 +249,11 @@ class TimerViewModelTest {
         val first = backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(500)
         runCurrent()
-        first.cancel() // screen stopped
-        advanceTimeBy(10_000) // WhileSubscribed(5s) lapses; the cached value stays Running
+        first.cancel()
+        advanceTimeBy(10_000)
         clock.now = 60_000
-        service.finishIfOverdue("t") // receiver finished it and notified
-        backgroundScope.launch { vm.runTicker() } // screen started again
+        service.finishIfOverdue("t")
+        backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(2_000)
         runCurrent()
         assertTrue(feedback.calls.isEmpty())
@@ -263,7 +263,7 @@ class TimerViewModelTest {
     fun finishedElsewhereFirstPlaysNoFeedback() = runTest(dispatcher) {
         seed(RunState.Running(0, 0))
         clock.now = 61_000
-        service.finishIfOverdue("t") // e.g. the alarm receiver got there first
+        service.finishIfOverdue("t")
         val vm = vm()
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(1_000)
@@ -274,7 +274,6 @@ class TimerViewModelTest {
     @Test
     fun finishBeforeFirstLoadStillPlaysFeedback() = runTest(dispatcher) {
         seed(RunState.Running(0, 0))
-        // Room's first emission arrives late: until then `loaded` only holds its initial null.
         val firstLoad = CompletableDeferred<Unit>()
         val slowTimers = object : TimerRepository by timers {
             override fun observeAll(): Flow<List<Timer>> = flow {
@@ -283,13 +282,19 @@ class TimerViewModelTest {
             }
         }
         val vm = TimerViewModel(
-            "t", slowTimers, service, favourites, FakeSettingsRepository(Settings()), clock,
-            AllowAllControlPolicy, feedback,
+            "t",
+            slowTimers,
+            service,
+            favourites,
+            FakeSettingsRepository(Settings()),
+            clock,
+            AllowAllControlPolicy,
+            feedback
         )
         backgroundScope.launch { vm.runTicker() }
         runCurrent()
         clock.now = 60_000
-        service.finishIfOverdue("t") // the alarm receiver finishes it; the screen is visible, so no notification
+        service.finishIfOverdue("t")
         firstLoad.complete(Unit)
         advanceTimeBy(100)
         runCurrent()

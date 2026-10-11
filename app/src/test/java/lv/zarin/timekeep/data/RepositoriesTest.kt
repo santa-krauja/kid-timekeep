@@ -5,7 +5,6 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import lv.zarin.timekeep.data.db.AppDatabase
-import lv.zarin.timekeep.testutil.inMemoryDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomPresetRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
@@ -15,6 +14,7 @@ import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.testutil.inMemoryDatabase
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,13 +38,25 @@ class RepositoriesTest {
     fun tearDown() = db.close()
 
     private fun timer(id: String, state: RunState) = Timer(
-        id = id, name = "T $id", durationMs = 300_000L, look = look, presetId = "p",
-        state = state, createdAtMs = 10L, updatedAtMs = 20L,
+        id = id,
+        name = "T $id",
+        durationMs = 300_000L,
+        look = look,
+        presetId = "p",
+        state = state,
+        createdAtMs = 10L,
+        updatedAtMs = 20L
     )
 
     private fun preset(id: String, order: Int, created: Long, pinned: Look? = null) = Preset(
-        id = id, name = id, durationMs = 60_000L, pinnedLook = pinned, lastLook = null,
-        sortOrder = order, createdAtMs = created, updatedAtMs = created,
+        id = id,
+        name = id,
+        durationMs = 60_000L,
+        pinnedLook = pinned,
+        lastLook = null,
+        sortOrder = order,
+        createdAtMs = created,
+        updatedAtMs = created
     )
 
     @Test
@@ -53,7 +65,7 @@ class RepositoriesTest {
         val timers = listOf(
             timer("a", RunState.Running(sinceMs = 100L, elapsedBeforeMs = 50L)),
             timer("b", RunState.Paused(elapsedMs = 7_000L)),
-            timer("c", RunState.Finished(finishedAtMs = 999L)),
+            timer("c", RunState.Finished(finishedAtMs = 999L))
         )
         timers.forEach { repo.upsert(it) }
         timers.forEach { assertEquals(it, repo.get(it.id)) }

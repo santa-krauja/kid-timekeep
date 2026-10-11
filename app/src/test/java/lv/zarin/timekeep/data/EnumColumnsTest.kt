@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
 import lv.zarin.timekeep.data.db.AppDatabase
-import lv.zarin.timekeep.testutil.inMemoryDatabase
 import lv.zarin.timekeep.data.repo.RoomFavouriteLookRepository
 import lv.zarin.timekeep.data.repo.RoomTimerRepository
 import lv.zarin.timekeep.domain.timer.Look
@@ -12,6 +11,7 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.testutil.inMemoryDatabase
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -36,7 +36,7 @@ class EnumColumnsTest {
         db.openHelper.writableDatabase.execSQL(
             "INSERT INTO timers (id, name, durationMs, look_topPicture, look_topSand, look_bottomPicture, " +
                 "look_bottomSand, presetId, stateType, runningSinceMs, elapsedMs, finishedAtMs, createdAtMs, updatedAtMs) " +
-                "VALUES ('$id', 'n', 1000, '$topPicture', '$topSand', 'CAT', 'MINT', NULL, '$state', NULL, NULL, 5, 1, 2)",
+                "VALUES ('$id', 'n', 1000, '$topPicture', '$topSand', 'CAT', 'MINT', NULL, '$state', NULL, NULL, 5, 1, 2)"
         )
     }
 
@@ -45,7 +45,8 @@ class EnumColumnsTest {
         val repo = RoomTimerRepository(db.timerDao())
         val sands = SandColor.entries
         PictureId.entries.forEachIndexed { i, picture ->
-            val look = Look(picture, sands[i % sands.size], PictureId.entries[(i + 1) % PictureId.entries.size], sands[(i + 1) % sands.size])
+            val look =
+                Look(picture, sands[i % sands.size], PictureId.entries[(i + 1) % PictureId.entries.size], sands[(i + 1) % sands.size])
             val timer = Timer("t$i", "n", 1_000L, look, null, RunState.Paused(10L), 1L, 2L)
             repo.upsert(timer)
             assertEquals(timer, repo.get(timer.id))

@@ -11,12 +11,11 @@ private val Base = Typography()
 private fun TextStyle.scaled(factor: Float, weight: FontWeight? = null): TextStyle = copy(
     fontSize = fontSize.scale(factor),
     lineHeight = lineHeight.scale(factor),
-    fontWeight = weight ?: fontWeight,
+    fontWeight = weight ?: fontWeight
 )
 
 private fun TextUnit.scale(factor: Float): TextUnit = if (isSp) (value * factor).sp else this
 
-/** Material 3 defaults, body and label about 10% larger, titles bold. */
 val Typography = Typography(
     titleLarge = Base.titleLarge.scaled(1f, FontWeight.Bold),
     titleMedium = Base.titleMedium.scaled(1f, FontWeight.Bold),
@@ -26,5 +25,5 @@ val Typography = Typography(
     bodySmall = Base.bodySmall.scaled(1.1f),
     labelLarge = Base.labelLarge.scaled(1.1f),
     labelMedium = Base.labelMedium.scaled(1.1f),
-    labelSmall = Base.labelSmall.scaled(1.1f),
+    labelSmall = Base.labelSmall.scaled(1.1f)
 )

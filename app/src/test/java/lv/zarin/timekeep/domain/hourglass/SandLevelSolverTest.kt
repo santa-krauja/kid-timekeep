@@ -34,21 +34,21 @@ class SandLevelSolverTest {
         }
     }
 
-    /**
-     * While the funnel dip is still growing (p < 1/12) it deepens faster than the sand drains, so the
-     * top level wobbles back by up to ~0.06 logical units (0.05 % of the box height, under a pixel on
-     * any screen). The model is identical to the approved prototype; [tolerance] absorbs that wobble
-     * while still catching real regressions.
-     */
     @Test
     fun levelsMonotonicAcrossFullRange() {
-        val tolerance = 0.1f
+        val funnelDipWobbleTolerance = 0.1f
         var prevTop = Float.NEGATIVE_INFINITY
         var prevBot = Float.POSITIVE_INFINITY
         for (i in 0..4000) {
             val l = SandLevelSolver.levels(i / 4000f)
-            l.topLevel?.let { assertTrue("top at $i", it >= prevTop - tolerance); prevTop = it }
-            l.bottomLevel?.let { assertTrue("bottom at $i", it <= prevBot + tolerance); prevBot = it }
+            l.topLevel?.let {
+                assertTrue("top at $i", it >= prevTop - funnelDipWobbleTolerance)
+                prevTop = it
+            }
+            l.bottomLevel?.let {
+                assertTrue("bottom at $i", it <= prevBot + funnelDipWobbleTolerance)
+                prevBot = it
+            }
         }
     }
 

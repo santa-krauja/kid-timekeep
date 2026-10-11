@@ -2,30 +2,30 @@ package lv.zarin.timekeep.ui
 
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.testutil.pump
 import lv.zarin.timekeep.testutil.pumpUntil
 import lv.zarin.timekeep.testutil.pumpUntilDescription
 import lv.zarin.timekeep.testutil.pumpUntilNoText
 import lv.zarin.timekeep.testutil.pumpUntilText
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.testutil.textCount
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -35,9 +35,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** End-to-end flows through the real MainActivity with a fake clock; time only moves when a test moves it. */
 @RunWith(AndroidJUnit4::class)
-// A tall phone screen keeps every list row on screen (offscreen rows can't be tapped).
 @Config(qualifiers = "w411dp-h891dp")
 class FlowsTest {
     private val clock = FakeClock(1_000_000)
@@ -52,7 +50,6 @@ class FlowsTest {
 
     private fun timers(): List<Timer> = runBlocking { app.container.timerRepository.getAll() }
 
-    /** Running hourglasses never go idle, so frames and the looper are driven by hand from the start. */
     private fun openHome() {
         rule.mainClock.autoAdvance = false
         rule.pumpUntilText("My timers")

@@ -8,11 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.timer.TimerPhase
 
-data class PauseToggleSpec(
-    val icon: ImageVector,
-    @param:StringRes val label: Int,
-    @param:StringRes val contentDescription: Int,
-)
+data class PauseToggleSpec(val icon: ImageVector, @param:StringRes val label: Int, @param:StringRes val contentDescription: Int)
 
 fun pauseToggleSpec(phase: TimerPhase, canPause: Boolean): PauseToggleSpec? = when (phase) {
     TimerPhase.Running -> PauseToggleSpec(Icons.Rounded.Pause, R.string.action_pause, R.string.cd_pause).takeIf { canPause }

@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -20,8 +22,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsRepositoryTest {
@@ -72,8 +72,7 @@ class SettingsRepositoryTest {
     fun readIoErrorEmitsDefaults() = runTest(UnconfinedTestDispatcher()) {
         val failing = object : DataStore<Preferences> {
             override val data: Flow<Preferences> = flow { throw IOException("disk") }
-            override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences =
-                throw IOException("disk")
+            override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences = throw IOException("disk")
         }
         assertEquals(Settings(), DataStoreSettingsRepository(failing).settings.first())
     }

@@ -7,8 +7,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -16,6 +17,7 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.testutil.allowNotifications
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -25,8 +27,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class TimeUpReceiverTest {
@@ -50,7 +50,7 @@ class TimeUpReceiverTest {
 
     private fun seedRunning(id: String, durationMs: Long = 10_000) = runBlocking {
         app.container.timerRepository.upsert(
-            Timer(id, "Timer $id", durationMs, look, null, RunState.Running(0, 0), 0, 0),
+            Timer(id, "Timer $id", durationMs, look, null, RunState.Running(0, 0), 0, 0)
         )
     }
 
@@ -58,7 +58,8 @@ class TimeUpReceiverTest {
         val latch = CountDownLatch(1)
         TimeUpReceiver.onHandled = { latch.countDown() }
         TimeUpReceiver().onReceive(
-            app, Intent(app, TimeUpReceiver::class.java).setData(Uri.parse("kidtimekeep://timer/$id")),
+            app,
+            Intent(app, TimeUpReceiver::class.java).setData(Uri.parse("kidtimekeep://timer/$id"))
         )
         assertTrue("receiver did not finish", latch.await(10, TimeUnit.SECONDS))
     }
@@ -80,7 +81,6 @@ class TimeUpReceiverTest {
         clock.now = 5_000
         deliver("t1")
         assertTrue(shadowOf(nm).allNotifications.isEmpty())
-        // The early fire re-arms the alarm instead of stranding the timer.
         val am = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         assertEquals(10_000L, shadowOf(am).scheduledAlarms.single().triggerAtTime)
     }
@@ -115,7 +115,8 @@ class TimeUpReceiverTest {
         val n = shadowOf(nm).allNotifications
         assertEquals(2, n.size)
         assertNotEquals(
-            shadowOf(n[0].contentIntent).requestCode, shadowOf(n[1].contentIntent).requestCode,
+            shadowOf(n[0].contentIntent).requestCode,
+            shadowOf(n[1].contentIntent).requestCode
         )
         assertNotEquals(shadowOf(nm).getNotification("a".hashCode()), null)
         assertNotEquals(shadowOf(nm).getNotification("b".hashCode()), null)

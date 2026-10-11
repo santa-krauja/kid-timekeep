@@ -1,20 +1,20 @@
 package lv.zarin.timekeep.ui.home
 
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
-import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.control.Control
+import lv.zarin.timekeep.testutil.TestAppContainer
+import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

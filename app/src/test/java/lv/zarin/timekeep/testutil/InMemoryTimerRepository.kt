@@ -9,8 +9,7 @@ import lv.zarin.timekeep.domain.timer.Timer
 class InMemoryTimerRepository : TimerRepository {
     private val state = MutableStateFlow<Map<String, Timer>>(emptyMap())
 
-    override fun observeAll(): Flow<List<Timer>> =
-        state.map { it.values.sortedBy { t -> t.createdAtMs } }
+    override fun observeAll(): Flow<List<Timer>> = state.map { it.values.sortedBy { t -> t.createdAtMs } }
 
     override suspend fun get(id: String): Timer? = state.value[id]
     override suspend fun getAll(): List<Timer> = state.value.values.sortedBy { it.createdAtMs }

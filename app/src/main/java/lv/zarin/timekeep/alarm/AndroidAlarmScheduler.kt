@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import lv.zarin.timekeep.domain.ports.AlarmScheduler
 
-/** One RTC_WAKEUP alarm per timer, keyed by the data URI `kidtimekeep://timer/<id>`. */
 class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 

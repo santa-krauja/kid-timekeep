@@ -6,8 +6,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.AppStartup
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.timer.Look
@@ -16,6 +17,7 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.testutil.allowNotifications
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,8 +26,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class SystemEventsReceiverTest {
@@ -50,7 +50,7 @@ class SystemEventsReceiverTest {
 
     private fun seedRunning(id: String, durationMs: Long = 10_000) = runBlocking {
         app.container.timerRepository.upsert(
-            Timer(id, "Timer $id", durationMs, look, null, RunState.Running(0, 0), 0, 0),
+            Timer(id, "Timer $id", durationMs, look, null, RunState.Running(0, 0), 0, 0)
         )
     }
 
@@ -109,7 +109,6 @@ class SystemEventsReceiverTest {
     fun unknownActionIsIgnored() {
         seedRunning("t1")
         clock.now = 20_000
-        // An ignored action returns before launching any work, so onHandled (the work-complete hook) never fires.
         var handled = false
         SystemEventsReceiver.onHandled = { handled = true }
         SystemEventsReceiver().onReceive(app, Intent("com.example.OTHER"))

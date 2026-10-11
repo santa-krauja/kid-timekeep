@@ -13,10 +13,7 @@ import kotlinx.coroutines.launch
 import lv.zarin.timekeep.AppStartup
 import lv.zarin.timekeep.KidTimekeepApp
 
-/**
- * Re-syncs alarms after reboot, app update, clock/timezone changes and exact-alarm permission changes
- * (AlarmManager drops alarms on reboot/update), finishing timers that became overdue meanwhile.
- */
+// AlarmManager drops every alarm on reboot and app update, so alarms are re-armed here.
 class SystemEventsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in ACTIONS) return
@@ -45,10 +42,9 @@ class SystemEventsReceiver : BroadcastReceiver() {
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
-            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED,
+            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
         )
 
-        /** Test hook: called after every handled delivery. */
         @VisibleForTesting
         @Volatile
         var onHandled: () -> Unit = {}

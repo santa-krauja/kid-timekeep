@@ -15,7 +15,7 @@ class PresetSeeder(
     private val presets: PresetRepository,
     private val flags: SeedFlagStore,
     private val clock: Clock,
-    private val ids: () -> String = ::newId,
+    private val ids: () -> String = ::newId
 ) {
     private val mutex = Mutex()
 
@@ -26,7 +26,7 @@ class PresetSeeder(
             listOf(
                 names.teeth to 120_000L,
                 names.dressed to 600_000L,
-                names.reading to 900_000L,
+                names.reading to 900_000L
             ).forEachIndexed { index, (name, durationMs) ->
                 presets.upsert(Preset(ids(), name, durationMs, null, null, index, now, now))
             }

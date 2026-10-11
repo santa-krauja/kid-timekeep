@@ -228,7 +228,11 @@ class TimerServiceTest {
     @Test
     fun unknownIdsAreNoOps() = runTest {
         val s = service()
-        s.pause("x"); s.resume("x"); s.restart("x"); s.addMinute("x"); s.dismiss("x")
+        s.pause("x")
+        s.resume("x")
+        s.restart("x")
+        s.addMinute("x")
+        s.dismiss("x")
         assertTrue(timers.getAll().isEmpty())
     }
 

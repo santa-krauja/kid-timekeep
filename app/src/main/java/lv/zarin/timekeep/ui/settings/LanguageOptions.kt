@@ -5,13 +5,8 @@ import java.util.Locale
 import lv.zarin.timekeep.R
 import org.xmlpull.v1.XmlPullParser
 
-/** One row of the language dropdown. `tag == null` means "follow the system language". */
 data class LanguageOption(val tag: String?, val label: String)
 
-/**
- * System default first, then every `<locale>` of `res/xml/locales_config.xml`, each labelled in its own
- * language ("English", "Latviešu"), so a language added to the file shows up without any new string.
- */
 fun languageOptions(context: Context): List<LanguageOption> {
     val tags = buildList {
         context.resources.getXml(R.xml.locales_config).use { parser ->

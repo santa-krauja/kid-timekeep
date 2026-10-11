@@ -5,10 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import java.io.IOException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import lv.zarin.timekeep.domain.ports.SeedFlagStore
-import java.io.IOException
 
 class DataStoreSeedFlagStore(private val dataStore: DataStore<Preferences>) : SeedFlagStore {
     override suspend fun isSeeded(): Boolean = dataStore.data

@@ -26,26 +26,45 @@ fun Timer.toEntity(): TimerEntity {
             is RunState.Finished -> null
         },
         finishedAtMs = (s as? RunState.Finished)?.finishedAtMs,
-        createdAtMs = createdAtMs, updatedAtMs = updatedAtMs,
+        createdAtMs = createdAtMs, updatedAtMs = updatedAtMs
     )
 }
 
 fun TimerEntity.toDomain(): Timer = Timer(
-    id = id, name = name, durationMs = durationMs, look = look.toDomain(), presetId = presetId,
+    id = id,
+    name = name,
+    durationMs = durationMs,
+    look = look.toDomain(),
+    presetId = presetId,
     state = when (stateType) {
         RunStateType.RUNNING -> RunState.Running(runningSinceMs ?: createdAtMs, elapsedMs ?: 0L)
         RunStateType.PAUSED -> RunState.Paused(elapsedMs ?: 0L)
         RunStateType.FINISHED -> RunState.Finished(finishedAtMs ?: updatedAtMs)
     },
-    createdAtMs = createdAtMs, updatedAtMs = updatedAtMs,
+    createdAtMs = createdAtMs,
+    updatedAtMs = updatedAtMs
 )
 
 fun Preset.toEntity() = PresetEntity(
-    id, name, durationMs, pinnedLook?.toColumns(), lastLook?.toColumns(), sortOrder, createdAtMs, updatedAtMs,
+    id,
+    name,
+    durationMs,
+    pinnedLook?.toColumns(),
+    lastLook?.toColumns(),
+    sortOrder,
+    createdAtMs,
+    updatedAtMs
 )
 
 fun PresetEntity.toDomain() = Preset(
-    id, name, durationMs, pinnedLook?.toDomain(), lastLook?.toDomain(), sortOrder, createdAtMs, updatedAtMs,
+    id,
+    name,
+    durationMs,
+    pinnedLook?.toDomain(),
+    lastLook?.toDomain(),
+    sortOrder,
+    createdAtMs,
+    updatedAtMs
 )
 
 fun FavouriteLook.toEntity() = FavouriteLookEntity(id, look.toColumns(), createdAtMs, updatedAtMs)

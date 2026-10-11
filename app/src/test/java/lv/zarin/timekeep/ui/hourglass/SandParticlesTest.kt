@@ -26,7 +26,6 @@ class SandParticlesTest {
 
     @Test
     fun goldenFirstValuesPinTheRngPort() {
-        // Independently computed LCG values: seed 777 -> 0.5371962, 0.7553924; seed 4242 -> 0.8800654, 0.0439387.
         assertEquals(0.5371962f, SandParticles.stream[0].ph, 1e-6f)
         assertEquals(600f + 0.75539244f * 420f, SandParticles.stream[0].per, 1e-3f)
         assertEquals(0.8800654f, SandParticles.splash[0].ph, 1e-6f)

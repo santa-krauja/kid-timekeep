@@ -24,12 +24,7 @@ import lv.zarin.timekeep.R
 private const val PREFS = "notification_prefs"
 private const val KEY_ASKED = "notif_asked"
 
-/**
- * Returns a gate: `gate { start() }` runs the block straight away, except the first time on Android 13+ when
- * notifications aren't allowed yet. Then a rationale dialog is shown first, the system request follows on
- * "Allow", and the block runs afterwards either way. We only ever ask once ([KEY_ASKED]).
- * The pending block is not saved across recreation; if the screen is rotated mid-dialog the user taps Start again.
- */
+// The pending block is not saved across recreation: after a mid-dialog rotation the user taps Start again.
 @Composable
 fun rememberNotificationPermissionGate(): (onProceed: () -> Unit) -> Unit {
     val context = LocalContext.current
@@ -52,7 +47,7 @@ fun rememberNotificationPermissionGate(): (onProceed: () -> Unit) -> Unit {
                         markAsked(context)
                         launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     },
-                    modifier = Modifier.testTag("notif_allow"),
+                    modifier = Modifier.testTag("notif_allow")
                 ) { Text(stringResource(R.string.action_allow)) }
             },
             dismissButton = {
@@ -64,9 +59,9 @@ fun rememberNotificationPermissionGate(): (onProceed: () -> Unit) -> Unit {
                         pending = null
                         proceed?.invoke()
                     },
-                    modifier = Modifier.testTag("notif_not_now"),
+                    modifier = Modifier.testTag("notif_not_now")
                 ) { Text(stringResource(R.string.action_not_now)) }
-            },
+            }
         )
     }
     return { onProceed ->
@@ -79,11 +74,10 @@ fun rememberNotificationPermissionGate(): (onProceed: () -> Unit) -> Unit {
     }
 }
 
-private fun needsAsking(context: Context): Boolean =
-    Build.VERSION.SDK_INT >= 33 &&
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-        PackageManager.PERMISSION_GRANTED &&
-        !context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ASKED, false)
+private fun needsAsking(context: Context): Boolean = Build.VERSION.SDK_INT >= 33 &&
+    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+    PackageManager.PERMISSION_GRANTED &&
+    !context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ASKED, false)
 
 private fun markAsked(context: Context) {
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ASKED, true).apply()

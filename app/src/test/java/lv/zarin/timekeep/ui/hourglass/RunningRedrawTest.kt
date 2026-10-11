@@ -25,18 +25,18 @@ class RunningRedrawTest {
     @Test
     fun plainClockProgressAdvancesWhileRunning() {
         rule.mainClock.autoAdvance = false
-        var plain = 0.1f // deliberately not snapshot state
+        var nonStateProgress = 0.1f
         rule.setContent {
             Hourglass(
                 look = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY),
-                progress = { plain },
+                progress = { nonStateProgress },
                 running = true,
-                modifier = Modifier.size(200.dp, 256.dp).testTag("hg"),
+                modifier = Modifier.size(200.dp, 256.dp).testTag("hg")
             )
         }
         rule.mainClock.advanceTimeBy(100)
         val before = rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassDrawnProgress]
-        plain = 0.5f
+        nonStateProgress = 0.5f
         rule.mainClock.advanceTimeBy(100)
         val after = rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassDrawnProgress]
         assertTrue("before=$before after=$after", after > before + 0.3f)

@@ -27,11 +27,6 @@ import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
 
-/**
- * Debug-only showcase: a 2x2 grid of hourglasses at p = 0, 0.3, 0.7, 1 (stream runs on 0.3 and 0.7);
- * extra `--ez many true` shows 8 small running hourglasses.
- * `adb shell am start -n lv.zarin.timekeep/.HourglassShowcaseActivity`
- */
 class HourglassShowcaseActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +39,7 @@ class HourglassShowcaseActivity : ComponentActivity() {
                     if (many) {
                         Column(
                             Modifier.safeDrawingPadding().padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             listOf(listOf(0.1f, 0.25f, 0.4f, 0.55f), listOf(0.65f, 0.75f, 0.85f, 0.95f)).forEach { row ->
                                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -53,7 +48,7 @@ class HourglassShowcaseActivity : ComponentActivity() {
                                             look = look,
                                             progress = { p },
                                             running = true,
-                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                     }
                                 }
@@ -64,10 +59,12 @@ class HourglassShowcaseActivity : ComponentActivity() {
                         var firstP by remember { mutableFloatStateOf(0.3f) }
                         Column(
                             Modifier.safeDrawingPadding().padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Debug: flip the first cell (p = 0.3) and reset its progress to 0.
-                            Button(onClick = { firstP = 0f; flip++ }) { Text("Flip") }
+                            Button(onClick = {
+                                firstP = 0f
+                                flip++
+                            }) { Text("Flip") }
                             listOf(listOf(firstP, 0.3f), listOf(0.7f, 1f)).forEachIndexed { r, row ->
                                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     row.forEachIndexed { c, p ->
@@ -77,7 +74,7 @@ class HourglassShowcaseActivity : ComponentActivity() {
                                             progress = if (isFlipCell) ({ firstP }) else ({ p }),
                                             running = (if (isFlipCell) firstP else p).let { it > 0f && it < 1f },
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                            flipTrigger = if (isFlipCell) flip else 0,
+                                            flipTrigger = if (isFlipCell) flip else 0
                                         )
                                     }
                                 }

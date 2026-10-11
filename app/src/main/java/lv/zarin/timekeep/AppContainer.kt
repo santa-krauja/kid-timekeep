@@ -42,7 +42,7 @@ interface AppContainer {
     fun starterPresetNames() = StarterPresetNames(
         teeth = appContext.getString(R.string.seed_preset_teeth),
         dressed = appContext.getString(R.string.seed_preset_dressed),
-        reading = appContext.getString(R.string.seed_preset_reading),
+        reading = appContext.getString(R.string.seed_preset_reading)
     )
 }
 

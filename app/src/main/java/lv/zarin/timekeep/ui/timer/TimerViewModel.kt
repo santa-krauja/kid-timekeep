@@ -28,12 +28,7 @@ import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.phase
 
-data class TimerControls(
-    val canPause: Boolean,
-    val showAddMinute: Boolean,
-    val addMinuteEnabled: Boolean,
-    val canEdit: Boolean,
-)
+data class TimerControls(val canPause: Boolean, val showAddMinute: Boolean, val addMinuteEnabled: Boolean, val canEdit: Boolean)
 
 data class TimerUiState(
     val timer: Timer,
@@ -41,7 +36,7 @@ data class TimerUiState(
     val controls: TimerControls,
     val showNumbers: Boolean,
     val keepScreenOn: Boolean,
-    val flipTrigger: Int,
+    val flipTrigger: Int
 )
 
 class TimerViewModel(
@@ -53,19 +48,17 @@ class TimerViewModel(
     private val clock: Clock,
     private val policy: ControlPolicy = AllowAllControlPolicy,
     private val feedback: TimeUpFeedback,
-    /** Removes the time's-up notification of a timer id (no-op in tests). */
-    private val clearNotification: (String) -> Unit = {},
+    private val clearNotification: (String) -> Unit = {}
 ) : ViewModel() {
 
     private val flip = MutableStateFlow(0)
 
-    /** Null until the first load; then the timer (or null inside when it no longer exists). */
     private data class Loaded(val timer: Timer?, val settings: Settings, val flip: Int)
 
     private val loaded: StateFlow<Loaded?> = combine(
         timers.observeAll().map { all -> all.firstOrNull { it.id == timerId } },
         settings.settings,
-        flip,
+        flip
     ) { t, s, f -> Loaded(t, s, f) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -79,40 +72,33 @@ class TimerViewModel(
                 canPause = policy.isAllowed(Control.PAUSE),
                 showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
                 addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
-                canEdit = policy.isAllowed(Control.EDIT),
+                canEdit = policy.isAllowed(Control.EDIT)
             ),
             showNumbers = l.settings.showNumbers,
             keepScreenOn = l.settings.keepScreenOn && phase != TimerPhase.Finished,
-            flipTrigger = l.flip,
+            flipTrigger = l.flip
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** True once loaded and the timer is gone (dismissed here or elsewhere). */
     val missing: StateFlow<Boolean> = loaded.map { it != null && it.timer == null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     fun nowMs(): Long = clock.nowMs()
 
-    /**
-     * Runs while the screen is started. Plays the feedback once when it observes the timer go from Running to
-     * Finished (whoever finished it: this ticker, the alarm receiver or another screen), and finishes an
-     * overdue timer itself in case no alarm did. Opening an already-Finished timer plays nothing.
-     */
     suspend fun runTicker() = coroutineScope {
         launch {
-            // Seed from a fresh read: the cached StateFlow value can be stale after the screen was stopped.
+            // Seed from a fresh read: the cached StateFlow value may be stale after the screen was stopped.
             val fresh = timers.get(timerId)?.state
             var previous: RunState? = fresh
             var played: Pair<String, Long>? = null
             var first = true
             loaded.collect { l ->
-                // The initial null (nothing loaded yet) must not overwrite the fresh seed.
                 if (l == null) return@collect
                 val t = l.timer
                 val st = t?.state
                 if (first) {
                     first = false
-                    // Replayed stale value (e.g. Running while the timer finished meanwhile): ignore it.
+                    // A replayed stale Running value after the timer finished meanwhile must not trigger feedback.
                     if (fresh is RunState.Finished && st !is RunState.Finished) return@collect
                 }
                 if (t != null && st is RunState.Finished && previous is RunState.Running) {
@@ -160,7 +146,6 @@ class TimerViewModel(
         viewModelScope.launch { service.dismiss(timerId) }
     }
 
-    /** The Finished timer is on screen, so a leftover notification for it is stale. */
     fun onFinishedShown() = clearNotification(timerId)
 
     fun saveLookAsFavourite() {

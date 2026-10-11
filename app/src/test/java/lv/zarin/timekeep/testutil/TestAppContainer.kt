@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
+import java.io.File
+import java.util.UUID
+import java.util.concurrent.Executor
 import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.alarm.AndroidAlarmScheduler
 import lv.zarin.timekeep.data.db.AppDatabase
@@ -24,9 +27,6 @@ import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.PresetRepository
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import lv.zarin.timekeep.domain.ports.TimerRepository
-import java.io.File
-import java.util.UUID
-import java.util.concurrent.Executor
 
 fun inMemoryDatabase(context: Context): AppDatabase {
     val direct = Executor(Runnable::run)
@@ -41,7 +41,7 @@ class TestAppContainer(
     context: Context,
     override val clock: Clock = FakeClock(),
     override val controlPolicy: ControlPolicy = AllowAllControlPolicy,
-    alarmScheduler: AlarmScheduler? = null,
+    alarmScheduler: AlarmScheduler? = null
 ) : AppContainer {
     override val appContext: Context = context.applicationContext
     override val lookPicker = LookPicker()

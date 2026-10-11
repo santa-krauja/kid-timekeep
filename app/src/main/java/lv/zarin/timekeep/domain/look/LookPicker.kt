@@ -16,7 +16,7 @@ class LookPicker(private val random: Random = Random.Default) {
                 top = pictures[random.nextInt(pictures.size)],
                 topSand = sands[random.nextInt(sands.size)],
                 bottom = pictures[random.nextInt(pictures.size)],
-                bottomSand = sands[random.nextInt(sands.size)],
+                bottomSand = sands[random.nextInt(sands.size)]
             )
             if (isGoodLook(look) && look !in avoid) return look
         }
@@ -32,7 +32,6 @@ class LookPicker(private val random: Random = Random.Default) {
 
         private val FALLBACK = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
-        /** Euclidean distance over the R, G, B bytes of two ARGB values (alpha ignored). */
         fun rgbDistance(a: Long, b: Long): Double {
             val dr = ((a shr 16) and 0xFF) - ((b shr 16) and 0xFF)
             val dg = ((a shr 8) and 0xFF) - ((b shr 8) and 0xFF)
@@ -43,20 +42,24 @@ class LookPicker(private val random: Random = Random.Default) {
         fun contrastOk(picture: PictureId, sand: SandColor): Boolean =
             rgbDistance(picture.dominantArgb, sand.argb) > PICTURE_SAND_MIN_DISTANCE
 
-        fun isGoodLook(look: Look): Boolean =
-            look.top != look.bottom &&
-                look.topSand != look.bottomSand &&
-                contrastOk(look.top, look.topSand) &&
-                contrastOk(look.bottom, look.bottomSand) &&
-                rgbDistance(look.topSand.argb, look.bottomSand.argb) > SAND_SAND_MIN_DISTANCE
+        fun isGoodLook(look: Look): Boolean = look.top != look.bottom &&
+            look.topSand != look.bottomSand &&
+            contrastOk(look.top, look.topSand) &&
+            contrastOk(look.bottom, look.bottomSand) &&
+            rgbDistance(look.topSand.argb, look.bottomSand.argb) > SAND_SAND_MIN_DISTANCE
 
         private val goodLooks: List<Look> by lazy {
             buildList {
-                for (t in PictureId.entries) for (ts in SandColor.entries)
-                    for (b in PictureId.entries) for (bs in SandColor.entries) {
-                        val l = Look(t, ts, b, bs)
-                        if (isGoodLook(l)) add(l)
+                for (t in PictureId.entries) {
+                    for (ts in SandColor.entries) {
+                        for (b in PictureId.entries) {
+                            for (bs in SandColor.entries) {
+                                val l = Look(t, ts, b, bs)
+                                if (isGoodLook(l)) add(l)
+                            }
+                        }
                     }
+                }
             }
         }
     }

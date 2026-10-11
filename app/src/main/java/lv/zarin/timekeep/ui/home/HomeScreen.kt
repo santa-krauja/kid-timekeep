@@ -99,25 +99,27 @@ fun HomeScreen(
     onOpenTimer: (String) -> Unit,
     onNewTimer: () -> Unit,
     onEditPreset: (String) -> Unit = {},
-    onEditTimer: (String) -> Unit = {},
+    onEditTimer: (String) -> Unit = {}
 ) {
     val container = appContainer()
     val vm: HomeViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
                 HomeViewModel(
-                    container.timerRepository, container.presetRepository,
-                    container.timerService, container.clock, container.controlPolicy,
-                    clearNotification = { Notifications.cancel(container.appContext, it) },
+                    container.timerRepository,
+                    container.presetRepository,
+                    container.timerService,
+                    container.clock,
+                    container.controlPolicy,
+                    clearNotification = { Notifications.cancel(container.appContext, it) }
                 )
             }
-        },
+        }
     )
     val state by vm.state.collectAsStateWithLifecycle()
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
-    // Phones in landscape are wide but short: they keep the single-pane list and a full-screen timer.
-    val twoPane = windowSize.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED &&
-        windowSize.windowHeightSizeClass != WindowHeightSizeClass.COMPACT
+    val isPhoneLandscape = windowSize.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
+    val twoPane = windowSize.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED && !isPhoneLandscape
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val startedId by vm.startedId.collectAsStateWithLifecycle()
     LaunchedEffect(startedId) {
@@ -131,7 +133,6 @@ fun HomeScreen(
         return
     }
 
-    // Two-pane: the list on the left, the selected timer big on the right. Nothing navigates.
     val shownId = selectedId?.takeIf { id -> state.now.any { it.id == id } }
         ?: state.now.firstOrNull { it.state is RunState.Running }?.id
         ?: state.now.firstOrNull { it.state is RunState.Paused }?.id
@@ -143,11 +144,13 @@ fun HomeScreen(
             listPane = {
                 AnimatedPane(Modifier.preferredWidth(0.45f)) {
                     HomeList(
-                        vm, state, onOpenSettings,
+                        vm,
+                        state,
+                        onOpenSettings,
                         onOpenTimer = { selectedId = it },
                         onNewTimer = onNewTimer,
                         onEditPreset = onEditPreset,
-                        selectedId = shownId,
+                        selectedId = shownId
                     )
                 }
             },
@@ -158,7 +161,7 @@ fun HomeScreen(
                             Text(
                                 stringResource(R.string.home_select_timer),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     } else {
@@ -167,7 +170,7 @@ fun HomeScreen(
                         }
                     }
                 }
-            },
+            }
         )
     }
 }
@@ -181,7 +184,7 @@ private fun HomeList(
     onOpenTimer: (String) -> Unit,
     onNewTimer: () -> Unit,
     onEditPreset: (String) -> Unit,
-    selectedId: String? = null,
+    selectedId: String? = null
 ) {
     val container = appContainer()
     val clock = container.clock
@@ -207,21 +210,21 @@ private fun HomeList(
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.cd_settings))
                     }
-                },
+                }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNewTimer) {
                 Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.cd_new_timer))
             }
-        },
+        }
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(150.dp),
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) { SectionTitle(stringResource(R.string.home_now)) }
             if (state.now.isEmpty()) {
@@ -238,7 +241,7 @@ private fun HomeList(
                         selected = timer.id == selectedId,
                         onOpen = { onOpenTimer(timer.id) },
                         onToggle = { vm.togglePause(timer.id) },
-                        onRestart = { vm.restart(timer.id) },
+                        onRestart = { vm.restart(timer.id) }
                     )
                 }
             }
@@ -250,20 +253,25 @@ private fun HomeList(
                     PresetRow(
                         preset = preset,
                         onStart = { notificationGate { vm.startPreset(preset.id) } },
-                        // ControlPolicy: no menu at all when neither Edit nor Delete is allowed.
-                        onLongPress = { if (state.canEdit || state.canDelete) menuFor = preset },
+                        onLongPress = { if (state.canEdit || state.canDelete) menuFor = preset }
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {
                         if (state.canEdit) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.preset_menu_edit)) },
-                                onClick = { menuFor = null; onEditPreset(preset.id) },
+                                onClick = {
+                                    menuFor = null
+                                    onEditPreset(preset.id)
+                                }
                             )
                         }
                         if (state.canDelete) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.preset_menu_delete)) },
-                                onClick = { menuFor = null; confirmDelete = preset },
+                                onClick = {
+                                    menuFor = null
+                                    confirmDelete = preset
+                                }
                             )
                         }
                     }
@@ -279,15 +287,18 @@ private fun HomeList(
             text = { Text(stringResource(R.string.preset_delete_message, preset.name)) },
             confirmButton = {
                 TextButton(
-                    onClick = { vm.deletePreset(preset.id); confirmDelete = null },
-                    modifier = Modifier.testTag("confirm_delete"),
+                    onClick = {
+                        vm.deletePreset(preset.id)
+                        confirmDelete = null
+                    },
+                    modifier = Modifier.testTag("confirm_delete")
                 ) {
                     Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            }
         )
     }
 }
@@ -298,7 +309,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text,
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -309,7 +320,7 @@ private fun EmptyNow() {
         Text(
             stringResource(R.string.home_nothing_running_hint),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -324,22 +335,24 @@ private fun NowCard(
     selected: Boolean,
     onOpen: () -> Unit,
     onToggle: () -> Unit,
-    onRestart: () -> Unit,
+    onRestart: () -> Unit
 ) {
     val cardDescription = when (phase) {
         TimerPhase.Finished -> stringResource(R.string.cd_timer_done, timer.name)
         TimerPhase.Running, TimerPhase.Paused -> stringResource(
-            R.string.cd_timer_card, timer.name, durationPhrase(timer.remainingMs(nowMs), roundUp = true),
+            R.string.cd_timer_card,
+            timer.name,
+            durationPhrase(timer.remainingMs(nowMs), roundUp = true)
         )
     }
     Card(
         onClick = onOpen,
         modifier = Modifier.fillMaxWidth(),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary).takeIf { selected },
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary).takeIf { selected }
     ) {
         Column(
             Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Hourglass(
@@ -347,7 +360,7 @@ private fun NowCard(
                     progress = { timer.progress(clock.nowMs()) },
                     running = phase == TimerPhase.Running,
                     modifier = Modifier.height(96.dp).aspectRatio(0.62f),
-                    contentDescription = cardDescription,
+                    contentDescription = cardDescription
                 )
                 when (phase) {
                     TimerPhase.Finished ->
@@ -366,7 +379,7 @@ private fun NowCard(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis
             )
             when (phase) {
                 TimerPhase.Finished -> DoneBadge()
@@ -384,7 +397,7 @@ private fun DoneBadge() {
             stringResource(R.string.timer_done_badge),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -394,7 +407,7 @@ private fun TimeLeftText(@StringRes label: Int, remainingMs: Long) {
     Text(
         stringResource(label, formatClock(remainingMs, roundUp = true)),
         style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -404,23 +417,23 @@ private fun PresetRow(preset: Preset, onStart: () -> Unit, onLongPress: () -> Un
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onLongPress),
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onLongPress)
     ) {
         Row(
             Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             when (val pinned = preset.pinnedLook) {
                 null -> Icon(
                     Icons.Rounded.Casino,
                     contentDescription = stringResource(R.string.cd_preset_random_look),
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(28.dp)
                 )
                 else -> Hourglass(
                     look = pinned,
                     progress = { 0f },
                     running = false,
-                    modifier = Modifier.height(32.dp).aspectRatio(0.62f),
+                    modifier = Modifier.height(32.dp).aspectRatio(0.62f)
                 )
             }
             Spacer(Modifier.size(12.dp))
@@ -429,17 +442,17 @@ private fun PresetRow(preset: Preset, onStart: () -> Unit, onLongPress: () -> Un
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 compactDuration(preset.durationMs),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             IconButton(onClick = onStart) {
                 Icon(
                     Icons.Rounded.PlayArrow,
-                    contentDescription = stringResource(R.string.cd_start_preset, preset.name),
+                    contentDescription = stringResource(R.string.cd_start_preset, preset.name)
                 )
             }
         }
