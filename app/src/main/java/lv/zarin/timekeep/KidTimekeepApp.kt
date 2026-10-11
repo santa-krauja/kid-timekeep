@@ -20,18 +20,18 @@ open class KidTimekeepApp : Application() {
     override fun onCreate() {
         super.onCreate()
         if (!::container.isInitialized) {
-            container = AppContainer(this)
+            container = DefaultAppContainer(this)
         }
         Notifications.ensureChannels(this)
         if (!reconcileOnLaunch()) return
         // The process may have been killed while a timer ran: finish/notify/re-arm from timestamps.
         appScope.launch {
             try {
-                AppStartup.reconcile(container, this@KidTimekeepApp)
+                AppStartup.launch(container, this@KidTimekeepApp)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.e("KidTimekeepApp", "Launch reconcile failed", e)
+                Log.e("KidTimekeepApp", "Launch startup failed", e)
             }
         }
     }

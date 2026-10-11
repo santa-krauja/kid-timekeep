@@ -12,8 +12,9 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import org.junit.Rule
@@ -24,7 +25,8 @@ import org.junit.runner.RunWith
 class HomeScreenTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -45,9 +47,9 @@ class HomeScreenTest {
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.waitUntil(10_000) {
             rule.mainClock.advanceTimeBy(50)
-            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+            rule.onAllNodesWithText("Left").fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Nothing running").assertDoesNotExist()
+        rule.onNodeWithText("Left").assertExists()
         runBlocking { check(app.container.timerRepository.getAll().single().name == "Brush teeth") }
     }
 

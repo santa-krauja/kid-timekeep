@@ -5,6 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
+import lv.zarin.timekeep.domain.timer.PictureId
+import lv.zarin.timekeep.domain.timer.SandColor
 
 @Dao
 interface TimerDao {
@@ -48,7 +50,12 @@ interface FavouriteLookDao {
         "SELECT * FROM favourite_looks WHERE look_topPicture = :topPicture AND look_topSand = :topSand " +
             "AND look_bottomPicture = :bottomPicture AND look_bottomSand = :bottomSand LIMIT 1",
     )
-    suspend fun find(topPicture: String, topSand: String, bottomPicture: String, bottomSand: String): FavouriteLookEntity?
+    suspend fun find(
+        topPicture: PictureId,
+        topSand: SandColor,
+        bottomPicture: PictureId,
+        bottomSand: SandColor,
+    ): FavouriteLookEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: FavouriteLookEntity)

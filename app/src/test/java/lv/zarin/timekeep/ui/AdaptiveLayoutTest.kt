@@ -9,8 +9,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.testutil.allowNotifications
 import lv.zarin.timekeep.MainActivity
 import org.junit.Rule
@@ -22,7 +23,8 @@ import org.robolectric.annotation.Config
 class AdaptiveLayoutTest {
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
         it.allowNotifications()
-        it.container = AppContainer(it, inMemoryDb = true)
+        it.container = TestAppContainer(it)
+        seedStarterPresets(it.container)
     }
 
     @get:Rule
@@ -58,14 +60,14 @@ class AdaptiveLayoutTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun phoneShowsOnlyList() {
+    fun phoneStartingPresetOpensTimerScreen() {
         startBrushTeeth()
         rule.waitUntil(10_000) {
             rule.mainClock.advanceTimeBy(50)
-            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
+            rule.onAllNodesWithText("My timers").fetchSemanticsNodes().isEmpty()
         }
-        rule.onNodeWithText("My timers").assertIsDisplayed()
-        rule.onNodeWithText("Left").assertDoesNotExist()
+        rule.onNodeWithText("Brush teeth").assertIsDisplayed()
+        rule.onNodeWithText("Left").assertIsDisplayed()
     }
 
     @Test
@@ -81,12 +83,6 @@ class AdaptiveLayoutTest {
     @Config(qualifiers = "w891dp-h411dp")
     fun phoneLandscapeTimerShowsAllControls() {
         startBrushTeeth()
-        rule.waitUntil(10_000) {
-            rule.mainClock.advanceTimeBy(50)
-            rule.onAllNodesWithText("Brush teeth").fetchSemanticsNodes().size == 2
-        }
-        // Card is the first match (the preset row comes later in the grid).
-        rule.onAllNodesWithText("Brush teeth")[0].performClick()
         rule.waitUntil(10_000) {
             rule.mainClock.advanceTimeBy(50)
             rule.onAllNodesWithText("+1 min").fetchSemanticsNodes().isNotEmpty()

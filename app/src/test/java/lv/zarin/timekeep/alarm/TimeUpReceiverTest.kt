@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.alarm
 
+import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -7,7 +8,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit
 class TimeUpReceiverTest {
     private val clock = FakeClock(0)
     private val app = ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-        it.container = AppContainer(it, inMemoryDb = true, clock = clock)
+        it.container = TestAppContainer(it, clock = clock)
     }
     private val nm = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val look = Look(PictureId.STAR, SandColor.SKY, PictureId.HEART, SandColor.PEACH)
@@ -80,7 +81,7 @@ class TimeUpReceiverTest {
         deliver("t1")
         assertTrue(shadowOf(nm).allNotifications.isEmpty())
         // The early fire re-arms the alarm instead of stranding the timer.
-        val am = app.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val am = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         assertEquals(10_000L, shadowOf(am).scheduledAlarms.single().triggerAtTime)
     }
 

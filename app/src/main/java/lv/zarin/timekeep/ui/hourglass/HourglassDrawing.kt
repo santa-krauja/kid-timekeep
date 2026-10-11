@@ -1,5 +1,6 @@
 package lv.zarin.timekeep.ui.hourglass
 
+import android.graphics.Paint as AndroidPaint
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -328,15 +329,15 @@ private const val SPLASH_R_SPLIT = 0.24f
 private val STREAM_WIDTHS = floatArrayOf(2 * 0.225f, 2 * 0.355f)
 private val SPLASH_WIDTHS = floatArrayOf(2 * 0.19f, 2 * 0.29f)
 
-private fun pointPaint(color: Color, width: Float) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+private fun pointPaint(color: Color, width: Float) = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
     this.color = color.toArgb()
-    style = android.graphics.Paint.Style.STROKE
+    style = AndroidPaint.Style.STROKE
     strokeWidth = width
-    strokeCap = android.graphics.Paint.Cap.ROUND
+    strokeCap = AndroidPaint.Cap.ROUND
 }
 
 /** Reusable per-bucket point buffers: grains of one colour and size are drawn with one drawRawPoints. */
-internal class PointBuckets(val paints: Array<android.graphics.Paint>, capacity: Int) {
+internal class PointBuckets(val paints: Array<AndroidPaint>, capacity: Int) {
     private val points = Array(paints.size) { FloatArray(capacity * 2) }
     private val counts = IntArray(paints.size)
 

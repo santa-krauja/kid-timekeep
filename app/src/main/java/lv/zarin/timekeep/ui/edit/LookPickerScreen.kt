@@ -124,7 +124,7 @@ fun LookPickerScreen(
                         fav = fav,
                         selected = fav.look == look,
                         onUse = { onLookChange(fav.look) },
-                        onDelete = if (canDelete) ({ onDeleteFavourite(fav.id) }) else null,
+                        onDelete = { onDeleteFavourite(fav.id) }.takeIf { canDelete },
                     )
                 }
                 OutlinedButton(onClick = onSaveFavourite, enabled = favourites.none { it.look == look }) {
@@ -166,7 +166,7 @@ private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> U
             .combinedClickable(
                 onClick = onUse,
                 onLongClick = onDelete,
-                onLongClickLabel = if (onDelete != null) stringResource(R.string.action_delete) else null,
+                onLongClickLabel = onDelete?.let { stringResource(R.string.action_delete) },
             )
             .padding(6.dp),
     ) {

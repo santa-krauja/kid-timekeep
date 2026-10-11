@@ -11,13 +11,24 @@ import lv.zarin.timekeep.domain.ports.Clock
 import lv.zarin.timekeep.domain.ports.PresetRepository
 import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.Look
+import lv.zarin.timekeep.domain.timer.MAX_NAME_LENGTH
 import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.domain.timer.TimerActions
+import lv.zarin.timekeep.domain.timer.elapsedMs
 import lv.zarin.timekeep.domain.timer.finishAtMs
 import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.isValidDuration
 import lv.zarin.timekeep.domain.timer.newId
+
+sealed interface EditResult {
+    data object Saved : EditResult
+    data object NotFound : EditResult
+    data object NotAllowed : EditResult
+    data object InvalidName : EditResult
+    data object DurationTooShort : EditResult
+    data object DurationNeedsPause : EditResult
+}
 
 /** Application core: orchestrates timer transitions, persistence and alarms. */
 class TimerService(
@@ -64,6 +75,31 @@ class TimerService(
     suspend fun addMinute(id: String): Unit {
         if (!policy.isAllowed(Control.ADD_MINUTE)) return
         transition(id) { TimerActions.addMinute(it, clock.nowMs()) }
+    }
+
+    suspend fun editTimer(id: String, name: String, durationMs: Long?, look: Look?): EditResult = mutex.withLock {
+        if (!policy.isAllowed(Control.EDIT)) return@withLock EditResult.NotAllowed
+        val stored = timers.get(id) ?: return@withLock EditResult.NotFound
+        val now = clock.nowMs()
+        val t = TimerActions.finish(stored, now).takeIf { stored.isOverdue(now) } ?: stored
+        val trimmed = name.trim()
+        if (trimmed.length !in 1..MAX_NAME_LENGTH) return@withLock EditResult.InvalidName
+        val newDuration = durationMs?.takeIf { it != t.durationMs }
+        if (newDuration != null) {
+            if (t.state !is RunState.Paused) return@withLock EditResult.DurationNeedsPause
+            if (!isValidDuration(newDuration) || newDuration <= t.elapsedMs(now)) {
+                return@withLock EditResult.DurationTooShort
+            }
+        }
+        save(
+            t.copy(
+                name = trimmed,
+                durationMs = newDuration ?: t.durationMs,
+                look = look ?: t.look,
+                updatedAtMs = now,
+            ),
+        )
+        EditResult.Saved
     }
 
     /** Returns the timer only if this call finished it. */

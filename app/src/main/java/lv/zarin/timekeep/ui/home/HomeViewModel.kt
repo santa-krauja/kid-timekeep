@@ -48,7 +48,6 @@ class HomeViewModel(
 
     private val _startedId = MutableStateFlow<String?>(null)
 
-    /** Id of the timer just started from a preset, until [consumeStartedId] (the tablet layout selects it). */
     val startedId: StateFlow<String?> = _startedId
 
     fun startPreset(id: String) {

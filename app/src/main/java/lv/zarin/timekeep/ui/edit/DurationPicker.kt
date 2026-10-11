@@ -43,7 +43,12 @@ private const val MAX_HOURS = 4
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DurationPicker(durationMs: Long, onDurationChange: (Long) -> Unit, modifier: Modifier = Modifier) {
+fun DurationPicker(
+    durationMs: Long,
+    onDurationChange: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     var customOpen by rememberSaveable { mutableStateOf(false) }
     val isCustom = durationMs !in QUICK_DURATIONS_MS
     FlowRow(
@@ -53,12 +58,14 @@ fun DurationPicker(durationMs: Long, onDurationChange: (Long) -> Unit, modifier:
         for (ms in QUICK_DURATIONS_MS) {
             FilterChip(
                 selected = durationMs == ms,
+                enabled = enabled,
                 onClick = { onDurationChange(ms) },
                 label = { Text(compactDuration(ms)) },
             )
         }
         FilterChip(
             selected = isCustom,
+            enabled = enabled,
             onClick = { customOpen = true },
             label = {
                 Text(if (isCustom) compactDuration(durationMs) else stringResource(R.string.edit_duration_custom))

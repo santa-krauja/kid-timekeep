@@ -11,7 +11,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import lv.zarin.timekeep.AppContainer
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -23,7 +23,7 @@ import org.robolectric.shadows.ShadowLooper
 class StartTimerConsumeTest {
     init {
         ApplicationProvider.getApplicationContext<KidTimekeepApp>().also {
-            it.container = AppContainer(it, inMemoryDb = true)
+            it.container = TestAppContainer(it)
         }
     }
 

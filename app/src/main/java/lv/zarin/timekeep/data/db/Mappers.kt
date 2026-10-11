@@ -2,31 +2,22 @@ package lv.zarin.timekeep.data.db
 
 import lv.zarin.timekeep.domain.timer.FavouriteLook
 import lv.zarin.timekeep.domain.timer.Look
-import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.Preset
 import lv.zarin.timekeep.domain.timer.RunState
-import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 
-private const val RUNNING = "RUNNING"
-private const val PAUSED = "PAUSED"
-private const val FINISHED = "FINISHED"
+fun Look.toColumns() = LookColumns(top, topSand, bottom, bottomSand)
 
-private fun pictureOf(name: String): PictureId = PictureId.entries.firstOrNull { it.name == name } ?: PictureId.HEART
-private fun sandOf(name: String): SandColor = SandColor.entries.firstOrNull { it.name == name } ?: SandColor.LAVENDER
-
-fun Look.toColumns() = LookColumns(top.name, topSand.name, bottom.name, bottomSand.name)
-
-fun LookColumns.toDomain() = Look(pictureOf(topPicture), sandOf(topSand), pictureOf(bottomPicture), sandOf(bottomSand))
+fun LookColumns.toDomain() = Look(topPicture, topSand, bottomPicture, bottomSand)
 
 fun Timer.toEntity(): TimerEntity {
     val s = state
     return TimerEntity(
         id = id, name = name, durationMs = durationMs, look = look.toColumns(), presetId = presetId,
         stateType = when (s) {
-            is RunState.Running -> RUNNING
-            is RunState.Paused -> PAUSED
-            is RunState.Finished -> FINISHED
+            is RunState.Running -> RunStateType.RUNNING
+            is RunState.Paused -> RunStateType.PAUSED
+            is RunState.Finished -> RunStateType.FINISHED
         },
         runningSinceMs = (s as? RunState.Running)?.sinceMs,
         elapsedMs = when (s) {
@@ -42,9 +33,9 @@ fun Timer.toEntity(): TimerEntity {
 fun TimerEntity.toDomain(): Timer = Timer(
     id = id, name = name, durationMs = durationMs, look = look.toDomain(), presetId = presetId,
     state = when (stateType) {
-        RUNNING -> RunState.Running(runningSinceMs ?: createdAtMs, elapsedMs ?: 0L)
-        PAUSED -> RunState.Paused(elapsedMs ?: 0L)
-        else -> RunState.Finished(finishedAtMs ?: updatedAtMs)
+        RunStateType.RUNNING -> RunState.Running(runningSinceMs ?: createdAtMs, elapsedMs ?: 0L)
+        RunStateType.PAUSED -> RunState.Paused(elapsedMs ?: 0L)
+        RunStateType.FINISHED -> RunState.Finished(finishedAtMs ?: updatedAtMs)
     },
     createdAtMs = createdAtMs, updatedAtMs = updatedAtMs,
 )

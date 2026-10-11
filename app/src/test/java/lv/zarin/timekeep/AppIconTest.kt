@@ -1,5 +1,7 @@
 package lv.zarin.timekeep
 
+import android.app.Application
+import android.content.Context
 import android.graphics.drawable.AdaptiveIconDrawable
 import androidx.core.content.res.ResourcesCompat
 import androidx.test.core.app.ApplicationProvider
@@ -11,9 +13,9 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(application = android.app.Application::class, qualifiers = "w411dp-h891dp")
+@Config(application = Application::class, qualifiers = "w411dp-h891dp")
 class AppIconTest {
-    private val context get() = ApplicationProvider.getApplicationContext<android.content.Context>()
+    private val context get() = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
     fun launcherIconIsAdaptiveWithMonochromeLayer() {

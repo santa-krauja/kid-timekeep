@@ -9,7 +9,7 @@ data object HomeRoute
 data class TimerRoute(val timerId: String)
 
 @Serializable
-data class EditTimerRoute(val presetId: String? = null)
+data class EditTimerRoute(val presetId: String? = null, val timerId: String? = null)
 
 @Serializable
 data object SettingsRoute

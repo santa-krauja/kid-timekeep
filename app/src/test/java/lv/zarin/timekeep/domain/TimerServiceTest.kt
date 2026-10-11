@@ -262,4 +262,124 @@ class TimerServiceTest {
         assertNull(s.finishIfOverdue(t.id))
         assertEquals(t.createdAtMs + 60_000L, alarms.scheduled[t.id])
     }
+
+    private val otherLook = Look(PictureId.SUN, SandColor.SKY, PictureId.MOON, SandColor.MINT)
+
+    @Test
+    fun renameRunningTimerKeepsStateAndAlarm() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        clock.advance(5_000L)
+        alarms.scheduled.clear()
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "  Tea  ", null, otherLook))
+        val r = timers.get(t.id)!!
+        assertEquals("Tea", r.name)
+        assertEquals(otherLook, r.look)
+        assertEquals(t.state, r.state)
+        assertEquals(60_000L, r.durationMs)
+        assertEquals(t.createdAtMs + 60_000L, alarms.scheduled[t.id])
+    }
+
+    @Test
+    fun nullLookKeepsLook() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        s.editTimer(t.id, "b", null, null)
+        assertEquals(pinned, timers.get(t.id)!!.look)
+    }
+
+    @Test
+    fun durationChangeOnPausedTimerKeepsElapsedAndNoAlarm() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        clock.advance(20_000L)
+        s.pause(t.id)
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "a", 120_000L, null))
+        val r = timers.get(t.id)!!
+        assertEquals(120_000L, r.durationMs)
+        assertEquals(RunState.Paused(20_000L), r.state)
+        assertTrue(t.id !in alarms.scheduled)
+    }
+
+    @Test
+    fun resumeAfterDurationChangeSchedulesAlarmForNewRemaining() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        clock.advance(20_000L)
+        s.pause(t.id)
+        s.editTimer(t.id, "a", 120_000L, null)
+        s.resume(t.id)
+        assertEquals(clock.now + 100_000L, alarms.scheduled[t.id])
+    }
+
+    @Test
+    fun durationChangeWhileRunningNeedsPause() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        assertEquals(EditResult.DurationNeedsPause, s.editTimer(t.id, "b", 120_000L, null))
+        assertEquals(t, timers.get(t.id))
+    }
+
+    @Test
+    fun sameDurationWhileRunningIsFine() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "b", 60_000L, null))
+        assertEquals("b", timers.get(t.id)!!.name)
+    }
+
+    @Test
+    fun durationNotLongerThanElapsedIsRejected() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        clock.advance(30_000L)
+        s.pause(t.id)
+        assertEquals(EditResult.DurationTooShort, s.editTimer(t.id, "a", 30_000L, null))
+        assertEquals(EditResult.DurationTooShort, s.editTimer(t.id, "a", 5_000L, null))
+        assertEquals(60_000L, timers.get(t.id)!!.durationMs)
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "a", 30_001L, null))
+    }
+
+    @Test
+    fun invalidNameIsRejected() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 60_000L, pinned)
+        assertEquals(EditResult.InvalidName, s.editTimer(t.id, "   ", null, null))
+        assertEquals(EditResult.InvalidName, s.editTimer(t.id, "x".repeat(41), null, null))
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "x".repeat(40), null, null))
+    }
+
+    @Test
+    fun policyDenyBlocksEdit() = runTest {
+        val s = service(ControlPolicy { it != Control.EDIT })
+        val t = s.startOneOff("a", 60_000L, pinned)
+        assertEquals(EditResult.NotAllowed, s.editTimer(t.id, "b", null, null))
+        assertEquals(t, timers.get(t.id))
+    }
+
+    @Test
+    fun unknownTimerIsNotFound() = runTest {
+        assertEquals(EditResult.NotFound, service().editTimer("nope", "b", null, null))
+    }
+
+    @Test
+    fun renameFinishedTimerStaysFinished() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 10_000L, pinned)
+        clock.advance(15_000L)
+        s.finishIfOverdue(t.id)
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "b", null, null))
+        assertTrue(timers.get(t.id)!!.state is RunState.Finished)
+    }
+
+    @Test
+    fun editingAnOverdueRunningTimerFinishesItFirst() = runTest {
+        val s = service()
+        val t = s.startOneOff("a", 10_000L, pinned)
+        clock.advance(15_000L)
+        assertEquals(EditResult.Saved, s.editTimer(t.id, "b", null, null))
+        val r = timers.get(t.id)!!
+        assertEquals("b", r.name)
+        assertTrue(r.state is RunState.Finished)
+    }
 }
