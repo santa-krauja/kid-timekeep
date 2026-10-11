@@ -40,7 +40,6 @@ class EditTimerScreenTest {
 
     private var started: String? = null
 
-    // The preview glasses are not running, so the clock can auto-advance (performScrollTo needs it).
     private fun show() {
         rule.setContent { EditTimerScreen(presetId = null, onBack = {}, onStarted = { started = it }) }
         rule.pump()

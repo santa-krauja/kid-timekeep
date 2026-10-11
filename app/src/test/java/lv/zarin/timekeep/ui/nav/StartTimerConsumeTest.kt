@@ -57,7 +57,6 @@ class StartTimerConsumeTest {
         }
         assertEquals(1, consumedCalls)
         assertEquals(1, timerArrivals)
-        // Recomposition (as after recreation) with the id already consumed must not navigate again.
         rule.runOnIdle { }
         repeat(5) { rule.mainClock.advanceTimeBy(50) }
         assertEquals(1, consumedCalls)

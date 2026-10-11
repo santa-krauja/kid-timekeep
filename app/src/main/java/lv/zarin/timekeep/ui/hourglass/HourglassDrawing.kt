@@ -40,12 +40,6 @@ import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP1
 import lv.zarin.timekeep.domain.hourglass.SandLevels
 import lv.zarin.timekeep.domain.timer.SandColor
 
-/*
- * Port of render() / drawSand() from the approved prototype script. Everything except the emoji is
- * drawn in the logical 100 x 128 box; the caller scales the DrawScope to fit.
- */
-
-/** Theme-dependent glass colours. */
 internal data class GlassColors(val fill: Color, val line: Color, val cap: Color) {
     companion object {
         val Light = GlassColors(fill = Color(0x1A78A0C8), line = Color(0xFF8AA4BD), cap = Color(0xFFA87C52))
@@ -53,7 +47,6 @@ internal data class GlassColors(val fill: Color, val line: Color, val cap: Color
     }
 }
 
-/** Sand shades: lighter (×1.12), base, darker (×0.82), as in the prototype's shades(). */
 internal data class SandShades(val light: Color, val base: Color, val dark: Color)
 
 private val SHADES: Map<SandColor, SandShades> = SandColor.entries.associateWith { sand ->
@@ -68,7 +61,6 @@ private val SHADES: Map<SandColor, SandShades> = SandColor.entries.associateWith
 
 internal fun SandColor.shades(): SandShades = SHADES.getValue(this)
 
-/** Bulb outline, offset outwards by [off] logical units (prototype bulbPath()). */
 internal fun bulbPath(off: Float): Path = Path().apply {
     var y = TOP0
     moveTo(CX - BulbShape.halfWidth(y) - off, y)
@@ -84,7 +76,6 @@ internal fun bulbPath(off: Float): Path = Path().apply {
     close()
 }
 
-/** Glint stroke down the left side of the top bulb. */
 internal fun shinePath(): Path = Path().apply {
     for (y in 16..44) {
         val x = CX - BulbShape.halfWidth(y.toFloat()) + 5f
@@ -96,7 +87,6 @@ internal fun capPath(top: Float): Path = Path().apply {
     addRoundRect(RoundRect(6f, top, 94f, top + 6f, CornerRadius(3f, 3f)))
 }
 
-/** Adds the sand surface polyline (prototype surface()) to [path]. */
 private fun Path.surface(top: Boolean, level: Float, amp: Float, start: Boolean) {
     var x = CX - R - 3f
     var first = start
@@ -114,11 +104,10 @@ private fun Path.surface(top: Boolean, level: Float, amp: Float, start: Boolean)
 
 private class Grain(val x: Float, val y: Float, val r: Float, val light: Boolean)
 
-/** 2600 deterministic grains (seed 12345, LCG s = s·1664525 + 1013904223 mod 2^32). */
 private val GRAINS: List<Grain> by lazy {
     var s = 12345
     fun next(): Float {
-        s = s * 1664525 + 1013904223 // Int overflow wraps mod 2^32
+        s = s * 1664525 + 1013904223
         return (s.toUInt().toDouble() / 4294967296.0).toFloat()
     }
     List(2600) {
@@ -133,7 +122,6 @@ private const val GRAIN_BUCKETS = 3
 private const val GRAIN_R_MIN = 0.12f
 private const val GRAIN_R_SPAN = 0.22f
 
-/** One drawPoints batch: grains of one shade and (approximate) radius. */
 internal class GrainBatch(val points: FloatArray, diameter: Float, light: Boolean) {
     val paint = Paint().apply {
         color = if (light) GRAIN_LIGHT else GRAIN_DARK
@@ -143,7 +131,6 @@ internal class GrainBatch(val points: FloatArray, diameter: Float, light: Boolea
     }
 }
 
-/** Grain batches per bulb, filtered to that bulb's band as the prototype does. */
 internal class GrainSet(val top: List<GrainBatch>, val bottom: List<GrainBatch>)
 
 internal val GRAIN_SET: GrainSet by lazy {
@@ -195,7 +182,6 @@ internal val SAND_GRADIENT_BOTTOM = Brush.verticalGradient(
     endY = BOT1
 )
 
-/** Size-independent paths, built once per Hourglass and reused every frame. */
 internal class HourglassPaths {
     val bulb = bulbPath(0f)
     val glass = bulbPath(1.4f)
@@ -208,10 +194,6 @@ internal class HourglassPaths {
 
 private data class TextureKey(val sand: SandColor, val picture: Any, val width: Int, val height: Int)
 
-/**
- * Per-bulb sand textures (base fill + gradient + emoji + grains) rendered once at device resolution
- * and reused every draw. Rebuilt only when the sand colour, picture or size changes.
- */
 internal class SandTextures {
     private var topKey: TextureKey? = null
     private var topImage: ImageBitmap? = null
@@ -240,13 +222,11 @@ internal class SandTextures {
     }
 }
 
-/** Texture content in logical units (receiver already scaled by [pxPerUnit]). */
 private fun DrawScope.drawSandTexture(top: Boolean, painter: Painter, sand: SandColor, pxPerUnit: Float) {
     val box = Size(BulbShape.WIDTH, BulbShape.HEIGHT)
     drawRect(sand.shades().base, size = box)
     drawRect(if (top) SAND_GRADIENT_TOP else SAND_GRADIENT_BOTTOM, size = box)
 
-    // Emoji: undo the logical scale so the vector rasterises at device resolution.
     val cy = if (top) 29f else 104f
     val left = CX - EMOJI_SIZE / 2
     val topY = cy - EMOJI_SIZE / 2
@@ -265,10 +245,6 @@ private fun DrawScope.drawSandTexture(top: Boolean, painter: Painter, sand: Sand
     }
 }
 
-/**
- * Back layer: glass fill and both sand bodies (revealed from the cached textures). Receiver is scaled
- * so that one unit = one logical unit; [pxPerUnit] is that scale (textures are drawn 1:1 in pixels).
- */
 internal fun DrawScope.drawHourglassBack(
     paths: HourglassPaths,
     levels: SandLevels,
@@ -282,7 +258,6 @@ internal fun DrawScope.drawHourglassBack(
     levels.bottomLevel?.let { drawSand(paths, false, it, levels.mound, bottomTexture, pxPerUnit) }
 }
 
-/** Front layer: glass stroke, shine and caps. Fully static. */
 internal fun DrawScope.drawHourglassFront(paths: HourglassPaths, colors: GlassColors) {
     drawPath(paths.glass, colors.line, style = GLASS_STROKE)
     drawPath(paths.shine, SHINE, style = SHINE_STROKE)
@@ -329,7 +304,6 @@ private fun pointPaint(color: Color, width: Float) = AndroidPaint(AndroidPaint.A
     strokeCap = AndroidPaint.Cap.ROUND
 }
 
-/** Reusable per-bucket point buffers: grains of one colour and size are drawn with one drawRawPoints. */
 internal class PointBuckets(val paints: Array<AndroidPaint>, capacity: Int) {
     private val points = Array(paints.size) { FloatArray(capacity * 2) }
     private val counts = IntArray(paints.size)
@@ -350,10 +324,6 @@ internal class PointBuckets(val paints: Array<AndroidPaint>, capacity: Int) {
     }
 }
 
-/**
- * Stream colours for one look. Stream grains are bucketed by (shade, mix step, radius bucket) and the
- * splash by (shade, alpha step, radius bucket); colours are RGB mixes as in the prototype.
- */
 internal class StreamPalette(top: SandColor, bottom: SandColor) {
     private val ts = top.shades()
     private val bs = bottom.shades()
@@ -394,7 +364,6 @@ internal class StreamPalette(top: SandColor, bottom: SandColor) {
             if (r < SPLASH_R_SPLIT) 0 else 1
 }
 
-/** Caches the core-line brush per quantised bottom end (y1 only changes when the levels do). */
 internal class CoreBrushCache {
     private var key = Float.NaN
     private var brush: Brush? = null
@@ -414,7 +383,6 @@ internal class CoreBrushCache {
     }
 }
 
-/** Port of the prototype drawStream(): faint core line plus (unless [animate] is false) grains and splash. */
 internal fun DrawScope.drawStream(levels: SandLevels, palette: StreamPalette, brushes: CoreBrushCache, t: Long, animate: Boolean) {
     val bottom = levels.bottomLevel
     val y0 = TOP1 - 1.2f

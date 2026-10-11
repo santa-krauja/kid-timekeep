@@ -75,10 +75,6 @@ import lv.zarin.timekeep.ui.hourglass.Hourglass
 fun TimerScreen(timerId: String, onBack: () -> Unit, onEdit: (String) -> Unit = {}) =
     TimerContent(timerId, onClose = onBack, showBack = true, onEdit = onEdit)
 
-/**
- * The big timer. Used as the phone route (`showBack = true`) and as the tablet detail pane
- * (`showBack = false`); [onClose] also runs when the timer is dismissed or no longer exists.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit: (String) -> Unit = {}) {

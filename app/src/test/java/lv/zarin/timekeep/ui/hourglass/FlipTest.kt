@@ -50,7 +50,7 @@ class FlipTest {
         assertEquals(0f, rotation(), 0f)
 
         trigger = 1
-        rule.runOnIdle { } // let the trigger write reach the composition
+        rule.runOnIdle { }
         rule.mainClock.advanceTimeByFrame()
         rule.mainClock.advanceTimeByFrame()
         rule.mainClock.advanceTimeBy(325)
@@ -88,10 +88,9 @@ class FlipTest {
         var p by mutableFloatStateOf(0.6f)
         start({ p }, { trigger })
         rule.mainClock.advanceTimeBy(100)
-        rule.onNodeWithTag("hg").captureToImage() // force a real draw so the back layer records 0.6
+        rule.onNodeWithTag("hg").captureToImage()
         assertEquals(0.6f, drawn(), 0f)
 
-        // Caller resets progress and restarts in the same frame.
         Snapshot.withMutableSnapshot {
             p = 0f
             trigger = 1
@@ -121,7 +120,6 @@ class FlipTest {
             rule.mainClock.advanceTimeBy(50)
             samples += rotation()
         }
-        // Monotonic increase to 180 (never snaps back mid-flip), then 0 forever (no second flip).
         var prev = before
         var finished = false
         for (r in samples) {

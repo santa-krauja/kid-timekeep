@@ -109,7 +109,6 @@ class SystemEventsReceiverTest {
     fun unknownActionIsIgnored() {
         seedRunning("t1")
         clock.now = 20_000
-        // An ignored action returns before launching any work, so onHandled (the work-complete hook) never fires.
         var handled = false
         SystemEventsReceiver.onHandled = { handled = true }
         SystemEventsReceiver().onReceive(app, Intent("com.example.OTHER"))

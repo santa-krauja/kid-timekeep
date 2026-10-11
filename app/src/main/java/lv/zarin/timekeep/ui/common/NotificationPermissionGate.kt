@@ -24,12 +24,7 @@ import lv.zarin.timekeep.R
 private const val PREFS = "notification_prefs"
 private const val KEY_ASKED = "notif_asked"
 
-/**
- * Returns a gate: `gate { start() }` runs the block straight away, except the first time on Android 13+ when
- * notifications aren't allowed yet. Then a rationale dialog is shown first, the system request follows on
- * "Allow", and the block runs afterwards either way. We only ever ask once ([KEY_ASKED]).
- * The pending block is not saved across recreation; if the screen is rotated mid-dialog the user taps Start again.
- */
+// The pending block is not saved across recreation: after a mid-dialog rotation the user taps Start again.
 @Composable
 fun rememberNotificationPermissionGate(): (onProceed: () -> Unit) -> Unit {
     val context = LocalContext.current

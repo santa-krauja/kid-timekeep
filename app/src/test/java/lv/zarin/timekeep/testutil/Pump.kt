@@ -6,16 +6,11 @@ import androidx.compose.ui.test.onAllNodesWithText
 import java.util.concurrent.TimeUnit
 import org.robolectric.shadows.ShadowLooper
 
-/** Virtual milliseconds advanced per pump. Small enough that 250 ms tickers fire in order. */
 const val PUMP_STEP_MS = 50L
 
-/** Default bound: 400 pumps * 50 ms = 20 s of virtual time. */
 const val DEFAULT_MAX_PUMPS = 400
 
-/**
- * Advances Compose frames and the main looper by [steps] fixed steps of [PUMP_STEP_MS].
- * Requires `mainClock.autoAdvance = false` (running hourglasses never go idle). Never sleeps.
- */
+// Running hourglasses never go idle, so callers set mainClock.autoAdvance = false and pump by hand.
 fun ComposeTestRule.pump(steps: Int = 1) {
     repeat(steps) {
         mainClock.advanceTimeBy(PUMP_STEP_MS)
@@ -23,10 +18,6 @@ fun ComposeTestRule.pump(steps: Int = 1) {
     }
 }
 
-/**
- * Pumps until [condition] holds, at most [maxPumps] times; fails with [description] otherwise.
- * The bound is a count of virtual steps, not a wall-clock deadline.
- */
 fun ComposeTestRule.pumpUntil(description: String, maxPumps: Int = DEFAULT_MAX_PUMPS, condition: () -> Boolean) {
     repeat(maxPumps) {
         if (condition()) return

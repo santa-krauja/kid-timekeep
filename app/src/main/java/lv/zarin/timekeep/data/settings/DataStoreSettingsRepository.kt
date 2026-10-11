@@ -20,10 +20,6 @@ import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import lv.zarin.timekeep.domain.ports.ThemeMode
 
-/**
- * The settings DataStore. A corrupt file is replaced with empty preferences (defaults) instead of throwing on
- * every read, which would crash the app at launch until its data is cleared.
- */
 fun settingsDataStore(
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     produceFile: () -> File
@@ -34,7 +30,6 @@ fun settingsDataStore(
 )
 
 class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>) : SettingsRepository {
-    /** A read error (IOException) falls back to defaults; anything else is a bug and is rethrown. */
     override val settings: Flow<Settings> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it.toSettings() }

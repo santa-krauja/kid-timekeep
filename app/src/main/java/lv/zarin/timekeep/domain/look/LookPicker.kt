@@ -32,7 +32,6 @@ class LookPicker(private val random: Random = Random.Default) {
 
         private val FALLBACK = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
-        /** Euclidean distance over the R, G, B bytes of two ARGB values (alpha ignored). */
         fun rgbDistance(a: Long, b: Long): Double {
             val dr = ((a shr 16) and 0xFF) - ((b shr 16) and 0xFF)
             val dg = ((a shr 8) and 0xFF) - ((b shr 8) and 0xFF)

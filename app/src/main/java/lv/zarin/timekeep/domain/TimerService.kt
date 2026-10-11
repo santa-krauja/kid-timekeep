@@ -30,7 +30,6 @@ sealed interface EditResult {
     data object DurationNeedsPause : EditResult
 }
 
-/** Application core: orchestrates timer transitions, persistence and alarms. */
 class TimerService(
     private val timers: TimerRepository,
     private val presets: PresetRepository,
@@ -101,25 +100,20 @@ class TimerService(
         EditResult.Saved
     }
 
-    /** Returns the timer only if this call finished it. */
     suspend fun finishIfOverdue(id: String): Timer? = mutex.withLock {
         val t = timers.get(id) ?: return@withLock null
         finishOverdue(t, clock.nowMs()) ?: run {
-            if (t.state is RunState.Running) syncAlarm(t) // early or stale fire: re-arm
+            if (t.state is RunState.Running) syncAlarm(t)
             null
         }
     }
 
-    /**
-     * Removes a run (OK on a finished timer). Deliberately not gated by [Control.DELETE]: dismissing a finished
-     * timer clears the screen; it is not deleting a saved preset or look, which is what DELETE guards.
-     */
+    // Not gated by Control.DELETE: dismissing a finished run is not deleting a saved preset or look.
     suspend fun dismiss(id: String): Unit = mutex.withLock {
         timers.delete(id)
         alarms.cancel(id)
     }
 
-    /** Finishes overdue running timers (returned) and reschedules alarms of the other running ones. */
     suspend fun reconcile(): List<Timer> = mutex.withLock {
         val now = clock.nowMs()
         val finished = mutableListOf<Timer>()
@@ -136,7 +130,6 @@ class TimerService(
 
     private suspend fun transition(id: String, change: (Timer) -> Timer): Unit = mutex.withLock {
         val t = timers.get(id) ?: return@withLock
-        // An overdue Running timer is finished first, so actions never strand or shortchange it.
         val current = TimerActions.finish(t, clock.nowMs()).takeIf { t.isOverdue(clock.nowMs()) } ?: t
         val updated = change(current)
         if (updated === t) return@withLock

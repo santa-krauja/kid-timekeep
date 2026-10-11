@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import lv.zarin.timekeep.KidTimekeepApp
 
-/** Fires when a timer's alarm goes off: finishes it (once) and posts the time's-up notification. */
 class TimeUpReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val timerId = intent.data?.takeIf { it.scheme == "kidtimekeep" }?.lastPathSegment
@@ -43,7 +42,6 @@ class TimeUpReceiver : BroadcastReceiver() {
     internal companion object {
         private const val TAG = "TimeUpReceiver"
 
-        /** Test hook: called after every delivery has been handled. */
         @VisibleForTesting
         @Volatile
         var onHandled: () -> Unit = {}

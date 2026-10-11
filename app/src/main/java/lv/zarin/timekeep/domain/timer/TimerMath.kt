@@ -1,6 +1,5 @@
 package lv.zarin.timekeep.domain.timer
 
-/** Elapsed time, always clamped to [0, durationMs]. Safe against wall-clock jumps. */
 fun Timer.elapsedMs(nowMs: Long): Long {
     val raw = when (val s = state) {
         is RunState.Running -> s.elapsedBeforeMs + (nowMs - s.sinceMs)
@@ -16,5 +15,4 @@ fun Timer.progress(nowMs: Long): Float = if (durationMs <= 0L) 1f else (elapsedM
 
 fun Timer.isOverdue(nowMs: Long): Boolean = state is RunState.Running && elapsedMs(nowMs) >= durationMs
 
-/** Wall-clock time at which a running timer ends; null unless Running. */
 fun Timer.finishAtMs(): Long? = (state as? RunState.Running)?.let { it.sinceMs + durationMs - it.elapsedBeforeMs }

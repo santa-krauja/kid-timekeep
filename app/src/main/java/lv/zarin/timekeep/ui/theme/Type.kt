@@ -16,7 +16,6 @@ private fun TextStyle.scaled(factor: Float, weight: FontWeight? = null): TextSty
 
 private fun TextUnit.scale(factor: Float): TextUnit = if (isSp) (value * factor).sp else this
 
-/** Material 3 defaults, body and label about 10% larger, titles bold. */
 val Typography = Typography(
     titleLarge = Base.titleLarge.scaled(1f, FontWeight.Bold),
     titleMedium = Base.titleMedium.scaled(1f, FontWeight.Bold),

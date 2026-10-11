@@ -35,9 +35,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** End-to-end flows through the real MainActivity with a fake clock; time only moves when a test moves it. */
 @RunWith(AndroidJUnit4::class)
-// A tall phone screen keeps every list row on screen (offscreen rows can't be tapped).
 @Config(qualifiers = "w411dp-h891dp")
 class FlowsTest {
     private val clock = FakeClock(1_000_000)
@@ -52,7 +50,6 @@ class FlowsTest {
 
     private fun timers(): List<Timer> = runBlocking { app.container.timerRepository.getAll() }
 
-    /** Running hourglasses never go idle, so frames and the looper are driven by hand from the start. */
     private fun openHome() {
         rule.mainClock.autoAdvance = false
         rule.pumpUntilText("My timers")

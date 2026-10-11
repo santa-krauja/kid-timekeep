@@ -31,7 +31,6 @@ import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.hourglass.drawableRes
 
-/** The reward moment: the finished bottom picture, Again / OK and "Save this look". */
 @Composable
 fun TimeUpOverlay(timer: Timer, lookSaved: Boolean, onAgain: () -> Unit, onOk: () -> Unit, onSaveLook: () -> Unit) {
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {

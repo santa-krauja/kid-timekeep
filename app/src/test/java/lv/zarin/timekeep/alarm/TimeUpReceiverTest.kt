@@ -81,7 +81,6 @@ class TimeUpReceiverTest {
         clock.now = 5_000
         deliver("t1")
         assertTrue(shadowOf(nm).allNotifications.isEmpty())
-        // The early fire re-arms the alarm instead of stranding the timer.
         val am = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         assertEquals(10_000L, shadowOf(am).scheduledAlarms.single().triggerAtTime)
     }

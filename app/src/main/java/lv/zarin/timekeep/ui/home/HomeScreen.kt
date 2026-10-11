@@ -118,9 +118,8 @@ fun HomeScreen(
     )
     val state by vm.state.collectAsStateWithLifecycle()
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
-    // Phones in landscape are wide but short: they keep the single-pane list and a full-screen timer.
-    val twoPane = windowSize.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED &&
-        windowSize.windowHeightSizeClass != WindowHeightSizeClass.COMPACT
+    val isPhoneLandscape = windowSize.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
+    val twoPane = windowSize.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED && !isPhoneLandscape
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val startedId by vm.startedId.collectAsStateWithLifecycle()
     LaunchedEffect(startedId) {
@@ -134,7 +133,6 @@ fun HomeScreen(
         return
     }
 
-    // Two-pane: the list on the left, the selected timer big on the right. Nothing navigates.
     val shownId = selectedId?.takeIf { id -> state.now.any { it.id == id } }
         ?: state.now.firstOrNull { it.state is RunState.Running }?.id
         ?: state.now.firstOrNull { it.state is RunState.Paused }?.id
@@ -255,7 +253,6 @@ private fun HomeList(
                     PresetRow(
                         preset = preset,
                         onStart = { notificationGate { vm.startPreset(preset.id) } },
-                        // ControlPolicy: no menu at all when neither Edit nor Delete is allowed.
                         onLongPress = { if (state.canEdit || state.canDelete) menuFor = preset }
                     )
                     DropdownMenu(expanded = menuFor?.id == preset.id, onDismissRequest = { menuFor = null }) {

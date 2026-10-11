@@ -16,7 +16,6 @@ class DurationPhraseTest {
     @get:Rule
     val rule = createComposeRule()
 
-    /** Renders [durationPhrase] for every input in one composition. */
     private fun phrases(vararg ms: Long, roundUp: Boolean = false): List<String> {
         var out = emptyList<String>()
         rule.setContent { out = ms.map { durationPhrase(it, roundUp) } }
@@ -57,7 +56,6 @@ class DurationPhraseTest {
     @Test
     @Config(qualifiers = "lv")
     fun latvianZeroMinutesPlural() {
-        // durationPhrase never emits "0 minutes"; check the raw plural so the zero form is covered.
         val res = ApplicationProvider.getApplicationContext<Context>().resources
         val r = R.plurals.duration_minutes
         assertEquals("0 minūšu", res.getQuantityString(r, 0, 0))

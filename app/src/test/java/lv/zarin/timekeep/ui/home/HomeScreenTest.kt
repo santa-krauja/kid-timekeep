@@ -41,7 +41,6 @@ class HomeScreenTest {
         rule.onNodeWithText("Brush teeth").assertIsDisplayed()
         rule.onNodeWithText("Get dressed").assertIsDisplayed()
         rule.onNodeWithText("Reading").assertIsDisplayed()
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
         rule.waitUntil(10_000) {

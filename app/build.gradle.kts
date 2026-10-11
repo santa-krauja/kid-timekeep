@@ -25,7 +25,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Release signing is read from an untracked keystore.properties at the repo root; without it the release APK is unsigned.
     val keystoreFile = rootProject.file("keystore.properties")
     val keystoreProps: Properties? = if (keystoreFile.exists()) {
         Properties().apply { keystoreFile.inputStream().use { load(it) } }.also { props ->
@@ -52,7 +51,6 @@ android {
 
     buildTypes {
         debug {
-            // Adds the en-XA (accented, long) and ar-XB (RTL) pseudo-locales to the system language list for QA.
             isPseudoLocalesEnabled = true
         }
         release {

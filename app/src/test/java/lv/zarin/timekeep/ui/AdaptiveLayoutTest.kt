@@ -34,7 +34,6 @@ class AdaptiveLayoutTest {
         rule.waitUntil(5_000) {
             rule.onAllNodesWithContentDescription("Start Brush teeth").fetchSemanticsNodes().isNotEmpty()
         }
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         rule.onNodeWithContentDescription("Start Brush teeth").performClick()
     }
@@ -95,11 +94,10 @@ class AdaptiveLayoutTest {
     @Config(qualifiers = "w1280dp-h800dp")
     fun tabletTappingNowCardSelectsIt() {
         startBrushTeeth()
-        waitForCount("Brush teeth", 3) // preset row + card + detail title
+        waitForCount("Brush teeth", 3)
         rule.onNodeWithContentDescription("Start Get dressed").performClick()
         waitForCount("Get dressed", 3)
         waitForCount("Brush teeth", 2)
-        // The Now cards come before the preset rows; the first one is Brush teeth.
         rule.onAllNodesWithText("Brush teeth")[0].performClick()
         waitForCount("Brush teeth", 3)
         waitForCount("Get dressed", 2)

@@ -133,7 +133,6 @@ class EditTimerViewModelTest {
         vm.start()
         assertEquals(pinned, presets.observeAll().first().single().pinnedLook)
 
-        // Editing that preset starts with keepLook on and the pinned look; turning it off unpins.
         val presetId = presets.observeAll().first().single().id
         val edit = vm(presetId)
         assertEquals(EditTarget.Preset(presetId), edit.state.value.target)

@@ -128,9 +128,7 @@ private fun LanguageDropdown() {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val options = remember(context) { languageOptions(context) }
-    // Empty list = follow the system.
     var currentTag by remember { mutableStateOf(appLocaleTag()) }
-    // Re-read when coming back (and the activity recreates after a change), so it never goes stale.
     LifecycleResumeEffect(Unit) {
         currentTag = appLocaleTag()
         onPauseOrDispose { }
@@ -163,7 +161,6 @@ private fun LanguageDropdown() {
                                 LocaleListCompat.forLanguageTags(option.tag ?: "")
                             )
                             currentTag = option.tag
-                            // Notification channel names are renamed by MainActivity.onCreate after the recreation.
                         }
                     }
                 )
@@ -244,7 +241,6 @@ private fun AboutDialog(onDismiss: () -> Unit) {
 private fun NotificationsRow() {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
-    // The user may change this in system settings and come back.
     LifecycleResumeEffect(Unit) {
         allowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
         onPauseOrDispose { }

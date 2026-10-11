@@ -37,10 +37,6 @@ import lv.zarin.timekeep.ui.common.compactDuration
 
 private const val MAX_HOURS = 4
 
-/**
- * Quick chips from [QUICK_DURATIONS_MS] plus "h:m:s…", which opens hour / minute / second pickers.
- * The caller clamps the result to the allowed range.
- */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DurationPicker(durationMs: Long, onDurationChange: (Long) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
@@ -106,7 +102,6 @@ private fun CustomDurationDialog(initialMs: Long, onDismiss: () -> Unit, onConfi
     )
 }
 
-/** 0..[max], wrapping around at both ends. */
 @Composable
 private fun NumberStepper(label: String, value: Int, max: Int, onChange: (Int) -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

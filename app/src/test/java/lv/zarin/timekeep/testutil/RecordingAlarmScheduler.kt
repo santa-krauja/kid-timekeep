@@ -3,7 +3,6 @@ package lv.zarin.timekeep.testutil
 import lv.zarin.timekeep.domain.ports.AlarmScheduler
 
 class RecordingAlarmScheduler : AlarmScheduler {
-    /** Currently scheduled alarms (id to epoch ms). */
     val scheduled = mutableMapOf<String, Long>()
     val cancelled = mutableListOf<String>()
     var scheduleCalls = 0

@@ -2,7 +2,6 @@ package lv.zarin.timekeep.domain.timer
 
 import kotlinx.serialization.Serializable
 
-/** [pinnedLook] == null means a random look each start. */
 @Serializable
 data class Preset(
     val id: String,

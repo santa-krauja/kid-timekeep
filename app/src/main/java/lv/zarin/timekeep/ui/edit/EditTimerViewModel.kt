@@ -89,7 +89,6 @@ class EditTimerViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    /** The preset being edited, once loaded. */
     private var preset: Preset? = null
 
     init {
@@ -134,13 +133,11 @@ class EditTimerViewModel(
         }
     }
 
-    /** Input longer than [MAX_NAME_LENGTH] is ignored. */
     fun setName(name: String) {
         if (name.length > MAX_NAME_LENGTH) return
         _state.update { it.copy(name = name, nameError = false) }
     }
 
-    /** Clamped to [MIN_DURATION_MS, MAX_DURATION_MS]. */
     fun setDuration(ms: Long) {
         val clamped = ms.coerceIn(MIN_DURATION_MS, MAX_DURATION_MS)
         _state.update { it.copy(durationMs = clamped, durationError = false, durationTooShort = false) }
@@ -172,7 +169,6 @@ class EditTimerViewModel(
         _state.update { it.copy(keepLook = on) }
     }
 
-    /** Starts a run (saving a preset first if asked). Returns the new timer id, or null when invalid. */
     suspend fun start(): String? = exclusively(whenBusy = null) {
         val s = validated() ?: return@exclusively null
         val name = s.name.trim()
@@ -197,7 +193,6 @@ class EditTimerViewModel(
         service.startOneOff(name, s.durationMs, s.look, savedPresetId).id
     }
 
-    /** Saves the edited preset. Returns false when editing is not allowed, the input is invalid or the preset is gone. */
     suspend fun savePreset(): Boolean = exclusively(whenBusy = false) {
         if (!policy.isAllowed(Control.EDIT)) return@exclusively false
         val s = validated() ?: return@exclusively false
@@ -255,7 +250,6 @@ class EditTimerViewModel(
     }
 
     private companion object {
-        /** Shown only until the first suggestion arrives. */
         val PLACEHOLDER_LOOK = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
     }
 }

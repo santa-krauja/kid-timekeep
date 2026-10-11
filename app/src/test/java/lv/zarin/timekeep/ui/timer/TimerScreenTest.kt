@@ -43,12 +43,10 @@ class TimerScreenTest {
         runBlocking {
             app.container.timerRepository.upsert(Timer("t", "Brush teeth", 120_000, look, null, state, 0, 0))
         }
-        // Hourglasses animate forever, so the clock is driven by hand.
         rule.mainClock.autoAdvance = false
         rule.setContent { TimerScreen("t", onBack = { backs++ }, onEdit = { edited = it }) }
     }
 
-    /** Drives frames by hand and lets Room / ViewModel work on the main looper run. */
     private fun pump() {
         rule.mainClock.advanceTimeBy(50)
         ShadowLooper.idleMainLooper()

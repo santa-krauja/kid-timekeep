@@ -60,13 +60,8 @@ import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.hourglass.drawableRes
 
-/** Static fill used for every preview glass (wireframe E1/E2). */
 internal const val PREVIEW_PROGRESS = 0.35f
 
-/**
- * Wireframe E2: preview, favourite looks, top and bottom pictures and sands, Done.
- * In-screen state of [EditTimerScreen], not a navigation route.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LookPickerScreen(
@@ -180,10 +175,8 @@ private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> U
     }
 }
 
-/** Pictures that clash with [sand] are dimmed (still selectable). */
 @Composable
 private fun PictureRow(selected: PictureId, sand: SandColor, onPick: (PictureId) -> Unit) {
-    // Start scrolled so the chosen picture is visible.
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = (selected.ordinal - 2).coerceAtLeast(0))
     LazyRow(
         state = listState,
@@ -244,7 +237,6 @@ private fun SandRow(selected: SandColor, onPick: (SandColor) -> Unit) {
     }
 }
 
-/** "Heart on Lavender sand, Star on Sky sand". */
 @Composable
 internal fun lookDescription(look: Look): String = stringResource(
     R.string.cd_look,

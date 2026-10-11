@@ -14,12 +14,7 @@ import lv.zarin.timekeep.ui.settings.SettingsScreen
 import lv.zarin.timekeep.ui.timer.TimerScreen
 
 @Composable
-fun AppNavHost(
-    navController: NavHostController,
-    startTimerId: String? = null,
-    /** Called once the deep link was navigated, so recreation or recomposition can't navigate again. */
-    onStartTimerConsumed: () -> Unit = {}
-) {
+fun AppNavHost(navController: NavHostController, startTimerId: String? = null, onStartTimerConsumed: () -> Unit = {}) {
     val consumed by rememberUpdatedState(onStartTimerConsumed)
     LaunchedEffect(startTimerId) {
         if (startTimerId != null) {

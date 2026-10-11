@@ -108,11 +108,9 @@ class NotificationsTest {
     }
 
     @Test
-    @Config(sdk = [30]) // API < 33: AppCompat only localises Activity contexts
+    @Config(sdk = [30])
     fun notificationAndChannelsFollowAppLocale() {
         grant()
-        // On API < 33 the locale is only persisted (and so visible to non-Activity contexts) once an
-        // AppCompat activity has synced it, as happens in the real app.
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         scenario.onActivity {
             AppCompatDelegate.setApplicationLocales(
@@ -160,7 +158,7 @@ class NotificationsTest {
             ) {
                 Thread.sleep(20)
             }
-            scenario.recreate() // what a language change does; MainActivity.onCreate must rename the channels
+            scenario.recreate()
             assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {

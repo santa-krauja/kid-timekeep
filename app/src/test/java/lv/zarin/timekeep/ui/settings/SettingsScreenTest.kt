@@ -125,7 +125,6 @@ class SettingsScreenTest {
         waitForText("Copyright (C) 2026 Santa Zarina")
         waitForText("Kid Timekeep is free software under the GNU GPL v3.")
         waitForText("Source code")
-        // Only present in res/raw/noto_emoji_license.txt, so the file really loaded.
         waitForText("Licensed under the Apache License, Version 2.0", substring = true)
         // Apache-2.0 4(a)/(b): the full licence text and a notice that the files were modified.
         waitForText("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION", substring = true)

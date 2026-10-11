@@ -16,11 +16,6 @@ import lv.zarin.timekeep.domain.timer.PictureId
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
 
-/*
- * Design-time gallery only (not wired into navigation): every picture on every sand colour, plus a
- * large sample. Each small glass is half run so both the wiped top and the revealed bottom show.
- */
-
 private val sampleLook = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
 @Composable

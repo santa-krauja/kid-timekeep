@@ -44,20 +44,18 @@ import org.robolectric.shadows.ShadowLooper
 
 private fun flatten(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::flatten)
 
-/** Every node with a click action needs a spoken label and a >= 48 dp touch target. */
 private fun assertClickablesAccessible(root: SemanticsNode, density: Float, screen: String) {
     val clickables = flatten(root).filter { it.config.contains(SemanticsActions.OnClick) }
     assertTrue("$screen: no clickables found", clickables.isNotEmpty())
     for (n in clickables) {
-        // Off-screen items of scrolling containers are not laid out; they are checked when scrolled in.
         val cfg = n.config
         val label = buildList {
             cfg.getOrNull(SemanticsProperties.ContentDescription)?.let { addAll(it) }
             cfg.getOrNull(SemanticsProperties.Text)?.let { t -> addAll(t.map { it.text }) }
             cfg.getOrNull(SemanticsProperties.EditableText)?.let { add(it.text) }
         }.joinToString("").trim()
-        // Text fields are labelled by their placeholder/label child; accept a text-input role as labelled.
-        val labelled = label.isNotEmpty() || cfg.contains(SemanticsActions.SetText)
+        val labelledByTextFieldChild = cfg.contains(SemanticsActions.SetText)
+        val labelled = label.isNotEmpty() || labelledByTextFieldChild
         assertTrue("$screen: clickable node ${n.id} has no label: $cfg", labelled)
         val b = n.touchBoundsInRoot
         val w = b.width / density
@@ -72,7 +70,6 @@ private fun contrast(a: Color, b: Color): Double {
     return (maxOf(l1, l2) + 0.05) / (minOf(l1, l2) + 0.05)
 }
 
-// Large window so scrolling lists are laid out unclipped and touch bounds are meaningful.
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w1000dp-h3000dp-mdpi")
 class AccessibilityTest {
@@ -115,7 +112,6 @@ class AccessibilityTest {
 
     @Test
     fun hourglassHasTimePhrase() {
-        // 7 minutes elapsed of 15 -> 8 left.
         showTimer(RunState.Running(sinceMs = 100_000 - 7 * 60_000L, elapsedBeforeMs = 0))
         waitForCd("Reading: 8 minutes left of 15 minutes")
     }
@@ -134,7 +130,6 @@ class AccessibilityTest {
 
     @Test
     fun overdueRunningTimerReadsTimesUp() {
-        // Started 20 minutes ago on a 15 minute timer, not yet reconciled to Finished.
         showTimer(RunState.Running(sinceMs = 100_000 - 20 * 60_000L, elapsedBeforeMs = 0))
         waitForCd("Reading: time's up")
     }
@@ -154,8 +149,7 @@ class AccessibilityTest {
         fun SemanticsNode.cd() = config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().joinToString()
         fun SemanticsNode.text() = config.getOrNull(SemanticsProperties.Text).orEmpty().joinToString { it.text }
 
-        // Compose sorts TalkBack traversal geometrically (top, then left) unless traversalIndex is set,
-        // so the order is by screen position. Tree order differs (Scaffold slots content first).
+        // TalkBack order follows screen position (Compose sorts geometrically), not semantics tree order.
         fun top(pred: (SemanticsNode) -> Boolean) = nodes.first(pred).boundsInRoot.top
         val title = top { it.text() == "Reading" }
         val hourglass = top { it.cd().startsWith("Reading: ") }
@@ -238,7 +232,6 @@ class HomeAccessibilityTest {
     fun homeClickablesHaveLabelsAndSize() {
         rule.waitUntil(5_000) { rule.onAllNodesWithText("Reading").fetchSemanticsNodes().isNotEmpty() }
         val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
-        // A running hourglass animates forever, so the clock is driven by hand from here on.
         rule.mainClock.autoAdvance = false
         val now = app.container.clock.nowMs()
         runBlocking {

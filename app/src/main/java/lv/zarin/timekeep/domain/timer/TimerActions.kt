@@ -1,6 +1,5 @@
 package lv.zarin.timekeep.domain.timer
 
-/** Pure state transitions. Inapplicable transitions return the input instance unchanged. */
 object TimerActions {
     fun newRun(id: String, name: String, durationMs: Long, look: Look, presetId: String?, nowMs: Long): Timer = Timer(
         id = id,

@@ -57,7 +57,6 @@ private val KidShapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp)
 )
 
-/** Whether [themeMode] resolves to the dark scheme, given the system setting. */
 @Composable
 fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()

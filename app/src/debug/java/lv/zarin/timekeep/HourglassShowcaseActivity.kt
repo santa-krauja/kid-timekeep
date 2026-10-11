@@ -27,11 +27,6 @@ import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.ui.hourglass.Hourglass
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
 
-/**
- * Debug-only showcase: a 2x2 grid of hourglasses at p = 0, 0.3, 0.7, 1 (stream runs on 0.3 and 0.7);
- * extra `--ez many true` shows 8 small running hourglasses.
- * `adb shell am start -n lv.zarin.timekeep/.HourglassShowcaseActivity`
- */
 class HourglassShowcaseActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +61,6 @@ class HourglassShowcaseActivity : ComponentActivity() {
                             Modifier.safeDrawingPadding().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Debug: flip the first cell (p = 0.3) and reset its progress to 0.
                             Button(onClick = {
                                 firstP = 0f
                                 flip++
