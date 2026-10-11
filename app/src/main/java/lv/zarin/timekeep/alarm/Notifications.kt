@@ -36,7 +36,7 @@ object Notifications {
         Spec(CHANNEL_SOUND_VIBRATE, R.string.channel_time_up, sound = true, vibrate = true),
         Spec(CHANNEL_SOUND_ONLY, R.string.channel_time_up_sound_only, sound = true, vibrate = false),
         Spec(CHANNEL_VIBRATE_ONLY, R.string.channel_time_up_vibrate_only, sound = false, vibrate = true),
-        Spec(CHANNEL_SILENT, R.string.channel_time_up_silent, sound = false, vibrate = false),
+        Spec(CHANNEL_SILENT, R.string.channel_time_up_silent, sound = false, vibrate = false)
     )
 
     /** The channel matching the Sound and Vibrate settings. */
@@ -82,10 +82,14 @@ object Notifications {
             .putExtra(MainActivity.EXTRA_TIMER_ID, timer.id)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = PendingIntent.getActivity(
-            context, timer.id.hashCode(), open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            context,
+            timer.id.hashCode(),
+            open,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification = NotificationCompat.Builder(
-            context, channelFor(settings),
+            context,
+            channelFor(settings)
         )
             .setSmallIcon(R.drawable.ic_stat_hourglass)
             .setContentTitle(timer.name)

@@ -18,7 +18,7 @@ fun AppNavHost(
     navController: NavHostController,
     startTimerId: String? = null,
     /** Called once the deep link was navigated, so recreation or recomposition can't navigate again. */
-    onStartTimerConsumed: () -> Unit = {},
+    onStartTimerConsumed: () -> Unit = {}
 ) {
     val consumed by rememberUpdatedState(onStartTimerConsumed)
     LaunchedEffect(startTimerId) {
@@ -34,14 +34,14 @@ fun AppNavHost(
                 onOpenTimer = { navController.navigate(TimerRoute(it)) },
                 onNewTimer = { navController.navigate(EditTimerRoute()) },
                 onEditPreset = { navController.navigate(EditTimerRoute(presetId = it)) },
-                onEditTimer = { navController.navigate(EditTimerRoute(timerId = it)) },
+                onEditTimer = { navController.navigate(EditTimerRoute(timerId = it)) }
             )
         }
         composable<TimerRoute> { entry ->
             TimerScreen(
                 entry.toRoute<TimerRoute>().timerId,
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(EditTimerRoute(timerId = it)) },
+                onEdit = { navController.navigate(EditTimerRoute(timerId = it)) }
             )
         }
         composable<EditTimerRoute> { entry ->
@@ -54,7 +54,7 @@ fun AppNavHost(
                     navController.navigate(TimerRoute(id)) {
                         popUpTo<EditTimerRoute> { inclusive = true }
                     }
-                },
+                }
             )
         }
         composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }

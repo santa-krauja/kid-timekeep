@@ -9,8 +9,7 @@ import org.junit.Test
 class TimerMathTest {
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
 
-    private fun timer(state: RunState, durationMs: Long = 300_000L) =
-        Timer("id", "t", durationMs, look, null, state, 0L, 0L)
+    private fun timer(state: RunState, durationMs: Long = 300_000L) = Timer("id", "t", durationMs, look, null, state, 0L, 0L)
 
     @Test
     fun elapsedWhileRunning() {

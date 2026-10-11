@@ -38,7 +38,7 @@ class TimerService(
     private val clock: Clock,
     private val lookPicker: LookPicker,
     private val policy: ControlPolicy = AllowAllControlPolicy,
-    private val ids: () -> String = ::newId,
+    private val ids: () -> String = ::newId
 ) {
     private val mutex = Mutex()
 
@@ -55,15 +55,14 @@ class TimerService(
         timer
     }
 
-    suspend fun startOneOff(name: String, durationMs: Long, look: Look, presetId: String? = null): Timer =
-        mutex.withLock {
-            require(isValidDuration(durationMs)) { "Invalid duration: $durationMs" }
-            val timer = TimerActions.newRun(ids(), name.trim(), durationMs, look, presetId, clock.nowMs())
-            save(timer)
-            timer
-        }
+    suspend fun startOneOff(name: String, durationMs: Long, look: Look, presetId: String? = null): Timer = mutex.withLock {
+        require(isValidDuration(durationMs)) { "Invalid duration: $durationMs" }
+        val timer = TimerActions.newRun(ids(), name.trim(), durationMs, look, presetId, clock.nowMs())
+        save(timer)
+        timer
+    }
 
-    suspend fun pause(id: String): Unit {
+    suspend fun pause(id: String) {
         if (!policy.isAllowed(Control.PAUSE)) return
         transition(id) { TimerActions.pause(it, clock.nowMs()) }
     }
@@ -72,7 +71,7 @@ class TimerService(
 
     suspend fun restart(id: String): Unit = transition(id) { TimerActions.restart(it, clock.nowMs()) }
 
-    suspend fun addMinute(id: String): Unit {
+    suspend fun addMinute(id: String) {
         if (!policy.isAllowed(Control.ADD_MINUTE)) return
         transition(id) { TimerActions.addMinute(it, clock.nowMs()) }
     }
@@ -96,8 +95,8 @@ class TimerService(
                 name = trimmed,
                 durationMs = newDuration ?: t.durationMs,
                 look = look ?: t.look,
-                updatedAtMs = now,
-            ),
+                updatedAtMs = now
+            )
         )
         EditResult.Saved
     }
@@ -126,7 +125,11 @@ class TimerService(
         val finished = mutableListOf<Timer>()
         for (t in timers.getAll()) {
             val done = finishOverdue(t, now)
-            if (done != null) finished += done else if (t.state is RunState.Running) syncAlarm(t)
+            if (done != null) {
+                finished += done
+            } else if (t.state is RunState.Running) {
+                syncAlarm(t)
+            }
         }
         finished
     }
@@ -157,6 +160,5 @@ class TimerService(
         if (at != null) alarms.schedule(t.id, at) else alarms.cancel(t.id)
     }
 
-    private suspend fun activeLooks(): Set<Look> =
-        timers.getAll().filter { it.state !is RunState.Finished }.map { it.look }.toSet()
+    private suspend fun activeLooks(): Set<Look> = timers.getAll().filter { it.state !is RunState.Finished }.map { it.look }.toSet()
 }

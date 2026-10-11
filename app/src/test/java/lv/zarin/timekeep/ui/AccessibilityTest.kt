@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -15,13 +16,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.semantics.SemanticsNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.domain.timer.Look
@@ -30,7 +28,9 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.testutil.allowNotifications
+import lv.zarin.timekeep.testutil.seedStarterPresets
 import lv.zarin.timekeep.ui.edit.EditTimerScreen
 import lv.zarin.timekeep.ui.settings.SettingsScreen
 import lv.zarin.timekeep.ui.theme.KidTimekeepTheme
@@ -153,6 +153,7 @@ class AccessibilityTest {
         val nodes = flatten(rule.onRoot().fetchSemanticsNode())
         fun SemanticsNode.cd() = config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().joinToString()
         fun SemanticsNode.text() = config.getOrNull(SemanticsProperties.Text).orEmpty().joinToString { it.text }
+
         // Compose sorts TalkBack traversal geometrically (top, then left) unless traversalIndex is set,
         // so the order is by screen position. Tree order differs (Scaffold slots content first).
         fun top(pred: (SemanticsNode) -> Boolean) = nodes.first(pred).boundsInRoot.top
@@ -162,7 +163,7 @@ class AccessibilityTest {
         val controls = top { it.cd() == "Start over" }
         assertTrue(
             "title<hourglass<time<controls: $title $hourglass $time $controls",
-            title < hourglass && hourglass < time && time < controls,
+            title < hourglass && hourglass < time && time < controls
         )
     }
 
@@ -207,7 +208,7 @@ class AccessibilityTest {
             "onPrimaryContainer/primaryContainer" to (cs.onPrimaryContainer to cs.primaryContainer),
             "onSecondaryContainer/secondaryContainer" to (cs.onSecondaryContainer to cs.secondaryContainer),
             "primary/surface" to (cs.primary to cs.surface),
-            "secondary/surface" to (cs.secondary to cs.surface),
+            "secondary/surface" to (cs.secondary to cs.surface)
         )
         for ((label, p) in pairs) {
             val c = contrast(p.first, p.second)
@@ -242,7 +243,7 @@ class HomeAccessibilityTest {
         val now = app.container.clock.nowMs()
         runBlocking {
             app.container.timerRepository.upsert(
-                Timer("t", "Tidy", 120_000, look, null, RunState.Running(now, 0), 0, 0),
+                Timer("t", "Tidy", 120_000, look, null, RunState.Running(now, 0), 0, 0)
             )
         }
         rule.waitUntil(10_000) {
@@ -250,7 +251,9 @@ class HomeAccessibilityTest {
             rule.onAllNodesWithContentDescription("Pause").fetchSemanticsNodes().isNotEmpty()
         }
         assertClickablesAccessible(
-            rule.onRoot().fetchSemanticsNode(), app.resources.displayMetrics.density, "home",
+            rule.onRoot().fetchSemanticsNode(),
+            app.resources.displayMetrics.density,
+            "home"
         )
     }
 }

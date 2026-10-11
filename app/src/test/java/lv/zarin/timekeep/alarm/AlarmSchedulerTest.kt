@@ -53,7 +53,8 @@ class AlarmSchedulerTest {
         val all = alarms()
         assertEquals(2, all.size)
         assertNotEquals(
-            shadowOf(all[0].operation).requestCode, shadowOf(all[1].operation).requestCode,
+            shadowOf(all[0].operation).requestCode,
+            shadowOf(all[1].operation).requestCode
         )
         assertNotEquals(shadowOf(all[0].operation).savedIntent.data, shadowOf(all[1].operation).savedIntent.data)
         scheduler.cancel("a")

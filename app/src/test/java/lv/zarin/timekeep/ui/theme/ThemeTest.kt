@@ -1,11 +1,11 @@
 package lv.zarin.timekeep.ui.theme
 
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import org.junit.Assert.assertEquals

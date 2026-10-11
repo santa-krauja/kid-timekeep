@@ -14,7 +14,7 @@ class PauseToggleSpecTest {
     fun runningOffersPauseWhenAllowed() {
         assertEquals(
             PauseToggleSpec(Icons.Rounded.Pause, R.string.action_pause, R.string.cd_pause),
-            pauseToggleSpec(TimerPhase.Running, canPause = true),
+            pauseToggleSpec(TimerPhase.Running, canPause = true)
         )
     }
 

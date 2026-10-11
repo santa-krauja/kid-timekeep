@@ -1,9 +1,12 @@
 package lv.zarin.timekeep.ui.timer
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -19,6 +22,7 @@ import lv.zarin.timekeep.domain.look.LookPicker
 import lv.zarin.timekeep.domain.ports.FavouriteLookRepository
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.ports.SettingsRepository
+import lv.zarin.timekeep.domain.ports.TimerRepository
 import lv.zarin.timekeep.domain.timer.FavouriteLook
 import lv.zarin.timekeep.domain.timer.Look
 import lv.zarin.timekeep.domain.timer.PictureId
@@ -30,10 +34,6 @@ import lv.zarin.timekeep.testutil.FakeClock
 import lv.zarin.timekeep.testutil.InMemoryPresetRepository
 import lv.zarin.timekeep.testutil.InMemoryTimerRepository
 import lv.zarin.timekeep.testutil.RecordingAlarmScheduler
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.emitAll
-import lv.zarin.timekeep.domain.ports.TimerRepository
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,6 +71,7 @@ class TimerViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
@@ -86,7 +87,7 @@ class TimerViewModelTest {
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
         AllowAllControlPolicy, feedback,
-        clearNotification = { cleared += it },
+        clearNotification = { cleared += it }
     )
 
     private suspend fun seed(state: RunState, duration: Long = 60_000) =
@@ -152,7 +153,7 @@ class TimerViewModelTest {
         runCurrent()
         assertEquals(
             TimerControls(canPause = true, showAddMinute = true, addMinuteEnabled = false, canEdit = true),
-            vm.state.value!!.controls,
+            vm.state.value!!.controls
         )
     }
 
@@ -283,8 +284,14 @@ class TimerViewModelTest {
             }
         }
         val vm = TimerViewModel(
-            "t", slowTimers, service, favourites, FakeSettingsRepository(Settings()), clock,
-            AllowAllControlPolicy, feedback,
+            "t",
+            slowTimers,
+            service,
+            favourites,
+            FakeSettingsRepository(Settings()),
+            clock,
+            AllowAllControlPolicy,
+            feedback
         )
         backgroundScope.launch { vm.runTicker() }
         runCurrent()

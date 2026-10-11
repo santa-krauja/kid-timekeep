@@ -38,8 +38,14 @@ class NotificationsTest {
         .grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
 
     private fun timer(id: String = "t1", name: String = "Brush teeth") = Timer(
-        id = id, name = name, durationMs = 120_000, look = LOOK, presetId = null,
-        state = RunState.Finished(1_000), createdAtMs = 0, updatedAtMs = 0,
+        id = id,
+        name = name,
+        durationMs = 120_000,
+        look = LOOK,
+        presetId = null,
+        state = RunState.Finished(1_000),
+        createdAtMs = 0,
+        updatedAtMs = 0
     )
 
     private fun posted(id: String = "t1"): Notification {
@@ -80,7 +86,7 @@ class NotificationsTest {
     @Test
     fun staleChannelsAreDeleted() {
         nm.createNotificationChannel(
-            NotificationChannel("time_up_old", "old", NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel("time_up_old", "old", NotificationManager.IMPORTANCE_HIGH)
         )
         Notifications.ensureChannels(context)
         assertNull(nm.getNotificationChannel("time_up_old"))
@@ -93,7 +99,7 @@ class NotificationsTest {
             Settings(soundOn = true, vibrateOn = true) to Notifications.CHANNEL_SOUND_VIBRATE,
             Settings(soundOn = true, vibrateOn = false) to Notifications.CHANNEL_SOUND_ONLY,
             Settings(soundOn = false, vibrateOn = true) to Notifications.CHANNEL_VIBRATE_ONLY,
-            Settings(soundOn = false, vibrateOn = false) to Notifications.CHANNEL_SILENT,
+            Settings(soundOn = false, vibrateOn = false) to Notifications.CHANNEL_SILENT
         )
         for ((settings, channel) in cases) {
             Notifications.showTimeUp(context, timer(), settings)
@@ -110,7 +116,7 @@ class NotificationsTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         scenario.onActivity {
             AppCompatDelegate.setApplicationLocales(
-                LocaleListCompat.forLanguageTags("lv"),
+                LocaleListCompat.forLanguageTags("lv")
             )
         }
         try {
@@ -119,7 +125,9 @@ class NotificationsTest {
             while (ContextCompat.getContextForLanguage(context)
                     .getString(R.string.notification_time_up) != "Laiks beidzies!" &&
                 System.currentTimeMillis() < deadline
-            ) Thread.sleep(20)
+            ) {
+                Thread.sleep(20)
+            }
             Notifications.ensureChannels(context)
             Notifications.showTimeUp(context, timer(), Settings())
             assertEquals("Laiks beidzies!", posted().extras.getString(Notification.EXTRA_TEXT))
@@ -127,7 +135,7 @@ class NotificationsTest {
         } finally {
             scenario.onActivity {
                 AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.getEmptyLocaleList(),
+                    LocaleListCompat.getEmptyLocaleList()
                 )
             }
             scenario.close()
@@ -142,20 +150,22 @@ class NotificationsTest {
             assertEquals("Time's up", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
             scenario.onActivity {
                 AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.forLanguageTags("lv"),
+                    LocaleListCompat.forLanguageTags("lv")
                 )
             }
             val deadline = System.currentTimeMillis() + 5_000
             while (ContextCompat.getContextForLanguage(context)
                     .getString(R.string.channel_time_up) != "Laiks beidzies" &&
                 System.currentTimeMillis() < deadline
-            ) Thread.sleep(20)
+            ) {
+                Thread.sleep(20)
+            }
             scenario.recreate() // what a language change does; MainActivity.onCreate must rename the channels
             assertEquals("Laiks beidzies", nm.getNotificationChannel(Notifications.CHANNEL_SOUND_VIBRATE).name.toString())
         } finally {
             scenario.onActivity {
                 AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.getEmptyLocaleList(),
+                    LocaleListCompat.getEmptyLocaleList()
                 )
             }
             scenario.close()

@@ -43,24 +43,19 @@ private const val MAX_HOURS = 4
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DurationPicker(
-    durationMs: Long,
-    onDurationChange: (Long) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
+fun DurationPicker(durationMs: Long, onDurationChange: (Long) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     var customOpen by rememberSaveable { mutableStateOf(false) }
     val isCustom = durationMs !in QUICK_DURATIONS_MS
     FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         for (ms in QUICK_DURATIONS_MS) {
             FilterChip(
                 selected = durationMs == ms,
                 enabled = enabled,
                 onClick = { onDurationChange(ms) },
-                label = { Text(compactDuration(ms)) },
+                label = { Text(compactDuration(ms)) }
             )
         }
         FilterChip(
@@ -69,7 +64,7 @@ fun DurationPicker(
             onClick = { customOpen = true },
             label = {
                 Text(if (isCustom) compactDuration(durationMs) else stringResource(R.string.edit_duration_custom))
-            },
+            }
         )
     }
     if (customOpen) {
@@ -79,7 +74,7 @@ fun DurationPicker(
             onConfirm = {
                 customOpen = false
                 onDurationChange(it)
-            },
+            }
         )
     }
 }
@@ -107,7 +102,7 @@ private fun CustomDurationDialog(initialMs: Long, onDismiss: () -> Unit, onConfi
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
+        }
     )
 }
 
@@ -123,7 +118,7 @@ private fun NumberStepper(label: String, value: Int, max: Int, onChange: (Int) -
             value.toString().padStart(2, '0'),
             modifier = Modifier.semantics { contentDescription = valueDescription },
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Bold
         )
         IconButton(onClick = { onChange(if (value <= 0) max else value - 1) }) {
             Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.cd_decrease, label))

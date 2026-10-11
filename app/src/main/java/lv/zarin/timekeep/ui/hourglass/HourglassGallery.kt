@@ -33,7 +33,7 @@ private fun Gallery() {
                         look = Look(picture, sand, picture, sand),
                         progress = { 0.5f },
                         running = false,
-                        modifier = Modifier.width(48.dp),
+                        modifier = Modifier.width(48.dp)
                     )
                 }
             }
@@ -52,7 +52,7 @@ private fun HourglassGalleryPreview() {
     widthDp = 460,
     heightDp = 1060,
     showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun HourglassGalleryDarkPreview() {

@@ -43,7 +43,9 @@ object BulbShape {
      * Sand surface height at [x]. Top sand dips into a funnel (y = level + amp·g), bottom sand forms
      * a mound (y = level − amp·g). Clamped to the bulb's own half.
      */
-    fun surfaceY(top: Boolean, level: Float, amp: Float, x: Float): Float =
-        if (top) min(TOP1, level + amp * gauss(x - CX, SIG_TOP))
-        else max(BOT0, level - amp * gauss(x - CX, SIG_BOT))
+    fun surfaceY(top: Boolean, level: Float, amp: Float, x: Float): Float = if (top) {
+        min(TOP1, level + amp * gauss(x - CX, SIG_TOP))
+    } else {
+        max(BOT0, level - amp * gauss(x - CX, SIG_BOT))
+    }
 }

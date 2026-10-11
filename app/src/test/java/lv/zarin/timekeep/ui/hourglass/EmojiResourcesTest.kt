@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.drawable.VectorDrawable
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
+import java.io.File
 import lv.zarin.timekeep.domain.timer.PictureId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -11,7 +12,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class EmojiResourcesTest {

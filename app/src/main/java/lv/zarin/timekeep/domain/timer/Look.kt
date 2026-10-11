@@ -19,7 +19,7 @@ enum class PictureId(val codepoint: String, val dominantArgb: Long) {
     APPLE("1f34e", 0xFFE5484D),
     RAINBOW("1f308", 0xFFFF6B6B),
     UNICORN("1f984", 0xFFF0E6FF),
-    ROCKET("1f680", 0xFFB0B8C8),
+    ROCKET("1f680", 0xFFB0B8C8)
 }
 
 @Serializable
@@ -31,13 +31,8 @@ enum class SandColor(val argb: Long) {
     SAND(0xFFF1DCA7),
     PINK(0xFFFFB3CF),
     NIGHT(0xFF3C4A7A),
-    LEMON(0xFFFFF0A0),
+    LEMON(0xFFFFF0A0)
 }
 
 @Serializable
-data class Look(
-    val top: PictureId,
-    val topSand: SandColor,
-    val bottom: PictureId,
-    val bottomSand: SandColor,
-)
+data class Look(val top: PictureId, val topSand: SandColor, val bottom: PictureId, val bottomSand: SandColor)

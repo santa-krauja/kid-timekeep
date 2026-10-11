@@ -63,23 +63,24 @@ import lv.zarin.timekeep.ui.hourglass.Hourglass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditTimerScreen(
-    onBack: () -> Unit,
-    onStarted: (timerId: String) -> Unit,
-    presetId: String? = null,
-    timerId: String? = null,
-) {
+fun EditTimerScreen(onBack: () -> Unit, onStarted: (timerId: String) -> Unit, presetId: String? = null, timerId: String? = null) {
     val target = timerId?.let(EditTarget::RunTimer) ?: presetId?.let(EditTarget::Preset) ?: EditTarget.New
     val container = appContainer()
     val vm: EditTimerViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
                 EditTimerViewModel(
-                    target, container.presetRepository, container.favouriteLookRepository,
-                    container.timerRepository, container.timerService, container.lookPicker, container.clock, container.controlPolicy,
+                    target,
+                    container.presetRepository,
+                    container.favouriteLookRepository,
+                    container.timerRepository,
+                    container.timerService,
+                    container.lookPicker,
+                    container.clock,
+                    container.controlPolicy
                 )
             }
-        },
+        }
     )
     val state by vm.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -100,7 +101,7 @@ fun EditTimerScreen(
             onSaveFavourite = vm::saveLookAsFavourite,
             onDeleteFavourite = vm::deleteFavourite,
             canDelete = state.canDelete,
-            onDone = { lookOpen = false },
+            onDone = { lookOpen = false }
         )
         return
     }
@@ -116,21 +117,21 @@ fun EditTimerScreen(
                                 EditTarget.New -> R.string.edit_new_title
                                 is EditTarget.Preset -> R.string.edit_preset_title
                                 is EditTarget.RunTimer -> R.string.edit_timer_title
-                            },
-                        ),
+                            }
+                        )
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.cd_close))
                     }
-                },
+                }
             )
         },
         bottomBar = {
             Row(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 when (state.target) {
                     is EditTarget.Preset -> {
@@ -142,7 +143,7 @@ fun EditTimerScreen(
                         Button(
                             onClick = { scope.launch { if (vm.savePreset()) onBack() } },
                             modifier = Modifier.weight(1f),
-                            enabled = state.canEdit && !isSaving,
+                            enabled = state.canEdit && !isSaving
                         ) {
                             Text(stringResource(R.string.action_save))
                         }
@@ -150,25 +151,25 @@ fun EditTimerScreen(
                     is EditTarget.RunTimer -> Button(
                         onClick = { scope.launch { if (vm.saveTimer()) onBack() } },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = state.canEdit && !isSaving,
+                        enabled = state.canEdit && !isSaving
                     ) {
                         Text(stringResource(R.string.action_save))
                     }
                     EditTarget.New -> Button(
                         onClick = { notificationGate { scope.launch { vm.start()?.let(onStarted) } } },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSaving,
+                        enabled = !isSaving
                     ) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)
                         Text(stringResource(R.string.action_start), modifier = Modifier.padding(start = 4.dp))
                     }
                 }
             }
-        },
+        }
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FieldLabel(stringResource(R.string.edit_name_label))
             OutlinedTextField(
@@ -180,8 +181,8 @@ fun EditTimerScreen(
                 supportingText = (@Composable { Text(stringResource(R.string.edit_name_error)) }).takeIf { state.nameError },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
+                    imeAction = ImeAction.Done
+                )
             )
 
             FieldLabel(stringResource(R.string.edit_duration_label))
@@ -190,28 +191,28 @@ fun EditTimerScreen(
                 Text(
                     stringResource(R.string.edit_duration_pause_first),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (state.durationTooShort) {
                 Text(
                     stringResource(R.string.edit_duration_too_short),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
 
             Column(
                 Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Hourglass(
                     look = state.look,
                     progress = { PREVIEW_PROGRESS },
                     running = false,
                     modifier = Modifier.height(150.dp).aspectRatio(0.62f),
-                    contentDescription = lookDescription(state.look),
+                    contentDescription = lookDescription(state.look)
                 )
                 OutlinedButton(onClick = vm::shuffle) {
                     Icon(Icons.Rounded.Casino, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -225,7 +226,7 @@ fun EditTimerScreen(
                     .fillMaxWidth()
                     .clickable { lookOpen = true }
                     .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(stringResource(R.string.edit_choose_look), modifier = Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
@@ -236,20 +237,20 @@ fun EditTimerScreen(
                         text = stringResource(R.string.edit_save_as_preset),
                         checked = state.saveAsPreset,
                         onChange = vm::setSaveAsPreset,
-                        leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        leading = { Icon(Icons.Rounded.StarOutline, contentDescription = null, modifier = Modifier.size(20.dp)) }
                     )
                     SwitchRow(
                         text = stringResource(R.string.edit_keep_look),
                         checked = state.keepLook,
                         onChange = vm::setKeepLook,
                         enabled = state.saveAsPreset,
-                        indent = true,
+                        indent = true
                     )
                 }
                 is EditTarget.Preset -> SwitchRow(
                     text = stringResource(R.string.edit_keep_look),
                     checked = state.keepLook,
-                    onChange = vm::setKeepLook,
+                    onChange = vm::setKeepLook
                 )
                 is EditTarget.RunTimer -> Unit
             }
@@ -272,7 +273,7 @@ fun EditTimerScreen(
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            }
         )
     }
 }
@@ -284,14 +285,14 @@ private fun SwitchRow(
     onChange: (Boolean) -> Unit,
     enabled: Boolean = true,
     indent: Boolean = false,
-    leading: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
             .padding(start = if (indent) 28.dp else 0.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         leading?.let {
             it()
@@ -304,7 +305,7 @@ private fun SwitchRow(
                 MaterialTheme.colorScheme.onSurfaceVariant
             } else {
                 MaterialTheme.colorScheme.onSurface
-            },
+            }
         )
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }

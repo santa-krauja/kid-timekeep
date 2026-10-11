@@ -28,12 +28,7 @@ import lv.zarin.timekeep.domain.timer.TimerPhase
 import lv.zarin.timekeep.domain.timer.isOverdue
 import lv.zarin.timekeep.domain.timer.phase
 
-data class TimerControls(
-    val canPause: Boolean,
-    val showAddMinute: Boolean,
-    val addMinuteEnabled: Boolean,
-    val canEdit: Boolean,
-)
+data class TimerControls(val canPause: Boolean, val showAddMinute: Boolean, val addMinuteEnabled: Boolean, val canEdit: Boolean)
 
 data class TimerUiState(
     val timer: Timer,
@@ -41,7 +36,7 @@ data class TimerUiState(
     val controls: TimerControls,
     val showNumbers: Boolean,
     val keepScreenOn: Boolean,
-    val flipTrigger: Int,
+    val flipTrigger: Int
 )
 
 class TimerViewModel(
@@ -54,7 +49,7 @@ class TimerViewModel(
     private val policy: ControlPolicy = AllowAllControlPolicy,
     private val feedback: TimeUpFeedback,
     /** Removes the time's-up notification of a timer id (no-op in tests). */
-    private val clearNotification: (String) -> Unit = {},
+    private val clearNotification: (String) -> Unit = {}
 ) : ViewModel() {
 
     private val flip = MutableStateFlow(0)
@@ -65,7 +60,7 @@ class TimerViewModel(
     private val loaded: StateFlow<Loaded?> = combine(
         timers.observeAll().map { all -> all.firstOrNull { it.id == timerId } },
         settings.settings,
-        flip,
+        flip
     ) { t, s, f -> Loaded(t, s, f) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -79,11 +74,11 @@ class TimerViewModel(
                 canPause = policy.isAllowed(Control.PAUSE),
                 showAddMinute = policy.isAllowed(Control.ADD_MINUTE),
                 addMinuteEnabled = t.durationMs < MAX_DURATION_MS,
-                canEdit = policy.isAllowed(Control.EDIT),
+                canEdit = policy.isAllowed(Control.EDIT)
             ),
             showNumbers = l.settings.showNumbers,
             keepScreenOn = l.settings.keepScreenOn && phase != TimerPhase.Finished,
-            flipTrigger = l.flip,
+            flipTrigger = l.flip
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

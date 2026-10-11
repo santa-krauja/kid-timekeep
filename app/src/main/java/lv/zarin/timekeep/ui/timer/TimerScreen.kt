@@ -29,6 +29,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -38,7 +39,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -46,7 +46,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -55,6 +54,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.window.core.layout.WindowHeightSizeClass
 import kotlinx.coroutines.delay
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.alarm.Notifications
@@ -93,10 +93,10 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
                     container.favouriteLookRepository, container.settingsRepository,
                     container.clock, container.controlPolicy,
                     AndroidTimeUpFeedback(container.appContext),
-                    clearNotification = { Notifications.cancel(container.appContext, it) },
+                    clearNotification = { Notifications.cancel(container.appContext, it) }
                 )
             }
-        },
+        }
     )
     val state by vm.state.collectAsStateWithLifecycle()
     val missing by vm.missing.collectAsStateWithLifecycle()
@@ -162,9 +162,9 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
                             Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.cd_edit_timer))
                         }
                     }
-                },
+                }
             )
-        },
+        }
     ) { padding ->
         val s = state ?: return@Scaffold
         val timer = s.timer
@@ -178,13 +178,13 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
                 controls = s.controls,
                 onStartOver = { confirmStartOver = true },
                 onTogglePause = vm::togglePause,
-                onAddMinute = vm::addMinute,
+                onAddMinute = vm::addMinute
             )
         }
         if (landscape) {
             Row(
                 Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 hourglass(Modifier.weight(1f).fillMaxHeight())
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -195,7 +195,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
         } else {
             Column(
                 Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 hourglass(Modifier.weight(1f).fillMaxSize())
                 numbers()
@@ -206,17 +206,26 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
         if (confirmStartOver) {
             StartOverDialog(
                 durationMs = timer.durationMs,
-                onConfirm = { confirmStartOver = false; vm.restart() },
-                onDismiss = { confirmStartOver = false },
+                onConfirm = {
+                    confirmStartOver = false
+                    vm.restart()
+                },
+                onDismiss = { confirmStartOver = false }
             )
         }
         if (s.phase == TimerPhase.Finished) {
             TimeUpOverlay(
                 timer = timer,
                 lookSaved = lookSaved,
-                onAgain = { lookSaved = false; vm.again() },
+                onAgain = {
+                    lookSaved = false
+                    vm.again()
+                },
                 onOk = vm::dismiss,
-                onSaveLook = { lookSaved = true; vm.saveLookAsFavourite() },
+                onSaveLook = {
+                    lookSaved = true
+                    vm.saveLookAsFavourite()
+                }
             )
         }
     }
@@ -234,7 +243,7 @@ private fun timeLeftDescription(timer: Timer, nowMs: Long): String = stringResou
     R.string.cd_timer_big,
     timer.name,
     durationPhrase(timer.remainingMs(nowMs), roundUp = true),
-    durationPhrase(timer.durationMs, roundUp = true),
+    durationPhrase(timer.durationMs, roundUp = true)
 )
 
 @Composable
@@ -248,7 +257,7 @@ private fun TimerHourglass(s: TimerUiState, progress: () -> Float, description: 
             modifier = Modifier.fillMaxHeight(0.95f).aspectRatio(0.62f).alpha(if (paused) 0.55f else 1f),
             flipTrigger = s.flipTrigger,
             contentDescription = description,
-            announceDescription = s.phase == TimerPhase.Finished,
+            announceDescription = s.phase == TimerPhase.Finished
         )
         if (paused) PausedBadge()
     }
@@ -259,13 +268,13 @@ private fun PausedBadge() {
     Surface(
         shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
     ) {
         Text(
             stringResource(R.string.paused_badge),
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.ExtraBold
         )
     }
 }
@@ -275,21 +284,21 @@ private fun TimerNumbers(timer: Timer, nowMs: Long) {
     Text(
         stringResource(R.string.timer_left),
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
     DurationLabel(
         ms = timer.remainingMs(nowMs),
         roundUp = true,
-        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
+        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold)
     )
     Text(
         stringResource(
             R.string.timer_passed_of,
             formatClock(timer.elapsedMs(nowMs), roundUp = false),
-            formatClock(timer.durationMs, roundUp = true),
+            formatClock(timer.durationMs, roundUp = true)
         ),
         style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -300,13 +309,13 @@ private fun TimerControlsRow(
     controls: TimerControls,
     onStartOver: () -> Unit,
     onTogglePause: () -> Unit,
-    onAddMinute: () -> Unit,
+    onAddMinute: () -> Unit
 ) {
     FlowRow(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        itemVerticalAlignment = Alignment.CenterVertically,
+        itemVerticalAlignment = Alignment.CenterVertically
     ) {
         if (phase == TimerPhase.Finished) return@FlowRow
         OutlinedButton(onClick = onStartOver) {
@@ -337,6 +346,6 @@ private fun StartOverDialog(durationMs: Long, onConfirm: () -> Unit, onDismiss: 
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
+        }
     )
 }

@@ -24,7 +24,7 @@ data class HomeState(
     val presets: List<Preset> = emptyList(),
     val canPause: Boolean = true,
     val canEdit: Boolean = true,
-    val canDelete: Boolean = true,
+    val canDelete: Boolean = true
 )
 
 class HomeViewModel(
@@ -33,7 +33,7 @@ class HomeViewModel(
     private val service: TimerService,
     @Suppress("unused") private val clock: Clock,
     private val policy: ControlPolicy = AllowAllControlPolicy,
-    private val clearNotification: (String) -> Unit = {},
+    private val clearNotification: (String) -> Unit = {}
 ) : ViewModel() {
 
     val state: StateFlow<HomeState> = combine(timers.observeAll(), presets.observeAll()) { ts, ps ->
@@ -42,7 +42,7 @@ class HomeViewModel(
             presets = ps,
             canPause = policy.isAllowed(Control.PAUSE),
             canEdit = policy.isAllowed(Control.EDIT),
-            canDelete = policy.isAllowed(Control.DELETE),
+            canDelete = policy.isAllowed(Control.DELETE)
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 

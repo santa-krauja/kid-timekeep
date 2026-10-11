@@ -52,7 +52,7 @@ data class EditState(
     val durationEditable: Boolean = true,
     val pauseFirstHint: Boolean = false,
     val canEdit: Boolean = true,
-    val canDelete: Boolean = true,
+    val canDelete: Boolean = true
 )
 
 class EditTimerViewModel(
@@ -63,7 +63,7 @@ class EditTimerViewModel(
     private val service: TimerService,
     private val lookPicker: LookPicker,
     private val clock: Clock,
-    private val policy: ControlPolicy = AllowAllControlPolicy,
+    private val policy: ControlPolicy = AllowAllControlPolicy
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -78,8 +78,8 @@ class EditTimerViewModel(
             nameError = false,
             durationError = false,
             canEdit = policy.isAllowed(Control.EDIT),
-            canDelete = policy.isAllowed(Control.DELETE),
-        ),
+            canDelete = policy.isAllowed(Control.DELETE)
+        )
     )
     val state: StateFlow<EditState> = _state.asStateFlow()
 
@@ -104,8 +104,11 @@ class EditTimerViewModel(
                     preset = p
                     val look = p?.pinnedLook ?: service.suggestLook()
                     _state.update { s ->
-                        if (p == null) s.copy(look = look)
-                        else s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+                        if (p == null) {
+                            s.copy(look = look)
+                        } else {
+                            s.copy(name = p.name, durationMs = p.durationMs, look = look, keepLook = p.pinnedLook != null)
+                        }
                     }
                 }
                 is EditTarget.RunTimer -> {
@@ -119,7 +122,7 @@ class EditTimerViewModel(
                                 durationMs = t.durationMs,
                                 look = t.look,
                                 durationEditable = t.state is RunState.Paused,
-                                pauseFirstHint = t.state is RunState.Running,
+                                pauseFirstHint = t.state is RunState.Running
                             )
                         }
                     }
@@ -184,7 +187,7 @@ class EditTimerViewModel(
                 lastLook = s.look,
                 sortOrder = order,
                 createdAtMs = now,
-                updatedAtMs = now,
+                updatedAtMs = now
             )
             presets.upsert(p)
             p.id
@@ -204,8 +207,8 @@ class EditTimerViewModel(
                 name = s.name.trim(),
                 durationMs = s.durationMs,
                 pinnedLook = s.look.takeIf { s.keepLook },
-                updatedAtMs = clock.nowMs(),
-            ),
+                updatedAtMs = clock.nowMs()
+            )
         )
         true
     }

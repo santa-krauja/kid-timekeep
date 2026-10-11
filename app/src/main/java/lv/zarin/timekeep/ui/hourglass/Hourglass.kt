@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.derivedStateOf
-import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +36,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import lv.zarin.timekeep.domain.hourglass.BulbShape
 import lv.zarin.timekeep.domain.hourglass.SandLevelSolver
 import lv.zarin.timekeep.domain.timer.Look
@@ -101,7 +101,7 @@ fun Hourglass(
     modifier: Modifier = Modifier,
     flipTrigger: Int = 0,
     contentDescription: String? = null,
-    announceDescription: Boolean = false,
+    announceDescription: Boolean = false
 ) {
     val topPainter = rememberVectorPainter(ImageVector.vectorResource(look.top.drawableRes()))
     val bottomPainter = rememberVectorPainter(ImageVector.vectorResource(look.bottom.drawableRes()))
@@ -184,7 +184,7 @@ fun Hourglass(
             .graphicsLayer {
                 rotationZ = rotation.value
                 this.alpha = alpha.value
-            },
+            }
     ) {
         // Back layer.
         Spacer(
@@ -204,7 +204,7 @@ fun Hourglass(
                         }
                     }
                 }
-            },
+            }
         )
         // Stream layer: the only one that reads the frame clock.
         Spacer(
@@ -225,7 +225,7 @@ fun Hourglass(
                         }
                     }
                 }
-            },
+            }
         )
         // Front layer: static.
         Spacer(
@@ -238,7 +238,7 @@ fun Hourglass(
                         scale(s, s, pivot = Offset.Zero) { drawHourglassFront(paths, colors) }
                     }
                 }
-            },
+            }
         )
     }
 }

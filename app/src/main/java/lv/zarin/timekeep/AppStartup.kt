@@ -11,7 +11,7 @@ import lv.zarin.timekeep.alarm.VisibleTimerTracker
 object AppStartup {
     suspend fun launch(container: AppContainer, context: Context) = launch(
         seed = { container.presetSeeder.seedIfNeeded(container.starterPresetNames()) },
-        reconcile = { reconcile(container, context) },
+        reconcile = { reconcile(container, context) }
     )
 
     internal suspend fun launch(seed: suspend () -> Unit, reconcile: suspend () -> Unit) {

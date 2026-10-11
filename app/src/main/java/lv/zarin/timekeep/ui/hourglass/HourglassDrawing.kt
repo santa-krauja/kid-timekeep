@@ -6,26 +6,30 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.graphics.painter.Painter
+import kotlin.math.PI
+import kotlin.math.ceil
+import kotlin.math.roundToInt
+import kotlin.math.sin
 import lv.zarin.timekeep.domain.hourglass.BulbShape
 import lv.zarin.timekeep.domain.hourglass.BulbShape.BOT0
 import lv.zarin.timekeep.domain.hourglass.BulbShape.BOT1
@@ -35,10 +39,6 @@ import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP0
 import lv.zarin.timekeep.domain.hourglass.BulbShape.TOP1
 import lv.zarin.timekeep.domain.hourglass.SandLevels
 import lv.zarin.timekeep.domain.timer.SandColor
-import kotlin.math.PI
-import kotlin.math.ceil
-import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /*
  * Port of render() / drawSand() from the approved prototype script. Everything except the emoji is
@@ -61,7 +61,7 @@ private val SHADES: Map<SandColor, SandShades> = SandColor.entries.associateWith
     fun mul(m: Float) = Color(
         red = (base.red * m).coerceIn(0f, 1f),
         green = (base.green * m).coerceIn(0f, 1f),
-        blue = (base.blue * m).coerceIn(0f, 1f),
+        blue = (base.blue * m).coerceIn(0f, 1f)
     )
     SandShades(light = mul(1.12f), base = base, dark = mul(0.82f))
 }
@@ -152,7 +152,8 @@ internal val GRAIN_SET: GrainSet by lazy {
         for (light in listOf(true, false)) {
             for (b in 0 until GRAIN_BUCKETS) {
                 val sel = GRAINS.filter {
-                    it.light == light && it.y in lo..hi &&
+                    it.light == light &&
+                        it.y in lo..hi &&
                         ((it.r - GRAIN_R_MIN) / GRAIN_R_SPAN * GRAIN_BUCKETS).toInt().coerceAtMost(GRAIN_BUCKETS - 1) == b
                 }
                 val pts = FloatArray(sel.size * 2)
@@ -182,10 +183,16 @@ private const val EMOJI_ALPHA = 0.95f
 private const val GRAIN_MIN_SCALE = 1.4f
 
 internal val SAND_GRADIENT_TOP = Brush.verticalGradient(
-    0f to Color(1f, 1f, 1f, 0.22f), 1f to Color(0f, 0f, 0f, 0.08f), startY = TOP0, endY = TOP1,
+    0f to Color(1f, 1f, 1f, 0.22f),
+    1f to Color(0f, 0f, 0f, 0.08f),
+    startY = TOP0,
+    endY = TOP1
 )
 internal val SAND_GRADIENT_BOTTOM = Brush.verticalGradient(
-    0f to Color(1f, 1f, 1f, 0.22f), 1f to Color(0f, 0f, 0f, 0.08f), startY = BOT0, endY = BOT1,
+    0f to Color(1f, 1f, 1f, 0.22f),
+    1f to Color(0f, 0f, 0f, 0.08f),
+    startY = BOT0,
+    endY = BOT1
 )
 
 /** Size-independent paths, built once per Hourglass and reused every frame. */
@@ -211,14 +218,7 @@ internal class SandTextures {
     private var bottomKey: TextureKey? = null
     private var bottomImage: ImageBitmap? = null
 
-    fun get(
-        top: Boolean,
-        density: Density,
-        painter: Painter,
-        pictureKey: Any,
-        sand: SandColor,
-        pxPerUnit: Float,
-    ): ImageBitmap {
+    fun get(top: Boolean, density: Density, painter: Painter, pictureKey: Any, sand: SandColor, pxPerUnit: Float): ImageBitmap {
         val w = ceil(BulbShape.WIDTH * pxPerUnit).toInt().coerceAtLeast(1)
         val h = ceil(BulbShape.HEIGHT * pxPerUnit).toInt().coerceAtLeast(1)
         val key = TextureKey(sand, pictureKey, w, h)
@@ -275,7 +275,7 @@ internal fun DrawScope.drawHourglassBack(
     topTexture: ImageBitmap,
     bottomTexture: ImageBitmap,
     colors: GlassColors,
-    pxPerUnit: Float,
+    pxPerUnit: Float
 ) {
     drawPath(paths.glass, colors.fill)
     levels.topLevel?.let { drawSand(paths, true, it, levels.dip, topTexture, pxPerUnit) }
@@ -290,14 +290,7 @@ internal fun DrawScope.drawHourglassFront(paths: HourglassPaths, colors: GlassCo
     drawPath(paths.capBottom, colors.cap)
 }
 
-private fun DrawScope.drawSand(
-    paths: HourglassPaths,
-    top: Boolean,
-    level: Float,
-    amp: Float,
-    texture: ImageBitmap,
-    pxPerUnit: Float,
-) {
+private fun DrawScope.drawSand(paths: HourglassPaths, top: Boolean, level: Float, amp: Float, texture: ImageBitmap, pxPerUnit: Float) {
     val floor = if (top) TOP1 else BOT1
     val sandPath = paths.sand.apply {
         rewind()
@@ -377,10 +370,10 @@ internal class StreamPalette(top: SandColor, bottom: SandColor) {
             val b = bs.shade(sh)
             pointPaint(
                 Color(a.red + (b.red - a.red) * m, a.green + (b.green - a.green) * m, a.blue + (b.blue - a.blue) * m),
-                STREAM_WIDTHS[rb],
+                STREAM_WIDTHS[rb]
             )
         },
-        capacity = 120,
+        capacity = 120
     )
 
     val splashBuckets = PointBuckets(
@@ -390,7 +383,7 @@ internal class StreamPalette(top: SandColor, bottom: SandColor) {
             val sh = i / R_BUCKETS / ALPHA_STEPS
             pointPaint(bs.shade(sh).copy(alpha = (ai + 0.5f) / ALPHA_STEPS), SPLASH_WIDTHS[rb])
         },
-        capacity = 34,
+        capacity = 34
     )
 
     fun grainBucket(sh: Int, m: Float, r: Float): Int =
@@ -410,7 +403,10 @@ internal class CoreBrushCache {
         val cached = brush
         if (cached != null && q == key) return cached
         return Brush.verticalGradient(
-            0f to palette.topBase, 1f to palette.bottomBase, startY = y0, endY = q,
+            0f to palette.topBase,
+            1f to palette.bottomBase,
+            startY = y0,
+            endY = q
         ).also {
             key = q
             brush = it
@@ -419,13 +415,7 @@ internal class CoreBrushCache {
 }
 
 /** Port of the prototype drawStream(): faint core line plus (unless [animate] is false) grains and splash. */
-internal fun DrawScope.drawStream(
-    levels: SandLevels,
-    palette: StreamPalette,
-    brushes: CoreBrushCache,
-    t: Long,
-    animate: Boolean,
-) {
+internal fun DrawScope.drawStream(levels: SandLevels, palette: StreamPalette, brushes: CoreBrushCache, t: Long, animate: Boolean) {
     val bottom = levels.bottomLevel
     val y0 = TOP1 - 1.2f
     val y1 = if (bottom != null) maxOf(BOT0 + 0.5f, bottom - levels.mound) else BOT1
@@ -436,7 +426,7 @@ internal fun DrawScope.drawStream(
         end = Offset(CX, y1),
         strokeWidth = CORE_STROKE.width,
         cap = CORE_STROKE.cap,
-        alpha = CORE_ALPHA,
+        alpha = CORE_ALPHA
     )
     if (!animate) return
     val tf = t.toDouble()

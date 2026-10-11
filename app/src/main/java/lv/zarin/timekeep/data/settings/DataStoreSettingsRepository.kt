@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,8 +19,6 @@ import kotlinx.coroutines.flow.map
 import lv.zarin.timekeep.domain.ports.Settings
 import lv.zarin.timekeep.domain.ports.SettingsRepository
 import lv.zarin.timekeep.domain.ports.ThemeMode
-import java.io.File
-import java.io.IOException
 
 /**
  * The settings DataStore. A corrupt file is replaced with empty preferences (defaults) instead of throwing on
@@ -26,11 +26,11 @@ import java.io.IOException
  */
 fun settingsDataStore(
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-    produceFile: () -> File,
+    produceFile: () -> File
 ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
     scope = scope,
-    produceFile = produceFile,
+    produceFile = produceFile
 )
 
 class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>) : SettingsRepository {
@@ -57,7 +57,7 @@ class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>)
             soundOn = this[SOUND_ON] ?: d.soundOn,
             vibrateOn = this[VIBRATE_ON] ?: d.vibrateOn,
             keepScreenOn = this[KEEP_SCREEN_ON] ?: d.keepScreenOn,
-            themeMode = ThemeMode.entries.firstOrNull { it.name == this[THEME_MODE] } ?: ThemeMode.SYSTEM,
+            themeMode = ThemeMode.entries.firstOrNull { it.name == this[THEME_MODE] } ?: ThemeMode.SYSTEM
         )
     }
 

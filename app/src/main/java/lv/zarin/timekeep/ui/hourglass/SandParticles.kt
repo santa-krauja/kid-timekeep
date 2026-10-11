@@ -4,15 +4,7 @@ package lv.zarin.timekeep.ui.hourglass
 internal data class StreamGrain(val ph: Float, val per: Float, val dx: Float, val r: Float, val sh: Int, val wob: Float)
 
 /** One splash grain where the stream lands on the pile (prototype SPLASH entry). */
-internal data class SplashGrain(
-    val ph: Float,
-    val per: Float,
-    val dir: Int,
-    val reach: Float,
-    val hgt: Float,
-    val r: Float,
-    val sh: Int,
-)
+internal data class SplashGrain(val ph: Float, val per: Float, val dir: Int, val reach: Float, val hgt: Float, val r: Float, val sh: Int)
 
 /** Deterministic particle tables, ported from the prototype (LCG s = s·1664525 + 1013904223 mod 2^32). */
 internal object SandParticles {

@@ -8,8 +8,7 @@ import org.junit.Test
 class TimerActionsTest {
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
 
-    private fun run(now: Long = 1_000L, durationMs: Long = 300_000L) =
-        TimerActions.newRun("id", "Tea", durationMs, look, "p1", now)
+    private fun run(now: Long = 1_000L, durationMs: Long = 300_000L) = TimerActions.newRun("id", "Tea", durationMs, look, "p1", now)
 
     @Test
     fun newRunStartsRunning() {

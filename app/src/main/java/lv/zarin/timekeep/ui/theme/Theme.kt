@@ -28,7 +28,7 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = DarkSurfaceVariant,
     onSurface = DarkOnSurface,
     onBackground = DarkOnSurface,
-    outline = DarkOutline,
+    outline = DarkOutline
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -46,7 +46,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = LightSurfaceVariant,
     onSurface = LightOnSurface,
     onBackground = LightOnSurface,
-    outline = LightOutline,
+    outline = LightOutline
 )
 
 private val KidShapes = Shapes(
@@ -54,7 +54,7 @@ private val KidShapes = Shapes(
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
 /** Whether [themeMode] resolves to the dark scheme, given the system setting. */
@@ -66,19 +66,16 @@ fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
 }
 
 @Composable
-fun KidTimekeepTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
-    content: @Composable () -> Unit,
-) {
+fun KidTimekeepTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
     val dark = isDarkTheme(themeMode)
     MaterialTheme(
         colorScheme = if (dark) DarkColorScheme else LightColorScheme,
         typography = Typography,
-        shapes = KidShapes,
+        shapes = KidShapes
     ) {
         CompositionLocalProvider(
             LocalMinimumInteractiveComponentSize provides 56.dp,
-            content = content,
+            content = content
         )
     }
 }

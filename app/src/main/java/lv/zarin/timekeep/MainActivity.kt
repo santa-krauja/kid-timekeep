@@ -40,11 +40,15 @@ class MainActivity : AppCompatActivity() {
                 // Transparent bars; icon contrast follows the resolved theme, not the system.
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
-                        Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { dark },
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT,
+                        detectDarkMode = { dark }
                     ),
                     navigationBarStyle = SystemBarStyle.auto(
-                        Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { dark },
-                    ),
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT,
+                        detectDarkMode = { dark }
+                    )
                 )
                 onDispose { }
             }
@@ -52,7 +56,7 @@ class MainActivity : AppCompatActivity() {
                 AppNavHost(
                     navController = rememberNavController(),
                     startTimerId = startTimerId,
-                    onStartTimerConsumed = { startTimerId = null },
+                    onStartTimerConsumed = { startTimerId = null }
                 )
             }
         }

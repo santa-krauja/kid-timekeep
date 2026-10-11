@@ -76,7 +76,7 @@ fun LookPickerScreen(
     onSaveFavourite: () -> Unit,
     onDeleteFavourite: (String) -> Unit,
     onDone: () -> Unit,
-    canDelete: Boolean = true,
+    canDelete: Boolean = true
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -87,21 +87,21 @@ fun LookPickerScreen(
                     IconButton(onClick = onDone) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
-                },
+                }
             )
         },
         bottomBar = {
             Button(
                 onClick = onDone,
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(stringResource(R.string.action_done))
             }
-        },
+        }
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Hourglass(
@@ -109,7 +109,7 @@ fun LookPickerScreen(
                     progress = { PREVIEW_PROGRESS },
                     running = false,
                     modifier = Modifier.height(120.dp).aspectRatio(0.62f),
-                    contentDescription = lookDescription(look),
+                    contentDescription = lookDescription(look)
                 )
             }
 
@@ -117,14 +117,14 @@ fun LookPickerScreen(
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 for (fav in favourites) {
                     FavouriteThumb(
                         fav = fav,
                         selected = fav.look == look,
                         onUse = { onLookChange(fav.look) },
-                        onDelete = { onDeleteFavourite(fav.id) }.takeIf { canDelete },
+                        onDelete = { onDeleteFavourite(fav.id) }.takeIf { canDelete }
                     )
                 }
                 OutlinedButton(onClick = onSaveFavourite, enabled = favourites.none { it.look == look }) {
@@ -151,7 +151,7 @@ internal fun FieldLabel(text: String, modifier: Modifier = Modifier) {
         text,
         modifier = modifier.padding(top = 4.dp),
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -166,16 +166,16 @@ private fun FavouriteThumb(fav: FavouriteLook, selected: Boolean, onUse: () -> U
             .combinedClickable(
                 onClick = onUse,
                 onLongClick = onDelete,
-                onLongClickLabel = onDelete?.let { stringResource(R.string.action_delete) },
+                onLongClickLabel = onDelete?.let { stringResource(R.string.action_delete) }
             )
-            .padding(6.dp),
+            .padding(6.dp)
     ) {
         Hourglass(
             look = fav.look,
             progress = { PREVIEW_PROGRESS },
             running = false,
             modifier = Modifier.height(56.dp).aspectRatio(0.62f),
-            contentDescription = lookDescription(fav.look),
+            contentDescription = lookDescription(fav.look)
         )
     }
 }
@@ -188,7 +188,7 @@ private fun PictureRow(selected: PictureId, sand: SandColor, onPick: (PictureId)
     LazyRow(
         state = listState,
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(PictureId.entries) { pic ->
             val isOn = pic == selected
@@ -200,16 +200,16 @@ private fun PictureRow(selected: PictureId, sand: SandColor, onPick: (PictureId)
                     .background(Color(sand.argb))
                     .border(
                         BorderStroke(if (isOn) 3.dp else 0.dp, if (isOn) MaterialTheme.colorScheme.primary else Color.Transparent),
-                        CircleShape,
+                        CircleShape
                     )
                     .selectable(selected = isOn, role = Role.RadioButton, onClick = { onPick(pic) })
                     .semantics { contentDescription = name },
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center
             ) {
                 Image(
                     painterResource(pic.drawableRes()),
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp).alpha(if (LookPicker.contrastOk(pic, sand)) 1f else 0.35f),
+                    modifier = Modifier.size(32.dp).alpha(if (LookPicker.contrastOk(pic, sand)) 1f else 0.35f)
                 )
             }
         }
@@ -220,7 +220,7 @@ private fun PictureRow(selected: PictureId, sand: SandColor, onPick: (PictureId)
 private fun SandRow(selected: SandColor, onPick: (SandColor) -> Unit) {
     Row(
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         for (sand in SandColor.entries) {
             val isOn = sand == selected
@@ -233,12 +233,12 @@ private fun SandRow(selected: SandColor, onPick: (SandColor) -> Unit) {
                     .semantics { contentDescription = name }
                     .border(
                         BorderStroke(3.dp, if (isOn) MaterialTheme.colorScheme.primary else Color.Transparent),
-                        CircleShape,
+                        CircleShape
                     )
                     .padding(6.dp)
                     .clip(CircleShape)
                     .background(Color(sand.argb))
-                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape),
+                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape)
             )
         }
     }
@@ -251,7 +251,7 @@ internal fun lookDescription(look: Look): String = stringResource(
     stringResource(look.top.labelRes()),
     stringResource(look.topSand.labelRes()),
     stringResource(look.bottom.labelRes()),
-    stringResource(look.bottomSand.labelRes()),
+    stringResource(look.bottomSand.labelRes())
 )
 
 @StringRes

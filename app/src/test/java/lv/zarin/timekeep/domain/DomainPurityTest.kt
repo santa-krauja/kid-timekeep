@@ -1,9 +1,9 @@
 package lv.zarin.timekeep.domain
 
 import java.io.File
-import org.junit.Test
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Test
 
 class DomainPurityTest {
     @Test fun domainHasNoPlatformImports() {

@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -31,8 +31,7 @@ class FlipTest {
 
     private val look = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY)
 
-    private fun rotation(): Float =
-        rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassRotation]
+    private fun rotation(): Float = rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassRotation]
 
     @Test
     fun flipRunsOnTriggerChangeOnly() {
@@ -44,7 +43,7 @@ class FlipTest {
                 progress = { 0.5f },
                 running = false,
                 modifier = Modifier.size(200.dp, 256.dp).testTag("hg"),
-                flipTrigger = trigger,
+                flipTrigger = trigger
             )
         }
         rule.mainClock.advanceTimeBy(500)
@@ -62,8 +61,7 @@ class FlipTest {
         assertEquals(0f, rotation(), 0f)
     }
 
-    private fun drawn(): Float =
-        rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassDrawnProgress]
+    private fun drawn(): Float = rule.onNodeWithTag("hg").fetchSemanticsNode().config[HourglassDrawnProgress]
 
     private fun start(progress: () -> Float, trigger: () -> Int) {
         rule.setContent {
@@ -72,7 +70,7 @@ class FlipTest {
                 progress = progress,
                 running = false,
                 modifier = Modifier.size(200.dp, 256.dp).testTag("hg"),
-                flipTrigger = trigger(),
+                flipTrigger = trigger()
             )
         }
     }
@@ -94,7 +92,10 @@ class FlipTest {
         assertEquals(0.6f, drawn(), 0f)
 
         // Caller resets progress and restarts in the same frame.
-        Snapshot.withMutableSnapshot { p = 0f; trigger = 1 }
+        Snapshot.withMutableSnapshot {
+            p = 0f
+            trigger = 1
+        }
         startFlipAndSettleFrames()
         rule.mainClock.advanceTimeBy(325)
         assertEquals(0.6f, drawn(), 0f)
@@ -116,13 +117,20 @@ class FlipTest {
         assertTrue(before > 0f)
         trigger = 2
         val samples = mutableListOf<Float>()
-        repeat(60) { rule.mainClock.advanceTimeBy(50); samples += rotation() }
+        repeat(60) {
+            rule.mainClock.advanceTimeBy(50)
+            samples += rotation()
+        }
         // Monotonic increase to 180 (never snaps back mid-flip), then 0 forever (no second flip).
         var prev = before
         var finished = false
         for (r in samples) {
-            if (!finished && r >= prev) prev = r
-            else { finished = true; assertEquals(0f, r, 0f) }
+            if (!finished && r >= prev) {
+                prev = r
+            } else {
+                finished = true
+                assertEquals(0f, r, 0f)
+            }
         }
         assertTrue("flip completed", finished)
         assertEquals(0f, rotation(), 0f)

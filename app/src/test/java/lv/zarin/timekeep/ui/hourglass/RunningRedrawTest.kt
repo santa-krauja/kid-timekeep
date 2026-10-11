@@ -31,7 +31,7 @@ class RunningRedrawTest {
                 look = Look(PictureId.HEART, SandColor.LAVENDER, PictureId.STAR, SandColor.SKY),
                 progress = { plain },
                 running = true,
-                modifier = Modifier.size(200.dp, 256.dp).testTag("hg"),
+                modifier = Modifier.size(200.dp, 256.dp).testTag("hg")
             )
         }
         rule.mainClock.advanceTimeBy(100)

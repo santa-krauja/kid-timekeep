@@ -9,7 +9,7 @@ fun splitDuration(ms: Long, roundUp: Boolean): DurationParts {
     return DurationParts(
         hours = (total / 3600).toInt(),
         minutes = (total / 60 % 60).toInt(),
-        seconds = (total % 60).toInt(),
+        seconds = (total % 60).toInt()
     )
 }
 

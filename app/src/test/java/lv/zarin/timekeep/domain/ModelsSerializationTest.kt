@@ -2,11 +2,18 @@ package lv.zarin.timekeep.domain
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import lv.zarin.timekeep.domain.timer.*
-import org.junit.Test
+import lv.zarin.timekeep.domain.timer.FavouriteLook
+import lv.zarin.timekeep.domain.timer.Look
+import lv.zarin.timekeep.domain.timer.PictureId
+import lv.zarin.timekeep.domain.timer.Preset
+import lv.zarin.timekeep.domain.timer.RunState
+import lv.zarin.timekeep.domain.timer.SandColor
+import lv.zarin.timekeep.domain.timer.Timer
+import lv.zarin.timekeep.domain.timer.isValidDuration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class ModelsSerializationTest {
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.ROCKET, SandColor.NIGHT)

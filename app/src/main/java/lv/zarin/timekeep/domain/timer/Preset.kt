@@ -12,5 +12,5 @@ data class Preset(
     val lastLook: Look?,
     val sortOrder: Int,
     val createdAtMs: Long,
-    val updatedAtMs: Long,
+    val updatedAtMs: Long
 )

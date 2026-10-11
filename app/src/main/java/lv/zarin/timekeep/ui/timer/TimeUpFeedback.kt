@@ -19,7 +19,8 @@ class AndroidTimeUpFeedback(private val context: Context) : TimeUpFeedback {
         if (sound) {
             runCatching {
                 RingtoneManager.getRingtone(
-                    context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    context,
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 )?.play()
             }
         }

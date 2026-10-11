@@ -6,5 +6,4 @@ import lv.zarin.timekeep.AppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 
 @Composable
-fun appContainer(): AppContainer =
-    (LocalContext.current.applicationContext as KidTimekeepApp).container
+fun appContainer(): AppContainer = (LocalContext.current.applicationContext as KidTimekeepApp).container

@@ -1,7 +1,7 @@
 package lv.zarin.timekeep.domain.format
 
-import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class DurationFormatTest {
     @Test fun formats() {

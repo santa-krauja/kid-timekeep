@@ -47,8 +47,14 @@ class SandLevelSolverTest {
         var prevBot = Float.POSITIVE_INFINITY
         for (i in 0..4000) {
             val l = SandLevelSolver.levels(i / 4000f)
-            l.topLevel?.let { assertTrue("top at $i", it >= prevTop - tolerance); prevTop = it }
-            l.bottomLevel?.let { assertTrue("bottom at $i", it <= prevBot + tolerance); prevBot = it }
+            l.topLevel?.let {
+                assertTrue("top at $i", it >= prevTop - tolerance)
+                prevTop = it
+            }
+            l.bottomLevel?.let {
+                assertTrue("bottom at $i", it <= prevBot + tolerance)
+                prevBot = it
+            }
         }
     }
 

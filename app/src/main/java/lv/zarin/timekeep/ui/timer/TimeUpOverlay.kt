@@ -33,34 +33,28 @@ import lv.zarin.timekeep.ui.hourglass.drawableRes
 
 /** The reward moment: the finished bottom picture, Again / OK and "Save this look". */
 @Composable
-fun TimeUpOverlay(
-    timer: Timer,
-    lookSaved: Boolean,
-    onAgain: () -> Unit,
-    onOk: () -> Unit,
-    onSaveLook: () -> Unit,
-) {
+fun TimeUpOverlay(timer: Timer, lookSaved: Boolean, onAgain: () -> Unit, onOk: () -> Unit, onSaveLook: () -> Unit) {
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
         Card {
             Column(
                 Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Image(
                     painter = painterResource(timer.look.bottom.drawableRes()),
                     contentDescription = null,
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(72.dp)
                 )
                 Text(
                     stringResource(R.string.time_up_title),
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     stringResource(R.string.time_up_subtitle, timer.name, compactDuration(timer.durationMs)),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onAgain, modifier = Modifier.weight(1f)) {
@@ -75,7 +69,7 @@ fun TimeUpOverlay(
                     Text(
                         stringResource(R.string.look_saved),
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 } else {
                     TextButton(onClick = onSaveLook) {

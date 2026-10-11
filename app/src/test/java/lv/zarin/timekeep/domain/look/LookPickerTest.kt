@@ -52,10 +52,15 @@ class LookPickerTest {
     }
 
     private fun allGoodLooks(): Set<Look> = buildSet {
-        for (t in PictureId.entries) for (ts in SandColor.entries)
-            for (b in PictureId.entries) for (bs in SandColor.entries) {
-                val l = Look(t, ts, b, bs)
-                if (LookPicker.isGoodLook(l)) add(l)
+        for (t in PictureId.entries) {
+            for (ts in SandColor.entries) {
+                for (b in PictureId.entries) {
+                    for (bs in SandColor.entries) {
+                        val l = Look(t, ts, b, bs)
+                        if (LookPicker.isGoodLook(l)) add(l)
+                    }
+                }
             }
+        }
     }
 }

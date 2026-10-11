@@ -48,14 +48,9 @@ interface FavouriteLookDao {
 
     @Query(
         "SELECT * FROM favourite_looks WHERE look_topPicture = :topPicture AND look_topSand = :topSand " +
-            "AND look_bottomPicture = :bottomPicture AND look_bottomSand = :bottomSand LIMIT 1",
+            "AND look_bottomPicture = :bottomPicture AND look_bottomSand = :bottomSand LIMIT 1"
     )
-    suspend fun find(
-        topPicture: PictureId,
-        topSand: SandColor,
-        bottomPicture: PictureId,
-        bottomSand: SandColor,
-    ): FavouriteLookEntity?
+    suspend fun find(topPicture: PictureId, topSand: SandColor, bottomPicture: PictureId, bottomSand: SandColor): FavouriteLookEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: FavouriteLookEntity)

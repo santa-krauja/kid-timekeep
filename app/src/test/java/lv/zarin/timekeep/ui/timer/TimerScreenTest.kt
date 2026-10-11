@@ -9,7 +9,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import lv.zarin.timekeep.testutil.TestAppContainer
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.control.Control
 import lv.zarin.timekeep.domain.timer.Look
@@ -18,11 +17,12 @@ import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.SandColor
 import lv.zarin.timekeep.domain.timer.Timer
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.TestAppContainer
 import org.junit.Assert.assertEquals
 import org.junit.Rule
-import org.robolectric.shadows.ShadowLooper
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLooper
 
 @RunWith(AndroidJUnit4::class)
 class TimerScreenTest {
