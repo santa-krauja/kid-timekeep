@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         if (!intentAlreadyHandled) takeTimerId(intent)
         val container = (application as KidTimekeepApp).container
         // Re-runs on the recreation after a language change, so channel names follow the new language.
-        Notifications.ensureChannels(this)
+        Notifications.refreshChannels(this)
         enableEdgeToEdge()
         setContent {
             val settings by container.settingsRepository.settings

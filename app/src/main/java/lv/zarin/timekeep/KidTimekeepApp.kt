@@ -21,7 +21,7 @@ open class KidTimekeepApp : Application() {
         if (!::container.isInitialized) {
             container = DefaultAppContainer(this)
         }
-        Notifications.ensureChannels(this)
+        Notifications.refreshChannels(this)
         if (!reconcileOnLaunch()) return
         appScope.launch {
             try {

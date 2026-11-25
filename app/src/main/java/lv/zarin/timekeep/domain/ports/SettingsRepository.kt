@@ -9,7 +9,8 @@ data class Settings(
     val soundOn: Boolean = true,
     val vibrateOn: Boolean = true,
     val keepScreenOn: Boolean = true,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val alarmSoundUri: String? = null
 )
 
 interface SettingsRepository {

@@ -59,6 +59,19 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun alarmSoundUriRoundTripsAndClears() = runTest(UnconfinedTestDispatcher()) {
+        val ds = store()
+        val repo = DataStoreSettingsRepository(ds)
+        assertEquals(null, repo.settings.first().alarmSoundUri)
+        repo.update { it.copy(alarmSoundUri = "content://media/internal/audio/media/7") }
+        assertEquals("content://media/internal/audio/media/7", repo.settings.first().alarmSoundUri)
+        assertEquals("content://media/internal/audio/media/7", ds.data.first()[stringPreferencesKey("alarm_sound_uri")])
+        repo.update { it.copy(alarmSoundUri = null) }
+        assertEquals(null, repo.settings.first().alarmSoundUri)
+        assertEquals(null, ds.data.first()[stringPreferencesKey("alarm_sound_uri")])
+    }
+
+    @Test
     fun corruptFileFallsBackToDefaultsAndIsReplaced() = runTest(UnconfinedTestDispatcher()) {
         val file = File(tmp.root, "corrupt.preferences_pb")
         file.writeBytes(byteArrayOf(0x0A, 0x7F, 0x13, 0x00, 0x55, 0x01, 0x02))

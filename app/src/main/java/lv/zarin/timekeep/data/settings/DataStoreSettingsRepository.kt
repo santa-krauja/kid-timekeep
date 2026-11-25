@@ -42,6 +42,8 @@ class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>)
             prefs[VIBRATE_ON] = new.vibrateOn
             prefs[KEEP_SCREEN_ON] = new.keepScreenOn
             prefs[THEME_MODE] = new.themeMode.name
+            val soundUri = new.alarmSoundUri
+            if (soundUri == null) prefs.remove(ALARM_SOUND_URI) else prefs[ALARM_SOUND_URI] = soundUri
         }
     }
 
@@ -52,7 +54,8 @@ class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>)
             soundOn = this[SOUND_ON] ?: d.soundOn,
             vibrateOn = this[VIBRATE_ON] ?: d.vibrateOn,
             keepScreenOn = this[KEEP_SCREEN_ON] ?: d.keepScreenOn,
-            themeMode = ThemeMode.entries.firstOrNull { it.name == this[THEME_MODE] } ?: ThemeMode.SYSTEM
+            themeMode = ThemeMode.entries.firstOrNull { it.name == this[THEME_MODE] } ?: ThemeMode.SYSTEM,
+            alarmSoundUri = this[ALARM_SOUND_URI]
         )
     }
 
@@ -62,5 +65,6 @@ class DataStoreSettingsRepository(private val dataStore: DataStore<Preferences>)
         val VIBRATE_ON = booleanPreferencesKey("vibrate_on")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val ALARM_SOUND_URI = stringPreferencesKey("alarm_sound_uri")
     }
 }

@@ -134,10 +134,9 @@
     <string name="about_app_license">Kid Timekeep is free software under the GNU GPL v3.</string>
     <string name="about_source_code">Source code</string>
     <string name="action_close">Close</string>
-    <string name="channel_time_up">Time\'s up</string>
-    <string name="channel_time_up_sound_only">Time\'s up (sound only)</string>
-    <string name="channel_time_up_vibrate_only">Time\'s up (vibrate only)</string>
+    <string name="channel_time_up_alarm">Time\'s up alarm</string>
     <string name="channel_time_up_silent">Time\'s up (silent)</string>
+    <string name="action_stop">Stop</string>
     <string name="notification_time_up">Time\'s up!</string>
     <string name="notif_rationale_title">Let Kid Timekeep tell you when time is up?</string>
     <string name="notif_rationale_text">We\'ll show a notification with a sound when a timer finishes, even if the app is closed.</string>

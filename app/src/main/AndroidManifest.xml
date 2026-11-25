@@ -48,6 +48,10 @@
             android:name=".alarm.TimeUpReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".alarm.StopRingingReceiver"
+            android:exported="false" />
+
         <!-- Protected system broadcasts are delivered despite exported="false". -->
         <receiver
             android:name=".alarm.SystemEventsReceiver"

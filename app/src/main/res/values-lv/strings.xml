@@ -137,10 +137,9 @@
     <string name="about_app_license">Kid Timekeep ir brīva programmatūra ar GNU GPL v3 licenci.</string>
     <string name="about_source_code">Pirmkods</string>
     <string name="action_close">Aizvērt</string>
-    <string name="channel_time_up">Laiks beidzies</string>
-    <string name="channel_time_up_sound_only">Laiks beidzies (tikai skaņa)</string>
-    <string name="channel_time_up_vibrate_only">Laiks beidzies (tikai vibrācija)</string>
+    <string name="channel_time_up_alarm">Laiks beidzies – modinātājs</string>
     <string name="channel_time_up_silent">Laiks beidzies (klusi)</string>
+    <string name="action_stop">Apturēt</string>
     <string name="notification_time_up">Laiks beidzies!</string>
     <string name="notif_rationale_title">Vai atļausi Kid Timekeep paziņot, kad laiks beigsies?</string>
     <string name="notif_rationale_text">Kad taimeris beigsies, parādīsim paziņojumu ar skaņu – arī tad, ja lietotne ir aizvērta.</string>

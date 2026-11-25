@@ -126,7 +126,10 @@ class SystemEventsReceiverTest {
         clock.now = 20_000
         runBlocking { AppStartup.reconcile(app.container, app) }
         assertEquals(1, shadowOf(nm).allNotifications.size)
-        assertEquals(1, shadowOf(am).scheduledAlarms.size)
+        val timeUpAlarms = shadowOf(am).scheduledAlarms.filter {
+            shadowOf(it.operation).savedIntent.component?.className == TimeUpReceiver::class.java.name
+        }
+        assertEquals(1, timeUpAlarms.size)
         runBlocking { AppStartup.reconcile(app.container, app) }
         assertEquals(1, shadowOf(nm).allNotifications.size)
     }
