@@ -122,6 +122,8 @@
     <string name="cd_look">Augšā %1$s, krāsa %2$s; apakšā %3$s, krāsa %4$s</string>
     <string name="settings_show_numbers">Rādīt ciparus</string>
     <string name="settings_sound">Skaņa, kad laiks beidzies</string>
+    <string name="settings_alarm_sound">Modinātāja skaņa</string>
+    <string name="alarm_sound_default">Noklusējuma modinātājs</string>
     <string name="settings_vibrate">Vibrācija, kad laiks beidzies</string>
     <string name="settings_keep_screen_on">Neizslēgt ekrānu</string>
     <string name="settings_language">Valoda</string>

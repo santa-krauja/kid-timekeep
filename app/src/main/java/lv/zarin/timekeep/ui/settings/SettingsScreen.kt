@@ -1,11 +1,15 @@
 package lv.zarin.timekeep.ui.settings
 
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -27,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -41,12 +46,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.IntentCompat
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,17 +64,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import lv.zarin.timekeep.BuildConfig
 import lv.zarin.timekeep.R
+import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.ui.common.appContainer
 
+private const val DISABLED_ALPHA = 0.38f
 private const val SOURCE_URL = "https://github.com/santa-krauja/kid-timekeep"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val container = appContainer()
+    val appContext = LocalContext.current.applicationContext
     val vm: SettingsViewModel = viewModel(
-        factory = viewModelFactory { initializer { SettingsViewModel(container.settingsRepository) } }
+        factory = viewModelFactory {
+            initializer {
+                SettingsViewModel(
+                    container.settingsRepository,
+                    defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)?.toString(),
+                    onAlarmSoundChanged = { Notifications.ensureChannels(appContext, it) }
+                )
+            }
+        }
     )
     val settings by vm.settings.collectAsStateWithLifecycle()
     var showAbout by remember { mutableStateOf(false) }
@@ -89,6 +107,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             LanguageDropdown()
             SwitchRow(R.string.settings_show_numbers, settings.showNumbers, vm::setShowNumbers)
             SwitchRow(R.string.settings_sound, settings.soundOn, vm::setSound)
+            AlarmSoundRow(settings.alarmSoundUri, settings.soundOn, vm::setAlarmSound)
             SwitchRow(R.string.settings_vibrate, settings.vibrateOn, vm::setVibrate)
             SwitchRow(R.string.settings_keep_screen_on, settings.keepScreenOn, vm::setKeepScreenOn)
             NotificationsRow()
@@ -237,6 +256,54 @@ private fun AboutDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
+    )
+}
+
+@Composable
+private fun AlarmSoundRow(soundUri: String?, enabled: Boolean, onPick: (String?) -> Unit) {
+    val context = LocalContext.current
+    val defaultUri = remember { RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) }
+    val label = stringResource(R.string.settings_alarm_sound)
+    val defaultLabel = stringResource(R.string.alarm_sound_default)
+    val title = produceState(if (soundUri == null) defaultLabel else null, soundUri, defaultLabel) {
+        value = if (soundUri == null) {
+            defaultLabel
+        } else {
+            withContext(Dispatchers.IO) {
+                runCatching { RingtoneManager.getRingtone(context, Uri.parse(soundUri))?.getTitle(context) }.getOrNull()
+            } ?: defaultLabel
+        }
+    }.value.orEmpty()
+    val textColor = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val picked = result.data?.let {
+                IntentCompat.getParcelableExtra(it, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            }
+            onPick(picked?.toString())
+        }
+    }
+    ListItem(
+        modifier = Modifier.clickable(enabled = enabled, onClickLabel = label, role = Role.Button) {
+            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, defaultUri)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, soundUri?.let(Uri::parse) ?: defaultUri)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, label)
+            try {
+                picker.launch(intent)
+            } catch (_: ActivityNotFoundException) {
+            }
+        },
+        colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
+            headlineColor = textColor.takeOrElse { MaterialTheme.colorScheme.onSurface },
+            supportingColor = textColor.takeOrElse { MaterialTheme.colorScheme.onSurfaceVariant }
+        ),
+        headlineContent = { Text(label) },
+        supportingContent = { Text(title) }
     )
 }
 

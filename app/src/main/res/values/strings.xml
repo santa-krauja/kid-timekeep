@@ -118,6 +118,8 @@
     <string name="cd_look">%1$s on %2$s sand, %3$s on %4$s sand</string>
     <string name="settings_show_numbers">Show numbers</string>
     <string name="settings_sound">Sound when done</string>
+    <string name="settings_alarm_sound">Time\'s up sound</string>
+    <string name="alarm_sound_default">Default alarm</string>
     <string name="settings_vibrate">Vibrate when done</string>
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_language">Language</string>

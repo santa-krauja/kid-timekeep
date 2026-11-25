@@ -68,8 +68,10 @@ object Notifications {
     }
 
     private fun deleteChannelsExcept(nm: NotificationManager, keep: Set<String>) {
+        // Deleting a channel cancels its notifications, which would silence a ringing alarm.
+        val inUse = nm.activeNotifications.map { it.notification.channelId }.toSet()
         nm.notificationChannels.map { it.id }
-            .filter { it.startsWith(CHANNEL_PREFIX) && it !in keep }
+            .filter { it.startsWith(CHANNEL_PREFIX) && it !in keep && it !in inUse }
             .forEach(nm::deleteNotificationChannel)
     }
 

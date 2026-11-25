@@ -127,6 +127,25 @@ class NotificationsTest {
     }
 
     @Test
+    fun oldAlarmChannelWithActiveNotificationSurvivesUntilItIsQuiet() {
+        grant()
+        val old = Settings()
+        val custom = Settings(alarmSoundUri = "content://media/internal/audio/media/7")
+        Notifications.showTimeUp(context, timer(), old)
+        Notifications.ensureChannels(context, custom)
+        assertEquals(
+            setOf(Notifications.alarmChannelId(old), Notifications.alarmChannelId(custom), Notifications.CHANNEL_SILENT),
+            nm.notificationChannels.map { it.id }.toSet()
+        )
+        Notifications.cancel(context, "t1")
+        Notifications.ensureChannels(context, custom)
+        assertEquals(
+            setOf(Notifications.alarmChannelId(custom), Notifications.CHANNEL_SILENT),
+            nm.notificationChannels.map { it.id }.toSet()
+        )
+    }
+
+    @Test
     fun bothOffKeepsOnlySilentChannel() {
         Notifications.ensureChannels(context, Settings())
         Notifications.ensureChannels(context, Settings(soundOn = false, vibrateOn = false))

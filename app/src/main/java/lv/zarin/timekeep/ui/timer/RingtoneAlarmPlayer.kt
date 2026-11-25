@@ -41,8 +41,7 @@ class RingtoneAlarmPlayer(private val context: Context) : AlarmPlayer {
         }
     }
 
-    private fun playRingtone(soundUri: String?): Ringtone? =
-        runCatching { createRingtone(soundUri)?.also { it.play() } }.getOrNull()
+    private fun playRingtone(soundUri: String?): Ringtone? = runCatching { createRingtone(soundUri)?.also { it.play() } }.getOrNull()
 
     private fun createRingtone(soundUri: String?): Ringtone? {
         val uri = soundUri?.let(Uri::parse) ?: defaultAlarmUri()

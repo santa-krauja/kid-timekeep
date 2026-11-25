@@ -1,8 +1,11 @@
 package lv.zarin.timekeep.ui.settings
 
 import android.app.NotificationManager
+import android.media.RingtoneManager
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -88,12 +91,12 @@ class SettingsScreenTest {
         allowFullScreen(true)
         show()
         waitForTag("theme_dropdown")
-        rule.onNodeWithTag("theme_dropdown").performClick()
+        rule.onNodeWithTag("theme_dropdown").performScrollTo().performClick()
         waitForTag("theme_option_DARK")
         rule.onNodeWithTag("theme_option_DARK").performClick()
         waitFor("theme dark") { current().themeMode == ThemeMode.DARK }
         waitForText("Dark")
-        rule.onNodeWithTag("theme_dropdown").performClick()
+        rule.onNodeWithTag("theme_dropdown").performScrollTo().performClick()
         waitForTag("theme_option_LIGHT")
         rule.onNodeWithTag("theme_option_LIGHT").performClick()
         waitFor("theme light") { current().themeMode == ThemeMode.LIGHT }
@@ -180,5 +183,26 @@ class SettingsScreenTest {
         allowFullScreen(false)
         show()
         rule.onNodeWithText("Show Time's up on the lock screen").assertDoesNotExist()
+    }
+
+    @Test
+    fun alarmSoundRowShowsDefaultAndOpensRingtonePicker() {
+        show()
+        rule.onNodeWithText("Time's up sound").performScrollTo().assertIsEnabled()
+        waitForText("Default alarm")
+        rule.onNodeWithText("Time's up sound").performClick()
+        val picker = shadowOf(app).nextStartedActivity
+        assertEquals(RingtoneManager.ACTION_RINGTONE_PICKER, picker.action)
+        assertEquals(RingtoneManager.TYPE_ALARM, picker.getIntExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, -1))
+        assertEquals(true, picker.getBooleanExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false))
+        assertEquals(false, picker.getBooleanExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true))
+    }
+
+    @Test
+    fun alarmSoundRowIsDisabledWhenSoundIsOff() {
+        show()
+        rule.onNodeWithText("Sound when done").performClick()
+        waitFor("sound off") { !current().soundOn }
+        rule.onNodeWithText("Time's up sound").performScrollTo().assertIsNotEnabled()
     }
 }
