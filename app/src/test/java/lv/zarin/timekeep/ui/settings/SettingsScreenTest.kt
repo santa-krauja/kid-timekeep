@@ -1,6 +1,7 @@
 package lv.zarin.timekeep.ui.settings
 
 import android.app.NotificationManager
+import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -17,7 +18,9 @@ import kotlinx.coroutines.runBlocking
 import lv.zarin.timekeep.KidTimekeepApp
 import lv.zarin.timekeep.domain.ports.ThemeMode
 import lv.zarin.timekeep.testutil.FakeClock
+import lv.zarin.timekeep.testutil.FullScreenIntentShadow
 import lv.zarin.timekeep.testutil.TestAppContainer
+import lv.zarin.timekeep.testutil.allowFullScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -80,7 +83,9 @@ class SettingsScreenTest {
     }
 
     @Test
+    @Config(shadows = [FullScreenIntentShadow::class])
     fun themeDropdownChangesMode() {
+        allowFullScreen(true)
         show()
         waitForTag("theme_dropdown")
         rule.onNodeWithTag("theme_dropdown").performClick()
@@ -140,10 +145,40 @@ class SettingsScreenTest {
     }
 
     @Test
+    @Config(shadows = [FullScreenIntentShadow::class])
     fun notificationsRowOffersTurnOnWhenDisabled() {
+        allowFullScreen(true)
         val nm = app.getSystemService(NotificationManager::class.java)
         shadowOf(nm).setNotificationsEnabled(false)
         show()
         rule.onNodeWithText("Turn on").assertExists()
+    }
+
+    @Test
+    @Config(shadows = [FullScreenIntentShadow::class])
+    fun fullScreenRowOffersTurnOnWhenNotAllowed() {
+        allowFullScreen(false)
+        show()
+        rule.onNodeWithText("Show Time's up on the lock screen").assertExists()
+        rule.onNodeWithTag("full_screen_turn_on").performScrollTo().performClick()
+        val started = shadowOf(app).nextStartedActivity
+        assertEquals(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, started.action)
+        assertEquals("package:${app.packageName}", started.data.toString())
+    }
+
+    @Test
+    @Config(shadows = [FullScreenIntentShadow::class])
+    fun fullScreenRowIsHiddenWhenAllowed() {
+        allowFullScreen(true)
+        show()
+        rule.onNodeWithText("Show Time's up on the lock screen").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(sdk = [33], shadows = [FullScreenIntentShadow::class])
+    fun fullScreenRowIsHiddenBelowAndroid14() {
+        allowFullScreen(false)
+        show()
+        rule.onNodeWithText("Show Time's up on the lock screen").assertDoesNotExist()
     }
 }

@@ -148,4 +148,5 @@
     <string name="settings_notifications">Paziņojumi</string>
     <string name="notif_allowed">Atļauts ✓</string>
     <string name="notif_turn_on">Ieslēgt</string>
+    <string name="settings_full_screen">Rādīt „Laiks beidzies“ bloķēšanas ekrānā</string>
 </resources>

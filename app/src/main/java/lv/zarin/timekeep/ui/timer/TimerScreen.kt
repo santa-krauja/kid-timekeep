@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,7 +56,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.window.core.layout.WindowHeightSizeClass
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.alarm.Notifications
 import lv.zarin.timekeep.alarm.VisibleTimerTracker
@@ -66,10 +70,13 @@ import lv.zarin.timekeep.domain.timer.elapsedMs
 import lv.zarin.timekeep.domain.timer.progress
 import lv.zarin.timekeep.domain.timer.remainingMs
 import lv.zarin.timekeep.ui.common.DurationLabel
+import lv.zarin.timekeep.ui.common.LocalLockScreenAccess
 import lv.zarin.timekeep.ui.common.appContainer
 import lv.zarin.timekeep.ui.common.durationPhrase
 import lv.zarin.timekeep.ui.common.pauseToggleSpec
 import lv.zarin.timekeep.ui.hourglass.Hourglass
+
+private const val RINGING_POLL_MS = 500L
 
 @Composable
 fun TimerScreen(timerId: String, onBack: () -> Unit, onEdit: (String) -> Unit = {}) =
@@ -116,9 +123,33 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
             if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
         }
     }
-    if (state?.phase == TimerPhase.Finished) {
-        LaunchedEffect(timerId) { vm.onFinishedShown() }
+    val ringing by produceState(false, lifecycle, state?.phase) {
+        if (state?.phase != TimerPhase.Finished) {
+            value = false
+            return@produceState
+        }
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = withContext(Dispatchers.Default) { Notifications.isRinging(container.appContext, timerId) }
+                delay(RINGING_POLL_MS)
+            }
+        }
     }
+    if (state?.phase == TimerPhase.Finished) {
+        LaunchedEffect(timerId) {
+            if (!Notifications.isRinging(container.appContext, timerId)) vm.onFinishedShown()
+        }
+    }
+    val lockScreen = LocalLockScreenAccess.current
+    val phase = state?.phase
+    LaunchedEffect(phase, missing) {
+        when {
+            missing || (phase != null && phase != TimerPhase.Finished) -> lockScreen.release(timerId)
+            phase == TimerPhase.Finished -> lockScreen.acquire(timerId)
+        }
+    }
+    DisposableEffect(lockScreen, timerId) { onDispose { lockScreen.release(timerId) } }
+    val scope = rememberCoroutineScope()
     if (missing) {
         LaunchedEffect(Unit) { onClose() }
     }
@@ -213,11 +244,19 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
             TimeUpOverlay(
                 timer = timer,
                 lookSaved = lookSaved,
+                ringing = ringing,
+                onStop = {
+                    scope.launch { Notifications.stopRinging(container.appContext, container.timerRepository, timerId) }
+                },
                 onAgain = {
                     lookSaved = false
+                    lockScreen.release(timerId)
                     vm.again()
                 },
-                onOk = vm::dismiss,
+                onOk = {
+                    lockScreen.release(timerId)
+                    vm.dismiss()
+                },
                 onSaveLook = {
                     lookSaved = true
                     vm.saveLookAsFavourite()

@@ -1,8 +1,10 @@
 package lv.zarin.timekeep.ui.settings
 
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
@@ -90,6 +92,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             SwitchRow(R.string.settings_vibrate, settings.vibrateOn, vm::setVibrate)
             SwitchRow(R.string.settings_keep_screen_on, settings.keepScreenOn, vm::setKeepScreenOn)
             NotificationsRow()
+            FullScreenRow()
             ThemeDropdown(settings.themeMode, vm::setTheme)
             ListItem(
                 modifier = Modifier.clickable(
@@ -262,6 +265,33 @@ private fun NotificationsRow() {
                     modifier = Modifier.testTag("notif_turn_on")
                 ) { Text(stringResource(R.string.notif_turn_on)) }
             }
+        }
+    )
+}
+
+@Composable
+private fun FullScreenRow() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+    val context = LocalContext.current
+    val notifications = context.getSystemService(NotificationManager::class.java)
+    var allowed by remember { mutableStateOf(notifications.canUseFullScreenIntent()) }
+    LifecycleResumeEffect(Unit) {
+        allowed = notifications.canUseFullScreenIntent()
+        onPauseOrDispose { }
+    }
+    if (allowed) return
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(stringResource(R.string.settings_full_screen)) },
+        trailingContent = {
+            TextButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:${context.packageName}"))
+                    )
+                },
+                modifier = Modifier.testTag("full_screen_turn_on")
+            ) { Text(stringResource(R.string.notif_turn_on)) }
         }
     )
 }

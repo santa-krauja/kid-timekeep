@@ -19,6 +19,8 @@ import androidx.core.content.ContextCompat
 import lv.zarin.timekeep.MainActivity
 import lv.zarin.timekeep.R
 import lv.zarin.timekeep.domain.ports.Settings
+import lv.zarin.timekeep.domain.ports.TimerRepository
+import lv.zarin.timekeep.domain.timer.RunState
 import lv.zarin.timekeep.domain.timer.Timer
 
 object Notifications {
@@ -112,6 +114,7 @@ object Notifications {
         val notification = builder(context, timer, alarmChannelId(settings))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .addAction(R.drawable.ic_stat_hourglass, context.getString(R.string.action_stop), stopIntent(context, timer.id))
+            .setFullScreenIntent(fullScreenIntent(context, timer.id), true)
             .build()
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
         post(context, timer.id, notification)
@@ -154,6 +157,20 @@ object Notifications {
         )
     }
 
+    private fun fullScreenIntent(context: Context, timerId: String): PendingIntent {
+        val open = Intent(context, MainActivity::class.java)
+            .setData(Uri.parse("kidtimekeep://time-up/$timerId"))
+            .putExtra(MainActivity.EXTRA_TIMER_ID, timerId)
+            .putExtra(MainActivity.EXTRA_FROM_ALARM, true)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        return PendingIntent.getActivity(
+            context,
+            timerId.hashCode(),
+            open,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
     private fun stopIntent(context: Context, timerId: String): PendingIntent {
         val stop = Intent(context, StopRingingReceiver::class.java)
             .setData(Uri.parse("kidtimekeep://${StopRingingReceiver.HOST_STOP}/$timerId"))
@@ -164,6 +181,21 @@ object Notifications {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
     }
+
+    fun isRinging(context: Context, timerId: String): Boolean =
+        context.getSystemService(NotificationManager::class.java).activeNotifications.any {
+            it.id == notificationId(timerId) && it.notification.flags and Notification.FLAG_INSISTENT != 0
+        }
+
+    suspend fun stopRinging(context: Context, timers: TimerRepository, timerId: String) {
+        RingTimeout.cancel(context, timerId)
+        if (!isPosted(context, timerId)) return
+        val timer = timers.get(timerId)
+        if (timer?.state is RunState.Finished) showSilent(context, timer) else cancel(context, timerId)
+    }
+
+    private fun isPosted(context: Context, timerId: String) =
+        context.getSystemService(NotificationManager::class.java).activeNotifications.any { it.id == notificationId(timerId) }
 
     fun cancel(context: Context, timerId: String) {
         RingTimeout.cancel(context, timerId)

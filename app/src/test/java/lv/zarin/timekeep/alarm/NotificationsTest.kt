@@ -170,6 +170,41 @@ class NotificationsTest {
     }
 
     @Test
+    fun ringingNotificationOpensTimerFullScreenFromAlarm() {
+        grant()
+        Notifications.showTimeUp(context, timer(), Settings())
+        val n = posted()
+        val fullScreen = shadowOf(n.fullScreenIntent)
+        assertTrue(fullScreen.isActivity)
+        val intent = fullScreen.savedIntent
+        assertEquals(MainActivity::class.java.name, intent.component?.className)
+        assertEquals("t1", intent.getStringExtra(MainActivity.EXTRA_TIMER_ID))
+        assertTrue(intent.getBooleanExtra(MainActivity.EXTRA_FROM_ALARM, false))
+        assertNotEquals(shadowOf(n.contentIntent).savedIntent.data, intent.data)
+        assertFalse(shadowOf(n.contentIntent).savedIntent.getBooleanExtra(MainActivity.EXTRA_FROM_ALARM, false))
+    }
+
+    @Test
+    fun silentNotificationsHaveNoFullScreenIntent() {
+        grant()
+        Notifications.showTimeUp(context, timer(), Settings(soundOn = false, vibrateOn = false))
+        assertNull(posted().fullScreenIntent)
+        Notifications.showTimeUp(context, timer(), Settings())
+        Notifications.showSilent(context, timer())
+        assertNull(posted().fullScreenIntent)
+    }
+
+    @Test
+    fun isRingingOnlyWhileInsistentNotificationIsPosted() {
+        grant()
+        assertFalse(Notifications.isRinging(context, "t1"))
+        Notifications.showTimeUp(context, timer(), Settings())
+        assertTrue(Notifications.isRinging(context, "t1"))
+        Notifications.showSilent(context, timer())
+        assertFalse(Notifications.isRinging(context, "t1"))
+    }
+
+    @Test
     fun ringingSchedulesExactOneMinuteTimeoutOnElapsedClock() {
         grant()
         ShadowAlarmManager.setCanScheduleExactAlarms(true)

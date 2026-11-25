@@ -1,6 +1,5 @@
 package lv.zarin.timekeep.alarm
 
-import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lv.zarin.timekeep.KidTimekeepApp
-import lv.zarin.timekeep.domain.timer.RunState
 
 class StopRingingReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -22,7 +20,7 @@ class StopRingingReceiver : BroadcastReceiver() {
         val app = context.applicationContext
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                if (timerId != null) stopRinging(app, timerId)
+                if (timerId != null) Notifications.stopRinging(app, (app as KidTimekeepApp).container.timerRepository, timerId)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -32,14 +30,6 @@ class StopRingingReceiver : BroadcastReceiver() {
                 onHandled()
             }
         }
-    }
-
-    private suspend fun stopRinging(app: Context, timerId: String) {
-        RingTimeout.cancel(app, timerId)
-        val nm = app.getSystemService(NotificationManager::class.java)
-        if (nm.activeNotifications.none { it.id == Notifications.notificationId(timerId) }) return
-        val timer = (app as KidTimekeepApp).container.timerRepository.get(timerId)
-        if (timer?.state is RunState.Finished) Notifications.showSilent(app, timer) else Notifications.cancel(app, timerId)
     }
 
     internal companion object {

@@ -145,4 +145,5 @@
     <string name="settings_notifications">Notifications</string>
     <string name="notif_allowed">Allowed ✓</string>
     <string name="notif_turn_on">Turn on</string>
+    <string name="settings_full_screen">Show Time\'s up on the lock screen</string>
 </resources>

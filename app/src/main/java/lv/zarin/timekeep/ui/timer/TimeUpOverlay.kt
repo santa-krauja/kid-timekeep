@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -32,7 +33,15 @@ import lv.zarin.timekeep.ui.common.compactDuration
 import lv.zarin.timekeep.ui.hourglass.drawableRes
 
 @Composable
-fun TimeUpOverlay(timer: Timer, lookSaved: Boolean, onAgain: () -> Unit, onOk: () -> Unit, onSaveLook: () -> Unit) {
+fun TimeUpOverlay(
+    timer: Timer,
+    lookSaved: Boolean,
+    ringing: Boolean,
+    onStop: () -> Unit,
+    onAgain: () -> Unit,
+    onOk: () -> Unit,
+    onSaveLook: () -> Unit
+) {
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
         Card {
             Column(
@@ -55,6 +64,11 @@ fun TimeUpOverlay(timer: Timer, lookSaved: Boolean, onAgain: () -> Unit, onOk: (
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (ringing) {
+                    Button(onClick = onStop, modifier = Modifier.fillMaxWidth().height(64.dp).padding(top = 8.dp)) {
+                        Text(stringResource(R.string.action_stop), style = MaterialTheme.typography.titleLarge)
+                    }
+                }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onAgain, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Rounded.Refresh, contentDescription = null)
