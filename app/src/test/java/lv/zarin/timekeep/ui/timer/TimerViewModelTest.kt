@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -49,10 +50,16 @@ class FakeSettingsRepository(initial: Settings = Settings()) : SettingsRepositor
     }
 }
 
-class RecordingFeedback : TimeUpFeedback {
-    val calls = mutableListOf<Pair<Boolean, Boolean>>()
-    override fun play(sound: Boolean, vibrate: Boolean) {
-        calls += sound to vibrate
+class RecordingAlarmPlayer : AlarmPlayer {
+    data class Start(val soundUri: String?, val sound: Boolean, val vibrate: Boolean)
+
+    val starts = mutableListOf<Start>()
+    var stops = 0
+    override fun start(soundUri: String?, sound: Boolean, vibrate: Boolean) {
+        starts += Start(soundUri, sound, vibrate)
+    }
+    override fun stop() {
+        stops++
     }
 }
 
@@ -77,7 +84,9 @@ class TimerViewModelTest {
     private val look = Look(PictureId.HEART, SandColor.SKY, PictureId.STAR, SandColor.MINT)
     private val timers = InMemoryTimerRepository()
     private val clock = FakeClock(0)
-    private val feedback = RecordingFeedback()
+    private val player = RecordingAlarmPlayer()
+    private val rung = mutableListOf<Long>()
+    private val notifier = TimeUpNotifier { _, _, ringForMs -> rung += ringForMs }
     private val favourites = RecordingFavourites()
     private val alarms = RecordingAlarmScheduler()
     private val service = TimerService(timers, InMemoryPresetRepository(), alarms, clock, LookPicker())
@@ -86,7 +95,7 @@ class TimerViewModelTest {
 
     private fun vm(settings: Settings = Settings()) = TimerViewModel(
         "t", timers, service, favourites, FakeSettingsRepository(settings), clock,
-        AllowAllControlPolicy, feedback,
+        AllowAllControlPolicy, player, notifier,
         clearNotification = { cleared += it }
     )
 
@@ -101,7 +110,7 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(1_000)
         runCurrent()
-        assertEquals(listOf(true to true), feedback.calls)
+        assertEquals(listOf(RecordingAlarmPlayer.Start(null, true, true)), player.starts)
         assertTrue(timers.get("t")!!.state is RunState.Finished)
     }
 
@@ -113,7 +122,7 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(500)
         runCurrent()
-        assertEquals(listOf(false to true), feedback.calls)
+        assertEquals(listOf(RecordingAlarmPlayer.Start(null, false, true)), player.starts)
     }
 
     @Test
@@ -210,7 +219,7 @@ class TimerViewModelTest {
         advanceTimeBy(2_000)
         runCurrent()
         assertEquals(0, alarms.scheduleCalls)
-        assertTrue(feedback.calls.isEmpty())
+        assertTrue(player.starts.isEmpty())
     }
 
     @Test
@@ -221,7 +230,7 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(1_000)
         runCurrent()
-        assertTrue(feedback.calls.isEmpty())
+        assertTrue(player.starts.isEmpty())
     }
 
     @Test
@@ -231,15 +240,15 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(500)
         runCurrent()
-        assertTrue(feedback.calls.isEmpty())
+        assertTrue(player.starts.isEmpty())
         clock.now = 60_000
         service.finishIfOverdue("t")
         advanceTimeBy(100)
         runCurrent()
-        assertEquals(1, feedback.calls.size)
+        assertEquals(1, player.starts.size)
         advanceTimeBy(2_000)
         runCurrent()
-        assertEquals(1, feedback.calls.size)
+        assertEquals(1, player.starts.size)
     }
 
     @Test
@@ -256,7 +265,7 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(2_000)
         runCurrent()
-        assertTrue(feedback.calls.isEmpty())
+        assertTrue(player.starts.isEmpty())
     }
 
     @Test
@@ -268,7 +277,7 @@ class TimerViewModelTest {
         backgroundScope.launch { vm.runTicker() }
         advanceTimeBy(1_000)
         runCurrent()
-        assertTrue(feedback.calls.isEmpty())
+        assertTrue(player.starts.isEmpty())
     }
 
     @Test
@@ -289,7 +298,8 @@ class TimerViewModelTest {
             FakeSettingsRepository(Settings()),
             clock,
             AllowAllControlPolicy,
-            feedback
+            player,
+            notifier
         )
         backgroundScope.launch { vm.runTicker() }
         runCurrent()
@@ -298,6 +308,110 @@ class TimerViewModelTest {
         firstLoad.complete(Unit)
         advanceTimeBy(100)
         runCurrent()
-        assertEquals(1, feedback.calls.size)
+        assertEquals(1, player.starts.size)
+    }
+
+    private suspend fun TestScope.finishVisibleTimer(settings: Settings = Settings()): TimerViewModel {
+        seed(RunState.Running(0, 0))
+        val vm = vm(settings)
+        backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        clock.now = 60_000
+        service.finishIfOverdue("t")
+        advanceTimeBy(100)
+        runCurrent()
+        return vm
+    }
+
+    @Test
+    fun startsWithChosenSoundAndReportsPlaying() = runTest(dispatcher) {
+        val uri = "content://media/internal/audio/media/7"
+        val vm = finishVisibleTimer(Settings(alarmSoundUri = uri))
+        assertEquals(listOf(RecordingAlarmPlayer.Start(uri, true, true)), player.starts)
+        assertTrue(vm.alarmPlaying.value)
+    }
+
+    @Test
+    fun doesNotStartWhenSoundAndVibrateAreOff() = runTest(dispatcher) {
+        val vm = finishVisibleTimer(Settings(soundOn = false, vibrateOn = false))
+        assertTrue(player.starts.isEmpty())
+        assertFalse(vm.alarmPlaying.value)
+    }
+
+    @Test
+    fun stopsOnOkAgainAndStop() = runTest(dispatcher) {
+        val vm = finishVisibleTimer()
+        vm.stopAlarm()
+        assertEquals(1, player.stops)
+        assertFalse(vm.alarmPlaying.value)
+
+        vm.dismiss()
+        runCurrent()
+        assertEquals(2, player.stops)
+        assertFalse(vm.alarmPlaying.value)
+
+        vm.again()
+        runCurrent()
+        assertEquals(3, player.stops)
+        assertFalse(vm.alarmPlaying.value)
+    }
+
+    @Test
+    fun stopsAfterSixtySeconds() = runTest(dispatcher) {
+        val vm = finishVisibleTimer()
+        advanceTimeBy(59_000)
+        runCurrent()
+        assertEquals(0, player.stops)
+        assertTrue(vm.alarmPlaying.value)
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertEquals(1, player.stops)
+        assertFalse(vm.alarmPlaying.value)
+    }
+
+    @Test
+    fun stopAlarmCancelsTheTimeout() = runTest(dispatcher) {
+        val vm = finishVisibleTimer()
+        vm.stopAlarm()
+        advanceTimeBy(120_000)
+        runCurrent()
+        assertEquals(1, player.stops)
+    }
+
+    @Test
+    fun leavingScreenWhilePlayingHandsOffToNotificationWithRemainingTime() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        val ticker = backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        clock.now = 60_000
+        service.finishIfOverdue("t")
+        advanceTimeBy(100)
+        runCurrent()
+        clock.now = 80_000
+        ticker.cancel()
+        runCurrent()
+        assertEquals(1, player.stops)
+        assertFalse(vm.alarmPlaying.value)
+        assertEquals(listOf(40_000L), rung)
+    }
+
+    @Test
+    fun leavingScreenAfterStopDoesNotNotify() = runTest(dispatcher) {
+        seed(RunState.Running(0, 0))
+        val vm = vm()
+        val ticker = backgroundScope.launch { vm.runTicker() }
+        advanceTimeBy(500)
+        runCurrent()
+        clock.now = 60_000
+        service.finishIfOverdue("t")
+        advanceTimeBy(100)
+        runCurrent()
+        vm.stopAlarm()
+        ticker.cancel()
+        runCurrent()
+        assertTrue(rung.isEmpty())
     }
 }

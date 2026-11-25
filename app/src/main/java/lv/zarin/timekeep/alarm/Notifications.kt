@@ -103,7 +103,7 @@ object Notifications {
         PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("MissingPermission") // Checked in canPost; a denied permission just means no notification.
-    fun showTimeUp(base: Context, timer: Timer, settings: Settings) {
+    fun showTimeUp(base: Context, timer: Timer, settings: Settings, ringForMs: Long = RingTimeout.RING_DURATION_MS) {
         val context = localized(base)
         ensureChannels(base, settings)
         if (!canPost(context)) return
@@ -118,7 +118,7 @@ object Notifications {
             .build()
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
         post(context, timer.id, notification)
-        RingTimeout.schedule(context, timer.id)
+        RingTimeout.schedule(context, timer.id, ringForMs)
     }
 
     @SuppressLint("MissingPermission") // Checked in canPost; a denied permission just means no notification.

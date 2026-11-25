@@ -2,6 +2,7 @@ package lv.zarin.timekeep.ui.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,11 +48,17 @@ class TimerViewModel(
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val policy: ControlPolicy = AllowAllControlPolicy,
-    private val feedback: TimeUpFeedback,
+    private val player: AlarmPlayer,
+    private val notifier: TimeUpNotifier,
     private val clearNotification: (String) -> Unit = {}
 ) : ViewModel() {
 
     private val flip = MutableStateFlow(0)
+    private val playing = MutableStateFlow(false)
+    private var alarmTimeout: Job? = null
+    private var alarmStartedAtMs = 0L
+
+    val alarmPlaying: StateFlow<Boolean> = playing
 
     private data class Loaded(val timer: Timer?, val settings: Settings, val flip: Int)
 
@@ -85,7 +92,13 @@ class TimerViewModel(
 
     fun nowMs(): Long = clock.nowMs()
 
-    suspend fun runTicker() = coroutineScope {
+    suspend fun runTicker() = try {
+        tick()
+    } finally {
+        handOffAlarmToSystem()
+    }
+
+    private suspend fun tick() = coroutineScope {
         launch {
             // Seed from a fresh read: the cached StateFlow value may be stale after the screen was stopped.
             val fresh = timers.get(timerId)?.state
@@ -106,7 +119,7 @@ class TimerViewModel(
                     if (key != played) {
                         played = key
                         val s = settings.settings.first()
-                        feedback.play(sound = s.soundOn, vibrate = s.vibrateOn)
+                        startAlarm(s)
                     }
                 }
                 previous = st
@@ -119,6 +132,36 @@ class TimerViewModel(
         }
     }
 
+    private fun startAlarm(s: Settings) {
+        if (!s.soundOn && !s.vibrateOn) return
+        player.start(s.alarmSoundUri, sound = s.soundOn, vibrate = s.vibrateOn)
+        playing.value = true
+        alarmStartedAtMs = clock.nowMs()
+        alarmTimeout?.cancel()
+        alarmTimeout = viewModelScope.launch {
+            delay(ALARM_TIMEOUT_MS)
+            stopAlarm()
+        }
+    }
+
+    private fun handOffAlarmToSystem() {
+        val current = loaded.value
+        val timer = current?.timer
+        val remainingMs = ALARM_TIMEOUT_MS - (clock.nowMs() - alarmStartedAtMs)
+        val stillRinging = playing.value && timer?.state is RunState.Finished && remainingMs > 0
+        stopAlarm()
+        if (stillRinging && timer != null) notifier.ring(timer, current.settings, remainingMs)
+    }
+
+    fun stopAlarm() {
+        alarmTimeout?.cancel()
+        alarmTimeout = null
+        player.stop()
+        playing.value = false
+    }
+
+    override fun onCleared() = stopAlarm()
+
     fun togglePause() {
         viewModelScope.launch {
             when (state.value?.timer?.state) {
@@ -130,6 +173,7 @@ class TimerViewModel(
     }
 
     fun restart() {
+        stopAlarm()
         flip.value += 1
         clearNotification(timerId)
         viewModelScope.launch { service.restart(timerId) }
@@ -142,6 +186,7 @@ class TimerViewModel(
     }
 
     fun dismiss() {
+        stopAlarm()
         clearNotification(timerId)
         viewModelScope.launch { service.dismiss(timerId) }
     }
@@ -155,5 +200,6 @@ class TimerViewModel(
 
     private companion object {
         const val TICK_MS = 250L
+        const val ALARM_TIMEOUT_MS = 60_000L
     }
 }

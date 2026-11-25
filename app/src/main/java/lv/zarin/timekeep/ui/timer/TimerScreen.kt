@@ -95,7 +95,8 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
                     timerId, container.timerRepository, container.timerService,
                     container.favouriteLookRepository, container.settingsRepository,
                     container.clock, container.controlPolicy,
-                    AndroidTimeUpFeedback(container.appContext),
+                    RingtoneAlarmPlayer(container.appContext),
+                    { timer, settings, ringForMs -> Notifications.showTimeUp(container.appContext, timer, settings, ringForMs) },
                     clearNotification = { Notifications.cancel(container.appContext, it) }
                 )
             }
@@ -123,7 +124,8 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
             if (VisibleTimerTracker.visibleTimerId == timerId) VisibleTimerTracker.visibleTimerId = null
         }
     }
-    val ringing by produceState(false, lifecycle, state?.phase) {
+    val alarmPlaying by vm.alarmPlaying.collectAsStateWithLifecycle()
+    val notificationRinging by produceState(false, lifecycle, state?.phase) {
         if (state?.phase != TimerPhase.Finished) {
             value = false
             return@produceState
@@ -135,6 +137,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
             }
         }
     }
+    val ringing = notificationRinging || alarmPlaying
     if (state?.phase == TimerPhase.Finished) {
         LaunchedEffect(timerId) {
             if (!Notifications.isRinging(container.appContext, timerId)) vm.onFinishedShown()
@@ -246,6 +249,7 @@ fun TimerContent(timerId: String, onClose: () -> Unit, showBack: Boolean, onEdit
                 lookSaved = lookSaved,
                 ringing = ringing,
                 onStop = {
+                    vm.stopAlarm()
                     scope.launch { Notifications.stopRinging(container.appContext, container.timerRepository, timerId) }
                 },
                 onAgain = {
